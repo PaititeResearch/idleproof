@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: TFourniax/tooltest-2@main
+      - uses: PaititeResearch/idleproof@main
         with:
           attestation: .idleproof/attestation.dsse.json
           public-key: .idleproof-trust/team-recorder.pub.pem

@@ -5,7 +5,7 @@ import { ensureIdentity, signBytes, verifyBytes, verifyProvenanceChain, buildAge
 import { policyHash, loadPolicy } from './policy.mjs';
 import { responsibilityReport } from './ownership.mjs';
 
-export const PREDICATE_TYPE = 'https://github.com/TFourniax/tooltest-2/spec/agentic-development-provenance/v1';
+export const PREDICATE_TYPE = 'https://github.com/PaititeResearch/idleproof/spec/agentic-development-provenance/v1';
 export const PAYLOAD_TYPE = 'application/vnd.in-toto+json';
 function readJson(file, fallback = null) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (error) { if (error.code === 'ENOENT') return fallback; throw error; } }
 function dssePae(payloadType, payloadBytes) { const type = Buffer.from(payloadType, 'utf8'); const payload = Buffer.from(payloadBytes); return Buffer.concat([Buffer.from(`DSSEv1 ${type.length} `, 'utf8'), type, Buffer.from(` ${payload.length} `, 'utf8'), payload]); }

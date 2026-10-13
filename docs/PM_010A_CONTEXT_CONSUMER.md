@@ -2,7 +2,7 @@
 
 Acceptance recorded before implementation on IdleProof main
 0a6d6eaa7bf5afab72e185be0d0d97d3b679cd5f. Canonical registry:
-https://github.com/TFourniax/tooltest/issues/74.
+https://github.com/PaititeResearch/diffwitness/issues/74.
 
 The current consumer checks only schema and context-ID spelling, omits durable
 tasks and lifecycle reviews, discards warnings, and its Portal relation projection

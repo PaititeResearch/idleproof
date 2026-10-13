@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/TFourniax/tooltest-2/spec/agentic-development-provenance/v1",
+  "$id": "https://github.com/PaititeResearch/idleproof/spec/agentic-development-provenance/v1",
   "title": "IdleProof Agentic Development Provenance v1 predicate",
   "type": "object",
   "required": ["schema", "generatedAt", "project", "execution", "controls", "provenance", "agentBillOfMaterials", "responsibility"],

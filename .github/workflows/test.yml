@@ -101,7 +101,7 @@ jobs:
       - name: Checkout exact Core main for live-symbol extraction
         uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
+          repository: PaititeResearch/diffwitness
           ref: a168829247df8e6604cf47f327be9acd3f57e155
           path: core-quality-fixture
           persist-credentials: false
@@ -143,7 +143,7 @@ jobs:
       - name: Checkout exact Core ${{ matrix.core.ref }}
         uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
+          repository: PaititeResearch/diffwitness
           ref: ${{ matrix.core.ref }}
           path: core-context-fixture
           persist-credentials: false
@@ -277,7 +277,7 @@ jobs:
       - name: Checkout exact Core main
         uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
+          repository: PaititeResearch/diffwitness
           ref: a168829247df8e6604cf47f327be9acd3f57e155
           path: core-cold-fixture
           persist-credentials: false
@@ -314,14 +314,14 @@ jobs:
       - name: Checkout exact Core main with forward journal pages
         uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
+          repository: PaititeResearch/diffwitness
           ref: a168829247df8e6604cf47f327be9acd3f57e155
           path: core-memory-fixture
           persist-credentials: false
       - name: Checkout exact legacy Core without journal pages
         uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
+          repository: PaititeResearch/diffwitness
           ref: 956f79840f7c2146ae9d565f4fafd9f5018d21a6
           path: core-legacy-fixture
           persist-credentials: false

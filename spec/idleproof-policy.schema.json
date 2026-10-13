@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/TFourniax/tooltest-2/spec/idleproof-policy/v1",
+  "$id": "https://github.com/PaititeResearch/idleproof/spec/idleproof-policy/v1",
   "title": "IdleProof runtime policy v1",
   "type": "object",
   "required": ["schema", "profile", "rules"],

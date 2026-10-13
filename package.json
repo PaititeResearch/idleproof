@@ -21,8 +21,8 @@
   ],
   "license": "MIT",
   "files": ["bin", "src", "public", "docs", "spec", "examples", "action.yml", "README.md", "SECURITY.md", "LICENSE"],
-  "repository": { "type": "git", "url": "git+https://github.com/TFourniax/tooltest-2.git" },
-  "homepage": "https://github.com/TFourniax/tooltest-2#readme",
-  "bugs": { "url": "https://github.com/TFourniax/tooltest-2/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/PaititeResearch/idleproof.git" },
+  "homepage": "https://github.com/PaititeResearch/idleproof#readme",
+  "bugs": { "url": "https://github.com/PaititeResearch/idleproof/issues" },
   "publishConfig": { "access": "public" }
 }

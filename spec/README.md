@@ -18,7 +18,7 @@ The reference attestation is an in-toto Statement v1 wrapped in DSSE. Its subjec
 
 Predicate identifier for this repository version:
 
-`https://github.com/TFourniax/tooltest-2/spec/agentic-development-provenance/v1`
+`https://github.com/PaititeResearch/idleproof/spec/agentic-development-provenance/v1`
 
 This does not claim SLSA compliance. It borrows established supply-chain primitives because agentic development provenance is conceptually adjacent to build provenance.
 
