@@ -32,11 +32,13 @@ JS
 WORK="$(mktemp -d "$RECIPE_ROOT/byok-update.XXXXXX")"
 mkdir -- "$WORK/backup" "$WORK/candidate"
 # Older npm releases still invoke prepare during pack with --ignore-scripts.
-# An inert lifecycle shell also prevents those releases from executing hooks.
-printf '#!/bin/sh\nexit 0\n' > "$WORK/no-lifecycle.sh"
-chmod 700 "$WORK/no-lifecycle.sh"
-"$NPM" pack "$RUNTIME/node_modules/idleproof" --ignore-scripts --script-shell "$WORK/no-lifecycle.sh" --pack-destination "$WORK/backup" --json > "$WORK/backup.json"
-"$NPM" pack "$SOURCE" --ignore-scripts --script-shell "$WORK/no-lifecycle.sh" --pack-destination "$WORK/candidate" --json > "$WORK/candidate.json"
+# Some also ignore script-shell and invoke bare sh. Block both paths only while
+# packing; keep the package manifests and the caller's shell environment intact.
+mkdir -- "$WORK/no-lifecycle"
+printf '#!/bin/sh\nexit 0\n' > "$WORK/no-lifecycle/sh"
+chmod 700 "$WORK/no-lifecycle/sh"
+PATH="$WORK/no-lifecycle:$PATH" "$NPM" pack "$RUNTIME/node_modules/idleproof" --ignore-scripts --script-shell "$WORK/no-lifecycle/sh" --pack-destination "$WORK/backup" --json > "$WORK/backup.json"
+PATH="$WORK/no-lifecycle:$PATH" "$NPM" pack "$SOURCE" --ignore-scripts --script-shell "$WORK/no-lifecycle/sh" --pack-destination "$WORK/candidate" --json > "$WORK/candidate.json"
 BACKUP="$WORK/backup/$("$NODE" -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))[0].filename' "$WORK/backup.json")"
 CANDIDATE="$WORK/candidate/$("$NODE" -p 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))[0].filename' "$WORK/candidate.json")"
 test -f "$BACKUP"
