@@ -28,11 +28,11 @@ test('result renders sourced prose, escaped text and honest failure states with 
   const evidence=[{citation:'S1',path:'rules.py',snapshotId:'snap'}];
   const html=renderByokResult({status:'INTERPRETATION',reportedCostUsd:.001,latencyMs:1234,evidence,answer:{claims:[{text:'<script>alert(1)</script>',citations:['S1']}],nextTests:[],unknowns:['No execution']}});
   assert.ok(!html.includes('<script>'));assert.match(html,/&lt;script&gt;/);assert.match(html,/data-ai-source="rules.py"/);
-  assert.match(html,/<details><summary>Détails techniques/);assert.ok(!html.includes('<details open'));
+  assert.match(html,/<details><summary>Technical details/);assert.ok(!html.includes('<details open'));
   const error=renderByokResult({status:'FALLBACK',code:'BYOK_OUTPUT_TRUNCATED',latencyMs:10,reportedCostUsd:null});
-  assert.match(error,/atteint sa limite/);assert.match(error,/Coût réel inconnu/);
+  assert.match(error,/reached its output limit/);assert.match(error,/Actual cost unknown/);
 });
 test('preview exposes all selected files and omitted count before consent',()=>{
   const html=renderByokPreview({model:'test/model',requestPolicy:{maxTokens:2000},packet:{evidence:[{citation:'S1',path:'rules.py'}],selection:{eligible:19,omitted:18},includeSource:true,includeMemory:false}});
-  assert.match(html,/18 non transmis/);assert.match(html,/rules.py/);assert.match(html,/2000 tokens/);assert.match(html,/Voir exactement le contenu transmis/);
+  assert.match(html,/18 not sent/);assert.match(html,/rules.py/);assert.match(html,/2000 tokens/);assert.match(html,/View the exact outgoing content/);
 });

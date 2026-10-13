@@ -17,3 +17,10 @@ Principles:
 - never present a learning score as proof of software correctness;
 - add tests for new event adapters and trust rules;
 - keep integrations agent-neutral at the normalized event boundary.
+
+## Product language
+
+Use English for all maintained interface labels, CLI messages, default prompts,
+code comments and documentation. Generated project explanations are requested in
+English. Preserve original source excerpts, identifiers, user input and historical
+machine evidence verbatim; they are evidence, not interface translations.

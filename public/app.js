@@ -66,10 +66,10 @@ function renderLearning(state) {
 
   if (!state.session) {
     $('cardRisk').textContent = 'EN ATTENTE';
-    $('cardTime').textContent = 'Aucune activité observée';
-    $('cardConfidence').textContent = 'Compréhension non évaluée';
-    $('cardTitle').textContent = 'Aucune session agent observée';
-    $('cardWhy').textContent = 'Le scan du projet est disponible ci-dessus. Aucune activité agent n’a été observée dans cette installation.';
+    $('cardTime').textContent = 'No activity observed';
+    $('cardConfidence').textContent = 'Understanding not assessed';
+    $('cardTitle').textContent = 'No agent session observed';
+    $('cardWhy').textContent = 'The project scan is available above. No agent activity has been observed in this installation.';
     $('cardLesson').textContent = '';
     $('question').textContent = '';
     $('answers').innerHTML = '';

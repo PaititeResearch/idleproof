@@ -59,8 +59,8 @@ Policy:
 
 Evidence:
   idleproof feature-lineage --list [--json]
-  idleproof feature-history --feature KEY [--after ID] [--limit 1..100] [--json] [--language en|fr]
-  idleproof feature-lineage --from KEY --to KEY [--from-observation ID --to-observation ID] [--json] [--language en|fr]
+  idleproof feature-history --feature KEY [--after ID] [--limit 1..100] [--json] [--language en]
+  idleproof feature-lineage --from KEY --to KEY [--from-observation ID --to-observation ID] [--json] [--language en]
   idleproof trace [--json] [--limit N]
   idleproof bom [--json]
   idleproof responsibility [--json]

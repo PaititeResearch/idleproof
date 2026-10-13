@@ -118,7 +118,7 @@ $('aiRetry').onclick=()=>preparePreview(lastFailure);
 $('aiSend').onclick=async()=>{
   if(!consent||aiBusy)return;
   const approved=consent;invalidate();const sequence=previewSequence;aiBusy=true;
-  $('aiPreviewButton').disabled=true;$('aiResult').textContent='Explication en cours. Les observations locales restent disponibles.';
+  $('aiPreviewButton').disabled=true;$('aiResult').textContent='Generating an explanation. Local observations remain available.';
   try{
     const result=await aiRequest({action:'explain',...approved});
     $('aiResult').innerHTML=renderByokResult(result);

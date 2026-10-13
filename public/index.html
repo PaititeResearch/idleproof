@@ -45,15 +45,15 @@
         <p id="aiStatus">Configuration is local. No credential is entered or displayed in this page.</p>
         <button type="button" id="aiTestConnection">Test OpenRouter connection without sending project context</button>
         <p>Interpretations remain INFERRED and need review. They never change Proof, debt, declared memory or human mastery. Configure a dedicated capped key from the CLI, as described in docs/OPENROUTER_LOCAL.md.</p>
-        <label>Question <input id="aiQuestion" value="Présente ce projet en français simple : son objectif, ses règles principales, les liens entre ses composants et les fonctionnalités seulement prévues. Cite tes sources et précise les limites du contexte fourni."></label>
-        <label>Chemins exacts (un par ligne ; vide = sélection équilibrée de 12 fichiers maximum : intentions, composants reliés et tests)<textarea id="aiPaths" rows="2"></textarea></label>
+        <label>Question <input id="aiQuestion" value="Explain this project in plain English: its purpose, main rules, component relationships and planned features. Cite your sources and state the limits of the supplied context."></label>
+        <label>Exact paths (one per line; empty selects up to 12 files balancing intentions, linked components and tests)<textarea id="aiPaths" rows="2"></textarea></label>
         <label><input type="checkbox" id="aiIncludeSource"> Include bounded source descriptions and selected-document excerpts in the preview</label>
         <label><input type="checkbox" id="aiIncludeMemory"> Include bounded recorded Core objectives, decisions and task context in the preview</label>
         <button type="button" id="aiPreviewButton">Preview remote context locally</button>
-        <div id="aiPreview">Aucun aperçu préparé. Aucun envoi réseau autorisé.</div>
+        <div id="aiPreview">No preview prepared. No network request authorized.</div>
         <button type="button" id="aiSend" disabled>Send this preview to OpenRouter using my configured budget</button><button type="button" id="aiCancel">Cancel request</button>
         <div id="aiResult" role="status" aria-live="polite"></div>
-        <button type="button" id="aiRetry" hidden>Préparer un nouvel essai (un nouvel appel peut être facturé)</button>
+        <button type="button" id="aiRetry" hidden>Prepare a retry (a new call may incur a charge)</button>
       </details>
     </section>
 

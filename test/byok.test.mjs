@@ -118,13 +118,13 @@ test('human failures: truncation takes precedence, empty answers fail and diagno
 });
 
 test('reasoning is disabled when supported and the question is separate from untrusted project text',async t=>{
-  const cwd=fixture(t),options={includeSource:true,question:'Explique ce code en français'},p=previewByok(cwd,options),log=[],base=provider(log);
+  const cwd=fixture(t),options={includeSource:true,question:'Explain this code in English'},p=previewByok(cwd,options),log=[],base=provider(log);
   const result=await interpretByok(cwd,{...options,consentDigest:p.digest},{fetchImpl:async(url,request)=>url.endsWith('/models')?reply({data:[{id:'test/fixture',supported_parameters:['reasoning','response_format'],pricing:{prompt:'0.000001',completion:'0.000002'}}]}):base(url,request)});
   assert.equal(result.status,'INTERPRETATION');
   const sent=JSON.parse(log.find(x=>x.method==='POST').body);
   assert.deepEqual(sent.reasoning,{enabled:false});assert.equal(sent.stream,false);
   assert.equal(sent.messages.at(-1).content,options.question);
-  assert.match(sent.messages[0].content,/in its language/);
+  assert.match(sent.messages[0].content,/in English/);
   assert.equal(sent.provider.require_parameters,true);
 });
 

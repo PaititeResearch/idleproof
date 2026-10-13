@@ -56,7 +56,7 @@ canonical intent, Proof, technical debt or a quiz score.
   The preview reports the selected/eligible/omitted counts, exact paths and full
   outbound packet. Explicit paths still restrict the selection exactly.
 - The question is a separate user message, distinct from untrusted project data.
-  Output is requested in the question's language, with short sourced claims and
+  Output is requested in English, with short sourced claims and
   concrete unknowns. Static relations between selected files accompany the packet.
 - For models advertising reasoning support, the request sends
   `reasoning: { enabled: false }` with `provider.require_parameters: true`.
@@ -76,7 +76,7 @@ canonical intent, Proof, technical debt or a quiz score.
   required. Replaying the same retry digest returns its cache. A crash-pending
   UNKNOWN is not automatically retried. CLI equivalence: add the failed digest
   via `--retry-of` to both preview and explain, with the new `--consent` digest.
-- Request version 2 invalidates earlier previews/caches without deleting evidence
+- Request version 3 invalidates earlier previews/caches without deleting evidence
   or resetting consumption. Existing configuration, credential and scan persist.
 - The cockpit renders escaped prose, source buttons and collapsed technical
   details. Without an observed session it does not invent live agent activity.
@@ -87,6 +87,6 @@ https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 
 Resume the HUMAN test with the same global question, empty paths, source
 descriptions explicitly checked, memory unchecked, a newly reviewed preview,
-then one Send. Check useful French prose, rules/service/access/view and declared
+then one Send. Check useful English prose, rules/service/access/view and declared
 plans, clickable citations, no invented execution, visible omissions and cost.
 Success on that step does not qualify task/memory/Portal or the entire recipe.

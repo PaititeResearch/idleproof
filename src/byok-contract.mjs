@@ -1,5 +1,5 @@
 // Pure, bounded policies shared by the network path and offline regression tests.
-export const REQUEST_VERSION = 2;
+export const REQUEST_VERSION = 3;
 export function selectEvidence(model, paths = []) {
   const files = model.files.filter(f => f.extraction);
   if (paths.length) return files.filter(f => paths.includes(f.path));
