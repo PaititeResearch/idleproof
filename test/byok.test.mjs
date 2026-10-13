@@ -95,3 +95,50 @@ test('malformed and oversized paid responses fail closed and cannot silently be 
     assert.equal(cached.cached,true);assert.equal(cached.code,expected);
   }
 });
+
+test('human failures: truncation takes precedence, empty answers fail and diagnostics never contain raw output',async t=>{
+  const cases=[
+    ['length','not-json','BYOK_OUTPUT_TRUNCATED',null],
+    ['length',JSON.stringify({claims:[],nextTests:[],unknowns:[]}),'BYOK_OUTPUT_TRUNCATED',null],
+    ['stop','', 'BYOK_EMPTY_RESPONSE',null],
+    ['stop','null','BYOK_ANSWER_REJECTED','ROOT_FIELDS'],
+    ['stop',JSON.stringify({claims:[],nextTests:[],unknowns:['No execution observed']}),'BYOK_EMPTY_INTERPRETATION',null],
+    ['stop',JSON.stringify({claims:[{text:KEY,citations:['S999']}],nextTests:[],unknowns:[]}),'BYOK_ANSWER_REJECTED','UNKNOWN_CITATION']
+  ];
+  const cwd=fixture(t);
+  for(const [i,[finish,content,code,reason]] of cases.entries()) {
+    const options={includeSource:true,question:`case ${i}`},p=previewByok(cwd,options),base=provider([]);
+    const result=await interpretByok(cwd,{...options,consentDigest:p.digest},{fetchImpl:async(url,request)=>url.endsWith('/chat/completions')?reply({choices:[{finish_reason:finish,message:{content}}],usage:{cost:.00001,completion_tokens:2000,completion_tokens_details:{reasoning_tokens:2000}}}):base(url,request)});
+    assert.equal(result.code,code);assert.equal(result.answer,null);
+    assert.equal(result.reportedCostUsd,.00001);assert.equal(result.reservedUsd,.00001);
+    assert.equal(result.diagnostics.reasoningTokens,2000);
+    assert.equal(result.diagnostics.validationReason??null,reason);
+    assert.equal(JSON.stringify(result).includes(KEY),false);
+  }
+});
+
+test('reasoning is disabled when supported and the question is separate from untrusted project text',async t=>{
+  const cwd=fixture(t),options={includeSource:true,question:'Explique ce code en français'},p=previewByok(cwd,options),log=[],base=provider(log);
+  const result=await interpretByok(cwd,{...options,consentDigest:p.digest},{fetchImpl:async(url,request)=>url.endsWith('/models')?reply({data:[{id:'test/fixture',supported_parameters:['reasoning','response_format'],pricing:{prompt:'0.000001',completion:'0.000002'}}]}):base(url,request)});
+  assert.equal(result.status,'INTERPRETATION');
+  const sent=JSON.parse(log.find(x=>x.method==='POST').body);
+  assert.deepEqual(sent.reasoning,{enabled:false});assert.equal(sent.stream,false);
+  assert.equal(sent.messages.at(-1).content,options.question);
+  assert.match(sent.messages[0].content,/in its language/);
+  assert.equal(sent.provider.require_parameters,true);
+});
+
+test('explicit retry has fresh consent, preserves accounting and cannot replay a paid attempt',async t=>{
+  const cwd=fixture(t),options={includeSource:true},p=previewByok(cwd,options),log=[];
+  const failure=await interpretByok(cwd,{...options,consentDigest:p.digest},{fetchImpl:provider(log,{status:429})});
+  const reserved=byokStatus(cwd).reservedUsd;
+  const retryOptions={...options,retryOf:failure.digest},retry=previewByok(cwd,retryOptions);
+  assert.notEqual(retry.digest,p.digest);assert.equal(byokStatus(cwd).reservedUsd,reserved);
+  await assert.rejects(interpretByok(cwd,{...retryOptions,consentDigest:p.digest},{fetchImpl:provider(log)}),/CONSENT/);
+  assert.throws(()=>previewByok(cwd,{...retryOptions,question:'different'}),/RETRY_INVALID/);
+  const result=await interpretByok(cwd,{...retryOptions,consentDigest:retry.digest},{fetchImpl:provider(log)});
+  assert.equal(result.status,'INTERPRETATION');assert.ok(Math.abs(byokStatus(cwd).reservedUsd-(reserved+.0001))<1e-12);
+  const cached=await interpretByok(cwd,{...retryOptions,consentDigest:retry.digest},{fetchImpl:()=>{throw new Error('no duplicate charge');}});
+  assert.equal(cached.cached,true);assert.equal(log.filter(x=>x.method==='POST').length,2);
+  assert.throws(()=>previewByok(cwd,{...options,retryOf:result.digest}),/RETRY_INVALID/);
+});
