@@ -101,3 +101,33 @@ test('Core numeric JSON spellings are accepted without permitting duplicate obje
   assert.throws(()=>decodeScanResponse('{"score":0.1,"score":1.0}'),/ambiguous/);
   assert.throws(()=>decodeScanResponse('{"nested":{"proof":"UNKNOWN","proof":"VERIFIED"}}'),/ambiguous/);
 });
+
+test('real Core requirement question preserves the exact-ID source through Local', {skip:!enabled}, t=>{
+  const {cwd}=fixture(t);
+  const identity='DEC-HUMAN-RULES-20261014';
+  const reason='Owner requirement recorded in docs/OWNER_INTENT.md; implementation and runtime verification are separate.';
+  execFileSync(process.env.DIFFWITNESS_BIN||'dw',
+    ['decision','record','Keep the three numeric rules in rules.py independent.','--id',identity,'--why',reason],
+    {cwd,env:process.env,stdio:['ignore','pipe','pipe']});
+  const exact=readContinuityQuestion(cwd,`Why ${identity}?`);
+  const natural=readContinuityQuestion(cwd,'Why must the three numeric rules in rules.py remain independent?');
+  assert.equal(exact.status,'cited-records');
+  assert.equal(natural.status,'cited-records');
+  assert.equal(natural.context.facts.length,1);
+  const fact=natural.context.facts[0];
+  assert.equal(fact.fields.id,identity);
+  assert.equal(fact.fields.reason,reason);
+  assert.equal(fact.epistemicStatus,'DECLARED');
+  assert.deepEqual(fact.source,exact.context.facts[0].source);
+  assert.deepEqual(natural.context.anchor,exact.context.anchor);
+  const original=readContinuityEvent(cwd,fact.source.eventId,fact.source.eventHash);
+  assert.equal(original.event.payload.why,reason);
+  assert.equal(natural.assurance,'none');
+  assert.deepEqual(natural.actions,[]);
+  assert.equal(natural.questionStored,false);
+  for(const question of [
+    'Why must the three numeric rules in rules.py remain independent for billing?',
+    'Why must the three numeric rules in rules.py remain not independent?'
+  ]) assert.equal(readContinuityQuestion(cwd,question).status,'abstained');
+  assert.deepEqual(readContinuityQuestion(cwd,`Why ${identity}?`).context.anchor,exact.context.anchor);
+});
