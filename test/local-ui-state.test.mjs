@@ -34,7 +34,7 @@ function harness(responses) {
   const body = element('body');
   const context = {
     document: { getElementById: get, querySelectorAll: () => [], body },
-    navigator: {}, setInterval() {}, setTimeout, Date,
+    navigator: {}, setInterval() {}, setTimeout, clearTimeout, AbortController, Date,
     fetch: async () => {
       const next = responses.shift();
       if (next instanceof Error) throw next;
@@ -122,11 +122,13 @@ test('a feature or concept that was never checked is not shown as 0%', async () 
   assert.match(ui.get('projectHotspots').innerHTML, /not assessed/);
   assert.match(ui.get('featureReviewQueue').innerHTML, /not assessed/);
 
-  const checkedWithoutCorrect = structuredClone(unchecked);
-  checkedWithoutCorrect.metrics.featuresChecked = 1;
-  ui = harness([checkedWithoutCorrect]);
+  // A check elsewhere does not tell us whether this hotspot's features were ever checked.
+  const checkedElsewhere = structuredClone(unchecked);
+  checkedElsewhere.metrics.featuresChecked = 1;
+  ui = harness([checkedElsewhere]);
   await ui.settle();
-  assert.match(ui.get('projectHotspots').innerHTML, /no correct check yet/);
+  assert.match(ui.get('projectHotspots').innerHTML, /assessment unavailable/);
+  assert.doesNotMatch(ui.get('projectHotspots').innerHTML, /no correct check yet/);
 
   const checked = structuredClone(unchecked);
   checked.featureModel.fluency = { confidence: 0, checks: 2 };

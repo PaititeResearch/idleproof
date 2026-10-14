@@ -4,6 +4,14 @@ let featureFeedbackLock = null;
 let acceptAllowed = false;
 // Time of the last successful /api/state response; null until one arrives.
 let lastStateAt = null;
+// Presentation freshness only: no API, policy or evidence semantics are changed.
+const STATE_TIMEOUT_MS = 8000;
+const STATE_MAX_AGE_MS = 10000;
+let statePoll = null;
+let acceptanceBusy = false;
+let approvalBusy = false;
+let approvalFingerprint = null;
+let acceptanceSequence = 0;
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[ch]));
@@ -12,12 +20,12 @@ const shortHash = (value, size = 12) => value ? `${String(value).slice(0, size)}
 const meter = (className, value, label) => { const n = Number(value); return `<progress class="${className}" max="100" value="${Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"></progress>`; };
 // Presentation only: a value that was not assessed is shown quieter than a measured one.
 const markAssessed = (...ids) => ids.forEach((id) => { const el = $(id); if (el) el.dataset.assessed = String(el.textContent.trim() !== 'Not assessed'); });
-// Confidence only rises with correct answers, so 0 cannot be told apart from "never checked"
-// without a check count: it is never displayed as a measured 0%.
+// Project-wide check counts cannot establish that a particular zero-valued item was checked.
+// Preserve positive recorded scores; an ambiguous zero must not imply a failed personal check.
 const recallText = (value, anyChecks) => {
   if (!anyChecks) return 'not assessed';
   const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? `${Math.round(n)}%` : 'no correct check yet';
+  return Number.isFinite(n) && n > 0 ? `${Math.round(n)}%` : 'assessment unavailable';
 };
 const recallMeter = (className, value, label) => Number(value) > 0 ? meter(className, value, label) : '<span class="meter-empty" aria-hidden="true"></span>';
 
@@ -115,7 +123,7 @@ function renderLearning(state) {
   $('cardTime').textContent = `≈ ${card.seconds || 20} sec${depth}`;
   $('cardConfidence').textContent = handoff
     ? `${recap.mastered || 0} mastered · ${recap.building || 0} building · ${recap.review || 0} review`
-    : card.id ? `${Number(card.confidence) > 0 ? `${card.confidence}% mastery` : state.metrics?.conceptsChecked ? 'no correct check yet' : 'mastery not assessed'} · ${learning.phase || 'live'}` : 'Understanding not assessed';
+    : card.id ? `${Number(card.confidence) > 0 ? `${card.confidence}% mastery` : state.metrics?.conceptsChecked ? 'assessment unavailable' : 'mastery not assessed'} · ${learning.phase || 'live'}` : 'Understanding not assessed';
   $('cardTitle').textContent = card.title || 'Current task';
   $('cardWhy').textContent = card.why || 'IdleProof will connect a useful concept to the task as soon as the agent starts working.';
   $('cardLesson').textContent = card.lesson || '';
@@ -145,7 +153,7 @@ function driftDetails(drift = {}) {
 }
 
 function renderFeatureMemory(memory = []) {
-  $('featureMemoryCount').textContent = `${memory.length} learned`;
+  $('featureMemoryCount').textContent = `${memory.length} tracked`;
   $('featureMemory').innerHTML = memory.length ? memory.map((item) => {
     const story = (item.story || []).slice(0, 4).map((step) => escapeHtml(step.label)).join(' → ');
     const surfaces = [...(item.surfaces?.technologies || []).slice(0, 2), ...(item.surfaces?.routes || []).slice(0, 1), ...(item.surfaces?.tables || []).slice(0, 1)];
@@ -217,17 +225,22 @@ function renderProjectModel(state) {
   const model = state.projectModel || {};
   const impact = model.impact || { otherFeatures: [], blastRadius: 0, summary: '' };
   $('impactCount').textContent = `${impact.blastRadius || 0} other feature${impact.blastRadius === 1 ? '' : 's'}`;
-  $('impactSummary').textContent = impact.summary || 'IdleProof will compare touched files with feature mental models you have already learned.';
+  // Translate only the server's known presentation templates, not paths or user-supplied task text.
+  const summary = typeof impact.summary === 'string' ? impact.summary : '';
+  $('impactSummary').textContent = summary
+    .replace(/^(This task's observed feature surface overlaps \d+ other )learned (features?\b)/, '$1tracked $2')
+    .replace(/^No other learned feature currently overlaps/, 'No other tracked feature currently overlaps')
+    || 'IdleProof will compare touched files with previously captured feature models.';
   $('impactFeatures').innerHTML = impact.otherFeatures?.length ? impact.otherFeatures.slice(0, 6).map((item) => {
     const shared = (item.sharedFiles || []).map((entry) => `${entry.role} · ${entry.file}`).join(' · ');
     const status = item.needsRefresh || item.confidence < 60 ? 'review recommended' : `${item.confidence}% fluent`;
     return `<article class="impact-card ${item.needsRefresh || item.confidence < 60 ? 'weak' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(status)}</span></div><p>shared through ${escapeHtml(shared)}</p></article>`;
-  }).join('') : '<p class="empty">No other learned feature currently shares the files touched by this task.</p>';
+  }).join('') : '<p class="empty">No other tracked feature currently shares the files touched by this task.</p>';
 
   const hotspots = model.topology?.hotspots || [];
   const queue = model.reviewQueue || [];
   $('projectModelStats').textContent = `${hotspots.length} hotspot${hotspots.length === 1 ? '' : 's'} · ${model.stats?.pendingFeatureReviews || 0} review`;
-  $('projectHotspots').innerHTML = hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${recallText(item.averageFluency, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple learned features share code.</p>';
+  $('projectHotspots').innerHTML = hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${recallText(item.averageFluency, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple tracked features share code.</p>';
   $('featureReviewQueue').innerHTML = queue.length ? queue.slice(0, 7).map((item) => `<div class="compact-row ${item.needsRefresh ? 'refresh-row' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(item.reason)}</span></div><b>${recallText(item.confidence, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Feature reviews appear as your project memory grows.</p>';
 }
 
@@ -247,17 +260,58 @@ function renderTimeline(control) {
   }).join('') : '<p class="empty">Agent activity appears here so each lesson can be grounded in what is actually happening.</p>';
 }
 
+function stateIsFresh() {
+  return document.body.dataset.connection === 'live' && lastStateAt !== null
+    && Date.now() - lastStateAt.getTime() <= STATE_MAX_AGE_MS;
+}
+
+function requireFreshState() {
+  if (stateIsFresh()) return true;
+  markDisconnected();
+  void poll();
+  return false;
+}
+
+function syncCommitControls() {
+  const fresh = stateIsFresh();
+  $('acceptResponsibility').disabled = !fresh || !acceptAllowed || acceptanceBusy;
+  const approve = $('approveAction');
+  if (approve) {
+    approve.disabled = !fresh || approvalBusy || !approvalFingerprint;
+    if (approvalBusy) approve.textContent = 'confirming approval…';
+  }
+  for (const button of document.querySelectorAll('#answers button')) button.disabled = !fresh || Boolean(feedbackLock);
+  for (const button of document.querySelectorAll('.feature-answer')) button.disabled = !fresh || Boolean(featureFeedbackLock);
+}
+
 function renderDecision(control) {
   const latest = control.latestDecision; const banner = $('decisionBanner');
-  if (!latest || ['allow', 'observe'].includes(latest.originalDecision || latest.decision)) { banner.className = 'decision-banner hidden'; banner.innerHTML = ''; return; }
+  if (!latest || ['allow', 'observe'].includes(latest.originalDecision || latest.decision)) {
+    approvalFingerprint = null;
+    banner.className = 'decision-banner hidden'; banner.innerHTML = ''; return;
+  }
   const decision = latest.originalDecision || latest.decision;
   banner.className = `decision-banner ${decision}`;
   const canApprove = ['ask', 'deny'].includes(decision) && latest.approvalFingerprint;
-  banner.innerHTML = `<div><strong>${escapeHtml(decision.toUpperCase())} · risk ${latest.risk || 0}</strong><span>${escapeHtml(latest.reason || 'IdleProof paused a risky agent action.')}</span></div>${canApprove ? `<button id="approveAction" data-fingerprint="${escapeHtml(latest.approvalFingerprint)}">approve once</button>` : ''}`;
+  approvalFingerprint = canApprove ? latest.approvalFingerprint : null;
+  banner.innerHTML = `<div><strong>${escapeHtml(decision.toUpperCase())} · risk ${latest.risk || 0}</strong><span>${escapeHtml(latest.reason || 'IdleProof paused a risky agent action.')}</span></div>${canApprove ? `<button id="approveAction" disabled data-fingerprint="${escapeHtml(latest.approvalFingerprint)}">approve once</button>` : ''}`;
   $('approveAction')?.addEventListener('click', async (event) => {
-    const button = event.currentTarget; button.disabled = true;
-    try { await api('/api/approve', { method:'POST', body:JSON.stringify({ fingerprint: button.dataset.fingerprint, uses:1, minutes:10 }) }); button.textContent = 'approved · retry action'; }
-    catch { button.textContent = 'approval failed'; }
+    const button = event.currentTarget;
+    if (!requireFreshState() || approvalBusy || button.disabled || button.dataset.fingerprint !== approvalFingerprint) return;
+    const fingerprint = button.dataset.fingerprint;
+    approvalBusy = true; syncCommitControls();
+    try {
+      await api('/api/approve', { method:'POST', body:JSON.stringify({ fingerprint, uses:1, minutes:10 }) });
+      if ($('approveAction')?.dataset.fingerprint === fingerprint) $('approveAction').textContent = 'approved · retry action';
+    } catch {
+      // A failed transport is not evidence that a committing request was not applied. Never retry it automatically.
+      markDisconnected();
+      if ($('approveAction')?.dataset.fingerprint === fingerprint) $('approveAction').textContent = 'approval not confirmed';
+    } finally {
+      // Keep the action locked until a read that starts after the mutation has settled.
+      await refreshAfterAction();
+      approvalBusy = false; syncCommitControls();
+    }
   });
 }
 
@@ -279,7 +333,7 @@ function renderControlPlane(state) {
   $('responsibilityCoverage').textContent = state.session ? `${responsibility.responsibilityCoverage || 0}%` : 'Not assessed'; $('ownerCoverage').textContent = state.session ? `${responsibility.ownerCoverage || 0}% owners mapped` : 'No ownership evidence yet';
   $('responsibilityText').textContent = responsibility.obligations?.length ? `${responsibility.obligations.length} high-risk ownership obligation${responsibility.obligations.length === 1 ? '' : 's'} remain.` : state.session?.status === 'complete' ? 'No uncovered high-risk ownership obligation.' : 'Ownership evidence becomes available after a completed change.';
   acceptAllowed = state.session?.status === 'complete';
-  $('acceptResponsibility').disabled = !acceptAllowed;
+  syncCommitControls();
   renderDecision(control); renderTimeline(control);
 }
 
@@ -296,38 +350,45 @@ function render(state) {
   $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : complete ? 'The code is ready.<br><em>Make sure the understanding is too.</em>' : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
   $('task').textContent = session?.prompt || 'Run `idleproof on`, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and feature understanding.';
   if (active && learning.file) $('currentTool').textContent = `${session.currentTool || 'Working'} · ${learning.file}`;
-  renderControlPlane(state); renderLearning(state); renderFeatureModel(state); renderProjectModel(state); renderFiles(session); renderFindings(session); renderLedger(state.ledger); $('proofId').textContent = shortHash(session?.proof?.diffSha256, 20);
+  renderControlPlane(state);
+  // Feedback may pause its own card, never the rest of the live state or safety controls.
+  if (!feedbackLock) renderLearning(state);
+  if (!featureFeedbackLock) renderFeatureModel(state);
+  renderProjectModel(state); renderFiles(session); renderFindings(session); renderLedger(state.ledger); $('proofId').textContent = shortHash(session?.proof?.diffSha256, 20);
   markAssessed('runtimeRisk', 'featureFluency', 'debt', 'coverage', 'currentFeatureFluency', 'responsibilityCoverage', 'policyProfile', 'agentCount');
 }
 
 async function submitAnswer(conceptId, choice) {
+  if (!requireFreshState() || feedbackLock) return;
   try {
-    feedbackLock = conceptId; const result = await api('/api/answer', { method: 'POST', body: JSON.stringify({ conceptId, choice }) });
+    feedbackLock = conceptId; syncCommitControls(); const result = await api('/api/answer', { method: 'POST', body: JSON.stringify({ conceptId, choice }) });
     [...document.querySelectorAll('#answers .answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
     $('feedback').textContent = result.correct ? `Correct. ${result.review}` : `Not quite. ${result.review}`;
-    setTimeout(() => { feedbackLock = null; render(result.state); }, 1700);
-  } catch (error) { feedbackLock = null; $('feedback').textContent = `Could not record answer: ${error.message}`; }
+    setTimeout(() => { feedbackLock = null; void refreshAfterAction(); }, 1700);
+  } catch (error) { feedbackLock = null; $('feedback').textContent = `Could not record answer: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
 }
 
 async function submitFeatureAnswer(fingerprint, choice) {
+  if (!requireFreshState() || featureFeedbackLock) return;
   try {
-    featureFeedbackLock = fingerprint; const result = await api('/api/feature-answer', { method: 'POST', body: JSON.stringify({ fingerprint, choice }) });
+    featureFeedbackLock = fingerprint; syncCommitControls(); const result = await api('/api/feature-answer', { method: 'POST', body: JSON.stringify({ fingerprint, choice }) });
     [...document.querySelectorAll('.feature-answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
     $('featureFeedback').textContent = `${result.correct ? 'Correct.' : 'Not quite.'} ${result.explanation}`;
-    setTimeout(() => { featureFeedbackLock = null; render(result.state); }, 2200);
-  } catch (error) { featureFeedbackLock = null; $('featureFeedback').textContent = `Could not record feature check: ${error.message}`; }
+    setTimeout(() => { featureFeedbackLock = null; void refreshAfterAction(); }, 2200);
+  } catch (error) { featureFeedbackLock = null; $('featureFeedback').textContent = `Could not record feature check: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
 }
 
 async function snoozeLesson(conceptId, minutes = 10) {
-  if (!conceptId) return;
-  try { feedbackLock = conceptId; const result = await api('/api/snooze', { method: 'POST', body: JSON.stringify({ conceptId, minutes }) }); feedbackLock = null; render(result.state); }
-  catch (error) { feedbackLock = null; $('feedback').textContent = `Could not pause this lesson: ${error.message}`; }
+  if (!conceptId || !requireFreshState() || feedbackLock) return;
+  try { feedbackLock = conceptId; syncCommitControls(); await api('/api/snooze', { method: 'POST', body: JSON.stringify({ conceptId, minutes }) }); feedbackLock = null; await refreshAfterAction(); }
+  catch (error) { feedbackLock = null; $('feedback').textContent = `Could not pause this lesson: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
 }
 
 function markConnected() {
   lastStateAt = new Date();
   document.body.dataset.connection = 'live';
   const banner = $('connectionBanner'); if (banner) { banner.hidden = true; banner.textContent = ''; }
+  syncCommitControls();
 }
 
 // A failed refresh must not leave earlier values looking current, nor leave engaging actions available.
@@ -338,16 +399,44 @@ function markDisconnected() {
   if (banner) {
     banner.hidden = false;
     banner.textContent = lastStateAt
-      ? `IdleProof Local is not responding. Everything below is from the last update at ${lastStateAt.toLocaleTimeString()} and may be out of date.`
+      ? `IdleProof Local is not responding. Live-task data is from the last update at ${lastStateAt.toLocaleString()} and may be out of date. The project scan has its own captured snapshot.`
       : 'IdleProof Local is not responding. No project state has been loaded yet.';
   }
   acceptAllowed = false; $('acceptResponsibility').disabled = true;
-  const approve = $('approveAction'); if (approve) approve.disabled = true;
+  syncCommitControls();
 }
 
-async function poll() {
-  try { const state = await api('/api/state'); markConnected(); if (!feedbackLock && !featureFeedbackLock) render(state); }
-  catch { markDisconnected(); }
+// A single in-flight read prevents an older response overwriting a newer state. The deadline
+// also bounds a response whose headers or JSON body never complete. Late results are ignored.
+function poll() {
+  if (statePoll) return statePoll;
+  const controller = new AbortController();
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Local state refresh timed out'));
+    }, STATE_TIMEOUT_MS);
+  });
+  statePoll = (async () => {
+    try {
+      const state = await Promise.race([api('/api/state', { signal: controller.signal }), deadline]);
+      if (!state || typeof state !== 'object' || !state.metrics || typeof state.metrics !== 'object') {
+        throw new Error('Local state is unavailable');
+      }
+      render(state);
+      // Only a successfully rendered state is evidence of an update, not merely received headers.
+      markConnected();
+    } catch { markDisconnected(); }
+    finally { clearTimeout(timer); statePoll = null; }
+  })();
+  return statePoll;
+}
+
+async function refreshAfterAction() {
+  // Do not reuse a read that started before the action finished.
+  if (statePoll) await statePoll;
+  await poll();
 }
 
 $('copyEvidence').addEventListener('click', async () => {
@@ -358,11 +447,35 @@ $('copyEvidence').addEventListener('click', async () => {
 });
 
 $('acceptResponsibility').addEventListener('click', async () => {
-  const button = $('acceptResponsibility'); const before = button.textContent;
-  try { button.disabled = true; button.textContent = 'binding acceptance…'; const result = await api('/api/responsibility/accept', { method:'POST', body:JSON.stringify({}) }); button.textContent = `accepted · ${result.responsibility.responsibilityCoverage}% covered`; await poll(); }
-  catch { button.textContent = 'acceptance failed'; }
-  finally { setTimeout(() => { button.disabled = !acceptAllowed; button.textContent = before; }, 1800); }
+  const button = $('acceptResponsibility');
+  if (!requireFreshState() || !acceptAllowed || acceptanceBusy || button.disabled) return;
+  const before = 'accept current change'; const sequence = ++acceptanceSequence;
+  acceptanceBusy = true; syncCommitControls();
+  try {
+    button.textContent = 'binding acceptance…';
+    const result = await api('/api/responsibility/accept', { method:'POST', body:JSON.stringify({}) });
+    button.textContent = `accepted · ${result.responsibility.responsibilityCoverage}% covered`;
+  } catch {
+    button.textContent = 'acceptance not confirmed';
+    markDisconnected();
+  } finally {
+    await refreshAfterAction();
+    acceptanceBusy = false; syncCommitControls();
+    setTimeout(() => {
+      if (sequence !== acceptanceSequence || acceptanceBusy) return;
+      button.textContent = before; syncCommitControls();
+    }, 1800);
+  }
 });
+
+// Browser timers may be suspended in background tabs. Recheck age before showing controls again.
+if (typeof document.addEventListener === 'function') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!stateIsFresh()) markDisconnected();
+    void poll();
+  });
+}
 
 poll();
 setInterval(poll, 1500);
