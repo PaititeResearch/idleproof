@@ -99,11 +99,11 @@ function renderLearning(state) {
   $('cardTime').textContent = `≈ ${card.seconds || 20} sec${depth}`;
   $('cardConfidence').textContent = handoff
     ? `${recap.mastered || 0} mastered · ${recap.building || 0} building · ${recap.review || 0} review`
-    : `${card.confidence || 0}% mastery · ${learning.phase || 'live'}`;
+    : card.id ? `${card.confidence || 0}% mastery · ${learning.phase || 'live'}` : 'Understanding not assessed';
   $('cardTitle').textContent = card.title || 'Current task';
   $('cardWhy').textContent = card.why || 'IdleProof will connect a useful concept to the task as soon as the agent starts working.';
   $('cardLesson').textContent = card.lesson || '';
-  $('question').textContent = card.question || 'What should you understand before accepting this change?';
+  $('question').textContent = card.id ? card.question || 'What should you understand about this task?' : '';
   if (!feedbackLock || feedbackLock !== card.id) $('feedback').textContent = '';
   const choices = (card.options || []).map((option, index) => `<button class="answer" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
   const snooze = card.id ? '<button class="text-button" id="snoozeLesson" type="button">not now · 10 min</button>' : '';

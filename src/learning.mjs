@@ -210,12 +210,11 @@ function applicableConcept(session, id) {
   return id !== 'sql' || sqlLessonSupported(session);
 }
 
-export function selectLearningCard(state = {}, session = {}, fallbackId = 'testing') {
+export function selectLearningCard(state = {}, session = {}, fallbackId = null) {
   const sessionIds = Object.keys(session?.concepts || {}).filter((id) => CONCEPT_BY_ID[id] && applicableConcept(session,id));
-  const pool = sessionIds.length
-    ? sessionIds
-    : Object.keys(state.ledger || {}).filter((id) => CONCEPT_BY_ID[id] && state.ledger[id]?.exposures > 0 && applicableConcept(session,id));
-  if (!pool.length) return applicableConcept(session,fallbackId) ? fallbackId : 'testing';
+  // Historical exposure and a caller's default are not evidence about this task.
+  const pool = sessionIds;
+  if (!pool.length) return null;
 
   const scored = pool.map((id) => {
     const concept = CONCEPT_BY_ID[id];
@@ -315,13 +314,18 @@ export function buildLearningJourney(state = {}, session = {}) {
   };
 }
 
-export function buildLearningExperience(state = {}, session = {}, fallbackId = 'testing') {
+export function buildLearningExperience(state = {}, session = {}, fallbackId = null) {
   const cardId = selectLearningCard(state, session, fallbackId);
-  const concept = CONCEPT_BY_ID[cardId] || CONCEPT_BY_ID.testing;
+  const concept = CONCEPT_BY_ID[cardId];
   const journey = buildLearningJourney(state, session);
   return {
     ...journey,
     selectedConceptId: cardId,
-    card: buildContextualCard(concept, state, session)
+    card: concept ? buildContextualCard(concept, state, session) : {
+      id:null, title:'Current task', question:'', options:[], confidence:null,
+      context:{task:summarizeTask(session.prompt), phase:journey.phase,
+        file:journey.file, signals:session.taskSignals || null}
+    }
   };
 }
+

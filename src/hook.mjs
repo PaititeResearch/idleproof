@@ -19,7 +19,8 @@ import { captureBaselineIdentity, finalizeChangeIdentity, COMPLETED_CHANGE_FIELD
 import { schedulePortalSync } from './portal-client.mjs';
 import { scheduleAutoDebt } from './auto-debt.mjs';
 import { taskContinuityQuery, taskDisplayText, taskMetadata, updateSessionTask } from './task.mjs';
-import { validContextIdentity } from './continuity-contract.mjs';
+import { validContextIdentity, emptyContinuityJournal } from './continuity-contract.mjs';
+import { shellReadPaths } from './shell-read-context.mjs';
 import { continuityCounts, loadContinuityContext, renderContinuityForAgent } from './continuity.mjs';
 
 function now() {
@@ -128,7 +129,9 @@ function loadingOutput(cwd, state, event) {
   ].filter(Boolean).join('\n\n');
   const continuityText = renderContinuityForAgent(continuity, { maxChars: Math.min(5200,6500-taskHeader.length-2) });
   const taskContext = [taskHeader,continuityText].filter(Boolean).join('\n\n');
-  const contextSummary = counts
+  const contextSummary = counts && emptyContinuityJournal(continuity)
+    ? 'project memory connected · no recorded project memory yet'
+    : counts
     ? `${counts.tasks} related task(s) · ${counts.objectives} objective(s) · ${counts.decisions} decision(s) · ${counts.criticalInvariants || counts.invariants} invariant(s) · ${counts.debt} open debt item(s)`
     : 'task identity ready · project memory unavailable or rejected';
   const systemMessage = [
@@ -226,6 +229,12 @@ export function processHookLifecycle(event = {}, { deferAutoDebt = false } = {})
       const relative = touched.startsWith(cwd) ? touched.slice(cwd.length + 1) : touched;
       if (!session.touchedFiles.includes(relative)) session.touchedFiles.push(relative);
       session.touchedFiles = session.touchedFiles.slice(-80);
+    }
+
+    const shellReads = shellReadPaths(event, cwd);
+    if (shellReads.length) {
+      session.touchedFiles = [...new Set([...session.touchedFiles, ...shellReads])].slice(-80);
+      session.shellReadFiles = [...new Set([...(session.shellReadFiles || []), ...shellReads])].slice(-80);
     }
 
     if (eventName === 'Stop' || eventName === 'SessionEnd' || eventName === 'generic-stop') {
@@ -423,3 +432,4 @@ export function seedDemo(cwd = process.cwd()) {
   });
   return sessionId;
 }
+
