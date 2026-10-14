@@ -10,26 +10,42 @@
   <link rel="stylesheet" href="/feature-review.css" />
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-now" viewBox="0 0 16 16"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></symbol>
+    <symbol id="i-project" viewBox="0 0 16 16"><path d="M2 4.5V12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H8L6.5 3.5H3A1 1 0 0 0 2 4.5Z"/></symbol>
+    <symbol id="i-lens" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 16 16"><circle cx="3.5" cy="4" r="1.75"/><circle cx="12.5" cy="4" r="1.75"/><circle cx="8" cy="12" r="1.75"/><path d="M5.25 4h5.5M4.5 5.5l2.7 5M11.5 5.5l-2.7 5"/></symbol>
+    <symbol id="i-impact" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 1.5v2.5M8 12v2.5M1.5 8H4M12 8h2.5M3.4 3.4l1.8 1.8M10.8 10.8l1.8 1.8M12.6 3.4l-1.8 1.8M5.2 10.8l-1.8 1.8"/></symbol>
+    <symbol id="i-file" viewBox="0 0 16 16"><path d="M4 1.75h5L12.5 5v9.25H4Z"/><path d="M9 1.75V5h3.5M6 8.5h4.5M6 11h4.5"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.25"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></symbol>
+    <symbol id="i-resume" viewBox="0 0 16 16"><path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M3.5 2.5v2.75h2.75"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.25" y="5.25" width="8" height="8.5" rx="1.25"/><path d="M10.75 5.25V3.5a1.25 1.25 0 0 0-1.25-1.25H3.5A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.25"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+  </svg>
   <a class="skip-link" href="#nowSection">Skip to the live task</a>
-  <main class="shell">
-    <header class="topbar">
-      <div class="topbar-row">
-        <a class="brand" href="#" aria-label="IdleProof home"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="mark-tile" width="24" height="24" rx="6"/><circle class="mark-ring" cx="12" cy="12" r="5.4"/><circle class="mark-dot" cx="12" cy="12" r="1.9"/></svg><span class="brand-name">IdleProof</span><sup>learn while it builds</sup></a>
-        <div class="top-meta"><span id="project">project</span><span class="privacy">127.0.0.1 · source stays local</span><span id="integrityChip" class="chip chip-ok">local trace verified</span></div>
-      </div>
-      <nav class="section-nav" aria-label="Page sections">
-        <a href="#nowSection">Now</a>
-        <a href="#projectSection">Project</a>
-        <a href="#explainSection">Explanation</a>
-        <a href="#featureSection">Feature map</a>
-        <a href="#impactSection">Impact</a>
-        <a href="#filesSection">Files &amp; checks</a>
-        <a href="#hoodSection">Under the hood</a>
-      </nav>
-    </header>
 
-    <section id="nowSection" class="hero-grid" aria-label="What is happening now">
-      <article class="execution panel">
+  <header class="topbar">
+    <div class="topbar-row">
+      <a class="brand" href="#" aria-label="IdleProof home"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="mark-tile" width="24" height="24" rx="6"/><circle class="mark-ring" cx="12" cy="12" r="5.4"/><circle class="mark-dot" cx="12" cy="12" r="1.9"/></svg><span class="brand-name">IdleProof</span><span class="brand-edition">Local</span><sup>learn while it builds</sup></a>
+      <span class="crumb-sep" aria-hidden="true">/</span><span id="project">project</span>
+      <div class="top-meta"><span class="privacy"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>127.0.0.1 · source stays local</span><span id="integrityChip" class="chip chip-ok">local trace verified</span></div>
+    </div>
+    <nav class="section-nav" aria-label="Page sections">
+      <a href="#nowSection"><svg class="icon" aria-hidden="true"><use href="#i-now"/></svg>Now</a>
+      <a href="#projectSection"><svg class="icon" aria-hidden="true"><use href="#i-project"/></svg>Project</a>
+      <a href="#explainSection"><svg class="icon" aria-hidden="true"><use href="#i-lens"/></svg>Explanation</a>
+      <a href="#featureSection"><svg class="icon" aria-hidden="true"><use href="#i-map"/></svg>Feature map</a>
+      <a href="#impactSection"><svg class="icon" aria-hidden="true"><use href="#i-impact"/></svg>Impact</a>
+      <a href="#filesSection"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg>Files &amp; checks</a>
+      <a href="#hoodSection"><svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg>Under the hood</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section id="nowSection" class="now panel" aria-label="What is happening now">
+      <article class="execution">
         <div class="eyebrow-row"><div class="status-wrap"><span id="statusDot" class="status-dot"></span><span id="status">Waiting for a coding agent</span></div><span id="window" class="chip">0 sec window</span></div>
         <h1 id="headline">Vibe code fast.<br><em>Stay fluent in your own product.</em></h1>
         <p id="task" class="task">Run <code>idleproof on</code>, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and a mental model of the feature being built.</p>
@@ -37,103 +53,122 @@
         <div id="decisionBanner" class="decision-banner hidden"></div>
       </article>
       <aside class="metric-grid" aria-label="Task and human understanding signals">
-        <article class="metric panel"><span>Task risk</span><strong id="runtimeRisk">0</strong><small>/100 · observed activity</small></article>
-        <article class="metric panel feature-metric"><span>Human feature mastery</span><strong id="featureFluency">Not assessed</strong><small id="featureFluencyHint">mental models demonstrated</small></article>
-        <article class="metric panel"><span>Knowledge debt</span><strong id="debt">0</strong><small>concepts exposed but not yet owned</small></article>
-        <article class="metric panel"><span>Human concept mastery</span><strong id="coverage">Not assessed</strong><small>demonstrated concept recall</small></article>
+        <article class="metric"><span>Task risk</span><strong id="runtimeRisk">0</strong><small>/100 · observed activity</small></article>
+        <article class="metric feature-metric"><span>Human feature mastery</span><strong id="featureFluency">Not assessed</strong><small id="featureFluencyHint">mental models demonstrated</small></article>
+        <article class="metric"><span>Knowledge debt</span><strong id="debt">0</strong><small>concepts exposed but not yet owned</small></article>
+        <article class="metric"><span>Human concept mastery</span><strong id="coverage">Not assessed</strong><small>demonstrated concept recall</small></article>
       </aside>
     </section>
 
     <section id="projectSection" class="panel global-project" aria-labelledby="globalProjectTitle">
-      <div class="section-head"><div><span class="mini-label">Project baseline + active task</span><h2 id="globalProjectTitle">Understand the whole selected project</h2></div><label class="view-switch">View <select id="scanView"><option value="guided">Guided</option><option value="technical">Technical</option></select></label></div>
-      <p id="scanActiveTask" class="memory-intro">The current task remains visible above and within this project view.</p>
-      <div class="scan-controls"><label>Source <select id="scanSource"><option value="HEAD">Committed Git snapshot</option><option value="WORKTREE">Current working files (separate snapshot)</option></select></label><label class="scan-documents">Selected documents (one exact path per line)<textarea id="scanDocuments" rows="2" placeholder="README.md&#10;docs/blueprint.md"></textarea></label><label class="scan-check"><input type="checkbox" id="scanCI"> Include .github/workflows only</label><div class="scan-actions"><button id="scanStart" type="button">Scan selected project</button><button id="scanCancel" type="button">Pause</button><button id="scanResume" type="button">Resume</button></div></div>
-      <p class="memory-intro scan-boundary">Local static analysis. No project execution, dependency installation, AI key or upload. Selected documents describe intentions; they do not establish implemented or verified behavior.</p>
-      <p id="scanProgress" role="status" aria-live="polite">No global scan yet.</p><div id="scanCoverage"></div>
-      <div class="scan-controls scan-find"><label>Find a component, rule or reference <input id="scanFilter" type="search" placeholder="Search observed components"></label><button id="scanHandoff" type="button">Copy sourced handoff</button></div>
-      <div id="scanOverview"></div><div id="scanIntent"></div><div id="scanChanges"></div><div id="scanFiles"></div><div id="scanDuplicates"></div><div id="scanUnknowns"></div>
-      <details class="tool-drawer"><summary>Recorded objectives, decisions, related tasks and assurance <span class="product product-dw">DiffWitness Core</span></summary><label>Question or exact memory identity <input id="scanMemoryQuery" placeholder="Current task is used when empty"></label><button id="scanMemoryLoad" type="button">Read bounded Core context</button><button id="scanMemoryAsk" type="button">Answer from recorded sources</button><pre id="scanMemory">No memory lookup requested. A structural scan does not invent recorded reasons.</pre></details>
-      <details id="optionalAI" class="tool-drawer"><summary>Optional OpenRouter interpretation <span class="product product-paid">Uses your budget</span></summary>
-        <p id="aiStatus">Configuration is local. No credential is entered or displayed in this page.</p>
-        <button type="button" id="aiTestConnection">Test OpenRouter connection without sending project context</button>
-        <p>Interpretations remain INFERRED and need review. They never change Proof, debt, declared memory or human mastery. Configure a dedicated capped key from the CLI, as described in docs/OPENROUTER_LOCAL.md.</p>
-        <label>Question <input id="aiQuestion" value="Explain this project in plain English: its purpose, main rules, component relationships and planned features. Cite your sources and state the limits of the supplied context."></label>
-        <label>Exact paths (one per line; empty selects up to 12 files balancing intentions, linked components and tests)<textarea id="aiPaths" rows="2"></textarea></label>
-        <label class="ai-check"><input type="checkbox" id="aiIncludeSource"> Include bounded source descriptions and selected-document excerpts in the preview</label>
-        <label class="ai-check"><input type="checkbox" id="aiIncludeMemory"> Include bounded recorded Core objectives, decisions and task context in the preview</label>
-        <button type="button" id="aiPreviewButton">Preview remote context locally</button>
-        <div id="aiPreview">No preview prepared. No network request authorized.</div>
-        <div class="ai-actions"><button type="button" id="aiSend" disabled>Send this preview to OpenRouter using my configured budget</button><button type="button" id="aiCancel">Cancel request</button></div>
-        <div id="aiResult" role="status" aria-live="polite"></div>
-        <button type="button" id="aiRetry" hidden>Prepare a retry (a new call may incur a charge)</button>
-      </details>
+      <div class="section-head panel-head"><div><span class="mini-label">Project baseline + active task</span><h2 id="globalProjectTitle">Understand the whole selected project</h2></div><label class="view-switch">View <select id="scanView"><option value="guided">Guided</option><option value="technical">Technical</option></select></label></div>
+      <div class="panel-body">
+        <p id="scanActiveTask" class="memory-intro">The current task remains visible above and within this project view.</p>
+        <div class="scan-controls"><label>Source <select id="scanSource"><option value="HEAD">Committed Git snapshot</option><option value="WORKTREE">Current working files (separate snapshot)</option></select></label><label class="scan-documents">Selected documents (one exact path per line)<textarea id="scanDocuments" rows="2" placeholder="README.md&#10;docs/blueprint.md"></textarea></label><label class="scan-check"><input type="checkbox" id="scanCI"> Include .github/workflows only</label><div class="scan-actions"><button id="scanStart" type="button"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>Scan selected project</button><button id="scanCancel" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg>Pause</button><button id="scanResume" type="button"><svg class="icon" aria-hidden="true"><use href="#i-resume"/></svg>Resume</button></div></div>
+        <p class="memory-intro scan-boundary">Local static analysis. No project execution, dependency installation, AI key or upload. Selected documents describe intentions; they do not establish implemented or verified behavior.</p>
+        <p id="scanProgress" role="status" aria-live="polite">No global scan yet.</p><div id="scanCoverage"></div>
+        <div class="scan-controls scan-find"><label>Find a component, rule or reference <input id="scanFilter" type="search" placeholder="Search observed components"></label><button id="scanHandoff" type="button"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>Copy sourced handoff</button></div>
+        <div id="scanOverview"></div><div id="scanIntent"></div><div id="scanChanges"></div><div id="scanFiles"></div><div id="scanDuplicates"></div><div id="scanUnknowns"></div>
+        <details class="tool-drawer"><summary>Recorded objectives, decisions, related tasks and assurance <span class="product product-dw">DiffWitness Core</span></summary><label>Question or exact memory identity <input id="scanMemoryQuery" placeholder="Current task is used when empty"></label><button id="scanMemoryLoad" type="button">Read bounded Core context</button><button id="scanMemoryAsk" type="button">Answer from recorded sources</button><pre id="scanMemory">No memory lookup requested. A structural scan does not invent recorded reasons.</pre></details>
+        <details id="optionalAI" class="tool-drawer"><summary>Optional OpenRouter interpretation <span class="product product-paid">Uses your budget</span></summary>
+          <p id="aiStatus">Configuration is local. No credential is entered or displayed in this page.</p>
+          <button type="button" id="aiTestConnection">Test OpenRouter connection without sending project context</button>
+          <p>Interpretations remain INFERRED and need review. They never change Proof, debt, declared memory or human mastery. Configure a dedicated capped key from the CLI, as described in docs/OPENROUTER_LOCAL.md.</p>
+          <label>Question <input id="aiQuestion" value="Explain this project in plain English: its purpose, main rules, component relationships and planned features. Cite your sources and state the limits of the supplied context."></label>
+          <label>Exact paths (one per line; empty selects up to 12 files balancing intentions, linked components and tests)<textarea id="aiPaths" rows="2"></textarea></label>
+          <label class="ai-check"><input type="checkbox" id="aiIncludeSource"> Include bounded source descriptions and selected-document excerpts in the preview</label>
+          <label class="ai-check"><input type="checkbox" id="aiIncludeMemory"> Include bounded recorded Core objectives, decisions and task context in the preview</label>
+          <button type="button" id="aiPreviewButton">Preview remote context locally</button>
+          <div id="aiPreview">No preview prepared. No network request authorized.</div>
+          <div class="ai-actions"><button type="button" id="aiSend" disabled>Send this preview to OpenRouter using my configured budget</button><button type="button" id="aiCancel">Cancel request</button></div>
+          <div id="aiResult" role="status" aria-live="polite"></div>
+          <button type="button" id="aiRetry" hidden>Prepare a retry (a new call may incur a charge)</button>
+        </details>
+      </div>
     </section>
 
     <section id="explainSection" class="workspace">
       <article id="learningCard" class="learning-card panel">
-        <div class="section-head"><div><span class="mini-label">Live task lesson</span><h2 id="cardTitle">Current task</h2></div><span id="cardRisk" class="risk-badge">WAITING</span></div>
-        <div class="learning-meta"><span id="cardTime">≈ 30 sec</span><span id="cardConfidence">0% mastery</span></div>
-        <p id="cardWhy" class="why"></p><p id="cardLesson" class="lesson"></p>
-        <div id="learningJourney" class="ledger"><p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p></div>
-        <div class="challenge"><span class="challenge-kicker">Check your understanding · one tap</span><h3 id="question"></h3><div id="answers" class="answers"></div><p id="feedback" class="feedback" aria-live="polite"></p></div>
+        <div class="section-head panel-head"><div><span class="mini-label">Live task lesson</span><h2 id="cardTitle">Current task</h2></div><span id="cardRisk" class="risk-badge">WAITING</span></div>
+        <div class="panel-body">
+          <div class="learning-meta"><span id="cardTime">≈ 30 sec</span><span id="cardConfidence">0% mastery</span></div>
+          <p id="cardWhy" class="why"></p><p id="cardLesson" class="lesson"></p>
+          <div id="learningJourney" class="ledger"><p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p></div>
+          <div class="challenge"><span class="challenge-kicker">Check your understanding · one tap</span><h3 id="question"></h3><div id="answers" class="answers"></div><p id="feedback" class="feedback" aria-live="polite"></p></div>
+        </div>
       </article>
       <article class="panel recorder-panel">
-        <div class="section-head"><div><span class="mini-label">What the agent is doing</span><h2>Live task context</h2></div><span id="chainHead" class="mono dim">head: 00000000…</span></div>
+        <div class="section-head panel-head"><div><span class="mini-label">What the agent is doing</span><h2>Live task context</h2></div><span id="chainHead" class="mono dim">head: 00000000…</span></div>
         <div id="timeline" class="timeline"><p class="empty">Agent activity will appear here.</p></div>
       </article>
     </section>
 
     <section id="featureSection" class="feature-grid">
       <article class="panel feature-model-panel">
-        <div class="section-head"><div><span class="mini-label">Feature mental model</span><h2>How this feature hangs together</h2></div><div class="feature-head-meta"><span id="featureModelStatus" class="chip">waiting for code context</span><strong id="currentFeatureFluency">0%</strong></div></div>
-        <p id="featureDisclaimer" class="feature-disclaimer">IdleProof builds a bounded static map from the project-local files the agent actually touches.</p>
-        <div id="featureDrift" class="drift-banner hidden"></div>
-        <div id="featureStory" class="feature-story"><p class="empty">A feature path will appear as IdleProof sees connected code.</p></div>
-        <div id="featureSurfaces" class="surface-row"></div><div id="featureRiskNotes" class="feature-notes"></div><div id="featureExplainBack" class="explain-back hidden"></div>
-        <div id="featureChallenge" class="challenge feature-challenge hidden"><span class="challenge-kicker">Do you own the feature model? · one tap</span><h3 id="featureQuestion"></h3><div id="featureAnswers" class="answers"></div><p id="featureFeedback" class="feedback" aria-live="polite"></p></div>
+        <div class="section-head panel-head"><div><span class="mini-label">Feature mental model</span><h2>How this feature hangs together</h2></div><div class="feature-head-meta"><span id="featureModelStatus" class="chip">waiting for code context</span><strong id="currentFeatureFluency">0%</strong></div></div>
+        <div class="panel-body">
+          <p id="featureDisclaimer" class="feature-disclaimer">IdleProof builds a bounded static map from the project-local files the agent actually touches.</p>
+          <div id="featureDrift" class="drift-banner hidden"></div>
+          <div id="featureStory" class="feature-story"><p class="empty">A feature path will appear as IdleProof sees connected code.</p></div>
+          <div id="featureSurfaces" class="surface-row"></div><div id="featureRiskNotes" class="feature-notes"></div><div id="featureExplainBack" class="explain-back hidden"></div>
+          <div id="featureChallenge" class="challenge feature-challenge hidden"><span class="challenge-kicker">Do you own the feature model? · one tap</span><h3 id="featureQuestion"></h3><div id="featureAnswers" class="answers"></div><p id="featureFeedback" class="feedback" aria-live="polite"></p></div>
+        </div>
       </article>
       <article class="panel feature-memory-panel">
-        <div class="section-head"><div><span class="mini-label">Project memory</span><h2>Features you still own mentally</h2></div><span id="featureMemoryCount" class="chip">0 learned</span></div>
-        <p class="memory-intro">IdleProof remembers feature-level understanding separately from coding concepts. When a feature changes, its old fluency becomes a review target instead of a false certainty.</p>
-        <div id="featureMemory" class="feature-memory"><p class="empty">Completed tasks will accumulate here.</p></div>
+        <div class="section-head panel-head"><div><span class="mini-label">Project memory</span><h2>Features you still own mentally</h2></div><span id="featureMemoryCount" class="chip">0 learned</span></div>
+        <div class="panel-body">
+          <p class="memory-intro">IdleProof remembers feature-level understanding separately from coding concepts. When a feature changes, its old fluency becomes a review target instead of a false certainty.</p>
+          <div id="featureMemory" class="feature-memory"><p class="empty">Completed tasks will accumulate here.</p></div>
+        </div>
       </article>
     </section>
 
     <section id="impactSection" class="project-intel-grid">
       <article class="panel impact-panel">
-        <div class="section-head"><div><span class="mini-label">Change impact</span><h2>What else could this change touch?</h2></div><span id="impactCount" class="chip">0 other features</span></div>
-        <p id="impactSummary" class="memory-intro">IdleProof will compare touched files with feature mental models you have already learned.</p>
-        <div id="impactFeatures" class="impact-list"><p class="empty">No cross-feature impact observed yet.</p></div>
+        <div class="section-head panel-head"><div><span class="mini-label">Change impact</span><h2>What else could this change touch?</h2></div><span id="impactCount" class="chip">0 other features</span></div>
+        <div class="panel-body">
+          <p id="impactSummary" class="memory-intro">IdleProof will compare touched files with feature mental models you have already learned.</p>
+          <div id="impactFeatures" class="impact-list"><p class="empty">No cross-feature impact observed yet.</p></div>
+        </div>
       </article>
       <article class="panel project-model-panel">
-        <div class="section-head"><div><span class="mini-label">Project mental model</span><h2>Shared hotspots &amp; next reviews</h2></div><span id="projectModelStats" class="chip">0 hotspots</span></div>
-        <div class="project-model-columns">
-          <div><span class="sub-label">Shared code hotspots</span><div id="projectHotspots" class="compact-list"><p class="empty">Hotspots emerge when multiple learned features share code.</p></div></div>
-          <div><span class="sub-label">Feature review queue</span><div id="featureReviewQueue" class="compact-list"><p class="empty">Feature reviews appear as your project memory grows.</p></div></div>
-        </div>
-        <div id="memoryReviewChallenge" class="challenge memory-review-challenge hidden">
-          <span class="challenge-kicker">Spaced feature recall · one tap</span>
-          <h3 id="memoryReviewQuestion"></h3>
-          <div id="memoryReviewAnswers" class="answers"></div>
-          <p id="memoryReviewFeedback" class="feedback" aria-live="polite"></p>
+        <div class="section-head panel-head"><div><span class="mini-label">Project mental model</span><h2>Shared hotspots &amp; next reviews</h2></div><span id="projectModelStats" class="chip">0 hotspots</span></div>
+        <div class="panel-body">
+          <div class="project-model-columns">
+            <div><span class="sub-label">Shared code hotspots</span><div id="projectHotspots" class="compact-list"><p class="empty">Hotspots emerge when multiple learned features share code.</p></div></div>
+            <div><span class="sub-label">Feature review queue</span><div id="featureReviewQueue" class="compact-list"><p class="empty">Feature reviews appear as your project memory grows.</p></div></div>
+          </div>
+          <div id="memoryReviewChallenge" class="challenge memory-review-challenge hidden">
+            <span class="challenge-kicker">Spaced feature recall · one tap</span>
+            <h3 id="memoryReviewQuestion"></h3>
+            <div id="memoryReviewAnswers" class="answers"></div>
+            <p id="memoryReviewFeedback" class="feedback" aria-live="polite"></p>
+          </div>
         </div>
       </article>
     </section>
 
     <section id="filesSection" class="bottom-grid">
-      <article class="panel"><div class="section-head"><h3>Files behind this task</h3><span id="linesChanged" class="mono">+0 −0</span></div><div id="files" class="file-list"><p class="empty">No files observed yet.</p></div></article>
-      <article class="panel"><div class="section-head"><h3>Things worth noticing</h3><span id="findingCount" class="count">0</span></div><div id="findings" class="finding-list"><p class="empty">Checks appear when the agent completes a turn.</p></div></article>
-      <article class="panel ledger-panel"><div class="section-head"><h3>Your concept knowledge map</h3><span>risk × exposure × uncertainty</span></div><div id="ledger" class="ledger"></div></article>
+      <article class="panel"><div class="section-head panel-head"><h3>Files behind this task</h3><span id="linesChanged" class="mono">+0 −0</span></div><div id="files" class="file-list panel-body"><p class="empty">No files observed yet.</p></div></article>
+      <article class="panel"><div class="section-head panel-head"><h3>Things worth noticing</h3><span id="findingCount" class="count">0</span></div><div id="findings" class="finding-list panel-body"><p class="empty">Checks appear when the agent completes a turn.</p></div></article>
+      <article class="panel ledger-panel"><div class="section-head panel-head"><h3>Your concept knowledge map</h3><span>risk × exposure × uncertainty</span></div><div id="ledger" class="ledger panel-body"></div></article>
     </section>
 
-    <section id="hoodSection" class="control-strip" aria-label="Under the hood">
-      <article class="control-card panel"><span class="mini-label">Under the hood · safety</span><div><strong id="policyProfile">balanced</strong><span id="policySource">built-in safety</span></div><p id="policyText">Safety hooks use the same live context that powers learning.</p></article>
-      <article class="control-card panel"><span class="mini-label">Agent context</span><div><strong id="agentCount">0 capabilities</strong><span id="mcpCount">0 MCP servers</span></div><p id="agentSources">No agent execution observed yet.</p></article>
-      <article class="control-card panel"><span class="mini-label">Local evidence</span><div><strong id="attestationState">waiting</strong><span id="attestationSigner">no completed turn</span></div><button id="copyEvidence" class="text-button" type="button">copy evidence bundle</button></article>
-      <article class="control-card panel"><span class="mini-label">Ownership</span><div><strong id="responsibilityCoverage">0%</strong><span id="ownerCoverage">0% owners mapped</span></div><p id="responsibilityText">Ownership evidence becomes available after a completed change.</p><button id="acceptResponsibility" class="text-button" type="button">accept current change</button></article>
+    <section id="hoodSection" class="hood panel" aria-labelledby="hoodTitle">
+      <div class="section-head panel-head"><h3 id="hoodTitle">Under the hood</h3></div>
+      <div class="control-strip">
+        <article class="control-card"><span class="mini-label">Safety</span><div><strong id="policyProfile">balanced</strong><span id="policySource">built-in safety</span></div><p id="policyText">Safety hooks use the same live context that powers learning.</p></article>
+        <article class="control-card"><span class="mini-label">Agent context</span><div><strong id="agentCount">0 capabilities</strong><span id="mcpCount">0 MCP servers</span></div><p id="agentSources">No agent execution observed yet.</p></article>
+        <article class="control-card"><span class="mini-label">Local evidence</span><div><strong id="attestationState">waiting</strong><span id="attestationSigner">no completed turn</span></div><button id="copyEvidence" class="text-button" type="button">copy evidence bundle</button></article>
+        <article class="control-card"><span class="mini-label">Ownership</span><div><strong id="responsibilityCoverage">0%</strong><span id="ownerCoverage">0% owners mapped</span></div><p id="responsibilityText">Ownership evidence becomes available after a completed change.</p><button id="acceptResponsibility" class="text-button" type="button">accept current change</button></article>
+      </div>
+      <div class="evidence"><div><span class="mini-label">Free · local · no model bill required</span><h2>The agent writes the code.<br><em>IdleProof keeps your mental model in sync.</em></h2>
+        <ol class="process" aria-label="Where IdleProof Local fits">
+          <li class="process-ip" aria-current="step"><b>Understand</b><span>IdleProof Local · this page</span></li>
+          <li class="process-dw"><b>Prove &amp; owe</b><span>DiffWitness Core</span></li>
+          <li class="process-dw"><b>Remember</b><span>DiffWitness Portal</span></li>
+        </ol></div><div class="evidence-grid"><div><span>Diff proof</span><code id="proofId">waiting</code></div><div><span>Policy SHA</span><code id="policyHash">waiting</code></div><div><span>Trace head</span><code id="traceHash">waiting</code></div></div></div>
     </section>
-
-    <section class="evidence panel"><div><span class="mini-label">Free · local · no model bill required</span><h2>The agent writes the code.<br><em>IdleProof keeps your mental model in sync.</em></h2></div><div class="evidence-grid"><div><span>Diff proof</span><code id="proofId">waiting</code></div><div><span>Policy SHA</span><code id="policyHash">waiting</code></div><div><span>Trace head</span><code id="traceHash">waiting</code></div></div></section>
 
     <footer><span>IdleProof · free local learning layer for coding agents</span><span>Claude Code · Codex · feature-aware learning</span></footer>
   </main>
