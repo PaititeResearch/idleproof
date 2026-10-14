@@ -12,6 +12,14 @@ const shortHash = (value, size = 12) => value ? `${String(value).slice(0, size)}
 const meter = (className, value, label) => { const n = Number(value); return `<progress class="${className}" max="100" value="${Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"></progress>`; };
 // Presentation only: a value that was not assessed is shown quieter than a measured one.
 const markAssessed = (...ids) => ids.forEach((id) => { const el = $(id); if (el) el.dataset.assessed = String(el.textContent.trim() !== 'Not assessed'); });
+// Confidence only rises with correct answers, so 0 cannot be told apart from "never checked"
+// without a check count: it is never displayed as a measured 0%.
+const recallText = (value, anyChecks) => {
+  if (!anyChecks) return 'not assessed';
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? `${Math.round(n)}%` : 'no correct check yet';
+};
+const recallMeter = (className, value, label) => Number(value) > 0 ? meter(className, value, label) : '<span class="meter-empty" aria-hidden="true"></span>';
 
 async function api(path, options = {}) {
   const res = await fetch(path, { ...options, headers: { 'content-type': 'application/json', ...(options.headers || {}) } });
@@ -53,7 +61,7 @@ function renderFindings(session) {
 function renderLedger(ledger) {
   const rows = Object.values(ledger || {}).sort((a,b) => (b.risk * b.exposures * (100 - b.confidence)) - (a.risk * a.exposures * (100 - a.confidence)));
   $('ledger').innerHTML = rows.length
-    ? rows.slice(0, 8).map((entry) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(entry.title)}</span><span class="ledger-risk">×${entry.exposures} · r${entry.risk}</span>${meter('ledger-meter', entry.confidence, `${entry.confidence}% confidence`)}</div>`).join('')
+    ? rows.slice(0, 8).map((entry) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(entry.title)}</span><span class="ledger-risk">×${entry.exposures} · r${entry.risk}</span>${recallMeter('ledger-meter', entry.confidence, `${entry.confidence}% confidence`)}</div>`).join('')
     : '<p class="empty">Concepts appear as the coding agent touches your codebase.</p>';
 }
 
@@ -62,7 +70,7 @@ function renderJourney(state) {
   const complete = state.session?.status === 'complete';
   const visible = concepts.slice(0, complete ? 6 : 3);
   $('learningJourney').innerHTML = visible.length
-    ? visible.map((item) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(item.title)}</span><span class="ledger-risk">${escapeHtml(item.status)} · ${item.confidence}%</span>${meter('ledger-meter', item.confidence, `${item.confidence}% mastery`)}</div>`).join('')
+    ? visible.map((item) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(item.title)}</span><span class="ledger-risk">${escapeHtml(item.status)} · ${recallText(item.confidence, state.metrics?.conceptsChecked)}</span>${recallMeter('ledger-meter', item.confidence, `${item.confidence}% mastery`)}</div>`).join('')
     : '<p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p>';
 }
 
@@ -107,7 +115,7 @@ function renderLearning(state) {
   $('cardTime').textContent = `≈ ${card.seconds || 20} sec${depth}`;
   $('cardConfidence').textContent = handoff
     ? `${recap.mastered || 0} mastered · ${recap.building || 0} building · ${recap.review || 0} review`
-    : card.id ? `${card.confidence || 0}% mastery · ${learning.phase || 'live'}` : 'Understanding not assessed';
+    : card.id ? `${Number(card.confidence) > 0 ? `${card.confidence}% mastery` : state.metrics?.conceptsChecked ? 'no correct check yet' : 'mastery not assessed'} · ${learning.phase || 'live'}` : 'Understanding not assessed';
   $('cardTitle').textContent = card.title || 'Current task';
   $('cardWhy').textContent = card.why || 'IdleProof will connect a useful concept to the task as soon as the agent starts working.';
   $('cardLesson').textContent = card.lesson || '';
@@ -141,9 +149,9 @@ function renderFeatureMemory(memory = []) {
   $('featureMemory').innerHTML = memory.length ? memory.map((item) => {
     const story = (item.story || []).slice(0, 4).map((step) => escapeHtml(step.label)).join(' → ');
     const surfaces = [...(item.surfaces?.technologies || []).slice(0, 2), ...(item.surfaces?.routes || []).slice(0, 1), ...(item.surfaces?.tables || []).slice(0, 1)];
-    const status = item.needsRefresh ? '<span class="refresh-badge">refresh</span>' : `<span>${item.confidence || 0}% fluent</span>`;
+    const status = item.needsRefresh ? '<span class="refresh-badge">refresh</span>' : `<span>${item.checks > 0 ? `${item.confidence || 0}% fluent` : 'not assessed'}</span>`;
     const drift = item.needsRefresh && item.drift?.summary ? `<div class="memory-drift">${escapeHtml(item.drift.summary)}</div>` : '';
-    return `<article class="memory-card ${item.needsRefresh ? 'needs-refresh' : ''}"><div class="memory-top"><strong>${escapeHtml(item.task || 'Previous feature')}</strong>${status}</div><p>${story || 'Feature structure captured from a completed task.'}</p>${drift}<div class="memory-tags">${surfaces.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div>${meter('memory-meter', item.confidence || 0, `${item.confidence || 0}% fluent`)}</article>`;
+    return `<article class="memory-card ${item.needsRefresh ? 'needs-refresh' : ''}"><div class="memory-top"><strong>${escapeHtml(item.task || 'Previous feature')}</strong>${status}</div><p>${story || 'Feature structure captured from a completed task.'}</p>${drift}<div class="memory-tags">${surfaces.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div>${item.checks > 0 ? meter('memory-meter', item.confidence || 0, `${item.confidence || 0}% fluent`) : ''}</article>`;
   }).join('') : '<p class="empty">Completed feature tasks will accumulate here and become spaced-review material.</p>';
 }
 
@@ -169,7 +177,7 @@ function renderFeatureModel(state) {
   }
 
   $('featureModelStatus').textContent = `bounded static · ${model.generatedFrom?.filesInspected || 0} files`;
-  $('currentFeatureFluency').textContent = `${model.fluency?.confidence || 0}%`;
+  $('currentFeatureFluency').textContent = Number(model.fluency?.checks) > 0 ? `${model.fluency?.confidence || 0}%` : 'Not assessed';
   $('featureDisclaimer').textContent = model.disclaimer || 'This is a bounded static map, not a proven runtime trace.';
 
   if (model.drift?.changed) {
@@ -219,8 +227,8 @@ function renderProjectModel(state) {
   const hotspots = model.topology?.hotspots || [];
   const queue = model.reviewQueue || [];
   $('projectModelStats').textContent = `${hotspots.length} hotspot${hotspots.length === 1 ? '' : 's'} · ${model.stats?.pendingFeatureReviews || 0} review`;
-  $('projectHotspots').innerHTML = hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${item.averageFluency}%</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple learned features share code.</p>';
-  $('featureReviewQueue').innerHTML = queue.length ? queue.slice(0, 7).map((item) => `<div class="compact-row ${item.needsRefresh ? 'refresh-row' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(item.reason)}</span></div><b>${item.confidence}%</b></div>`).join('') : '<p class="empty">Feature reviews appear as your project memory grows.</p>';
+  $('projectHotspots').innerHTML = hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${recallText(item.averageFluency, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple learned features share code.</p>';
+  $('featureReviewQueue').innerHTML = queue.length ? queue.slice(0, 7).map((item) => `<div class="compact-row ${item.needsRefresh ? 'refresh-row' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(item.reason)}</span></div><b>${recallText(item.confidence, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Feature reviews appear as your project memory grows.</p>';
 }
 
 function eventClass(policy) {
@@ -283,7 +291,7 @@ function render(state) {
   $('coverage').nextElementSibling.textContent = `${state.metrics.conceptsChecked||0} checked / ${state.metrics.conceptsSeen||0} observed concepts`;
   document.body.classList.toggle('completed', complete); $('statusDot').classList.toggle('active', active);
   $('status').textContent = active ? `${agentName} working · ${learning.paused ? 'learning snoozed' : 'live lesson ready'}` : complete ? `${agentName} turn complete · mental-model review ready` : 'Waiting for a coding agent';
-  $('window').textContent = active ? `≈ ${session.estimatedWindow || 20} sec learning window` : complete ? 'handoff review' : '0 sec window';
+  $('window').textContent = active ? `≈ ${session.estimatedWindow || 20} sec learning window` : complete ? 'handoff review' : 'no learning window';
   $('currentTool').textContent = session?.currentTool || (complete ? 'Task complete · review what changed' : 'No active tool');
   $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : complete ? 'The code is ready.<br><em>Make sure the understanding is too.</em>' : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
   $('task').textContent = session?.prompt || 'Run `idleproof on`, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and feature understanding.';
