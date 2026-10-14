@@ -1,0 +1,24 @@
+name: UI quality
+on:
+  push:
+    branches: [fix/ui-ux-quality-20261014]
+  pull_request:
+    paths: ['public/**', 'src/**', 'test/**', '.github/workflows/ui-quality.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ui-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit and integration tests
+        run: npm test
