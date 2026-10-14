@@ -142,3 +142,17 @@ test('explicit retry has fresh consent, preserves accounting and cannot replay a
   assert.equal(cached.cached,true);assert.equal(log.filter(x=>x.method==='POST').length,2);
   assert.throws(()=>previewByok(cwd,{...options,retryOf:result.digest}),/RETRY_INVALID/);
 });
+
+test('a generation-policy update requires a new preview and never replays an older accepted answer',async t=>{
+  const cwd=fixture(t),options={includeSource:true,question:'Explain the numeric boundaries.'},preview=previewByok(cwd,options);
+  const previousDigest=createHash('sha256').update(JSON.stringify({packet:preview.packet,model:preview.model,maxTokens:preview.requestPolicy.maxTokens,version:3})).digest('hex');
+  writeByok(path.join(byokDirectory(cwd),`answer-${previousDigest}.json`),{schema:'idleproof.byok-result.v1',digest:previousDigest,contextDigest:previousDigest,status:'INTERPRETATION',answer:{claims:[{text:'Older interpretation with unsupported signature.',citations:['S1']}]}});
+  assert.notEqual(preview.digest,previousDigest);
+  const noNetwork=()=>{throw new Error('Old consent must not cause a request');};
+  await assert.rejects(interpretByok(cwd,{...options,consentDigest:previousDigest},{fetchImpl:noNetwork}),/CONSENT/);
+  const log=[],result=await interpretByok(cwd,{...options,consentDigest:preview.digest},{fetchImpl:provider(log)});
+  assert.equal(result.status,'INTERPRETATION');
+  assert.equal(result.cached,undefined);
+  assert.equal(log.filter(x=>x.method==='POST').length,1);
+  assert.equal(result.answer.claims.some(x=>x.text.includes('Older interpretation')),false);
+});
