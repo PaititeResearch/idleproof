@@ -65,7 +65,7 @@ function renderLearning(state) {
   const recap = learning.recap || {};
 
   if (!state.session) {
-    $('cardRisk').textContent = 'EN ATTENTE';
+    $('cardRisk').textContent = 'WAITING';
     $('cardTime').textContent = 'No activity observed';
     $('cardConfidence').textContent = 'Understanding not assessed';
     $('cardTitle').textContent = 'No agent session observed';
