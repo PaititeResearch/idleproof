@@ -38,7 +38,7 @@ function deliveryKey(phase, signals={}, session={}) {
 
 function fileLines(explanation) {
   return (explanation.files||[]).slice(0,3).map((item)=>{
-    const detail=item.explanation.replace(/^`[^`]+`\s*/, '').replace(/IdleProof/gi,'').trim();
+    const detail=item.explanation.replace(/^`[^`]+`\s*/, '').trim();
     return `• ${item.path} — ${compact(detail,210)}`;
   });
 }

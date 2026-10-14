@@ -3,7 +3,7 @@ import test from 'node:test';
 import { detectConcepts } from '../src/analyze.mjs';
 import { inferFileRole } from '../src/semantics.mjs';
 import { buildPlainExplanation } from '../src/explain.mjs';
-import { buildLearningJourney, selectLearningCard, sqlLessonSupported } from '../src/learning.mjs';
+import { buildLearningExperience, buildLearningJourney, selectLearningCard, sqlLessonSupported } from '../src/learning.mjs';
 import { CONCEPT_BY_ID } from '../src/catalog.mjs';
 
 function discountSession() {
@@ -81,5 +81,9 @@ test('explicit SQL task remains eligible for an appropriate SQL lesson', () => {
 test('unrelated past SQL exposure is not reused for a pure Python task', () => {
   const session=discountSession(); session.concepts={};
   const selected=selectLearningCard({ledger:{sql:{exposures:9,confidence:0}}},session,'testing');
-  assert.equal(selected,'testing');
+  assert.equal(selected,null);
+  const experience=buildLearningExperience({ledger:{sql:{exposures:9,confidence:0}}},session,'testing');
+  assert.equal(experience.card.id,null);
+  assert.equal(experience.card.title,'Current task');
+  assert.deepEqual(experience.card.options,[]);
 });
