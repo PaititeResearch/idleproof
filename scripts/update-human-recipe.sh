@@ -11,12 +11,20 @@ SOURCE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PROJECT="$RECIPE_ROOT/projects/projet-multicouche"
 RUNTIME="$RECIPE_ROOT/runtime"
 CLI="$RUNTIME/node_modules/idleproof/bin/idleproof.mjs"
+# A caller may have the private witness venv active. Never inherit that Core.
+export DIFFWITNESS_BIN="$RECIPE_ROOT/venv-core/bin/dw"
 test -x "$NODE"
 test -f "$CLI"
 test -d "$PROJECT/.idleproof"
 export PATH="$(dirname -- "$NODE"):$PATH"
 NPM="$(dirname -- "$NODE")/npm"
 test -x "$NPM"
+if [ ! -x "$DIFFWITNESS_BIN" ]; then
+  printf '%s\n' 'Recipe Core is missing; restore venv-core before updating.' >&2
+  exit 1
+fi
+# Check compatibility before packing, stopping or changing the installed runtime.
+"$DIFFWITNESS_BIN" state structure --help > /dev/null
 
 # Refuse to stop a different recipe instance recorded in this project.
 cd -- "$PROJECT"
