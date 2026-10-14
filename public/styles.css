@@ -385,6 +385,7 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;pa
   .shell{padding:0 16px 24px}
   .topbar{margin:0 -16px 16px;padding:10px 16px 0}
   .brand sup,.privacy{display:none}
+  .section-nav{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:24px}
   #project{max-width:16ch}
   section[id]{scroll-margin-top:104px}
   .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
