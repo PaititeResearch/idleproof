@@ -38,7 +38,7 @@ function deliveryKey(phase, signals={}, session={}) {
 
 function fileLines(explanation) {
   return (explanation.files||[]).slice(0,3).map((item)=>{
-    const detail=item.explanation.replace(/^`[^`]+`\s*/, '').replace(/IdleProof/gi,'').trim();
+    const detail=item.explanation.replace(/^`[^`]+`\s*/, '').trim();
     return `• ${item.path} — ${compact(detail,210)}`;
   });
 }
@@ -52,7 +52,7 @@ function userMessage(explanation, phase, session) {
     `Why it matters: ${compact(explanation.why,420)}`
   ];
   if (explanation.watch?.[0]) lines.push(`Keep in mind: ${compact(explanation.watch[0],360)}`);
-  if (handoff) lines.push('This explains the observed change; it does not claim the code is correct. Use tests/DiffWitness for proof.');
+  if (handoff) lines.push('This explains the observed activity; it does not claim the code is correct. Use tests/DiffWitness for proof.');
   lines.push('Open the local IdleProof cockpit for the current feature map. Understanding checks are optional.');
   return lines.filter(Boolean).join('\n');
 }
@@ -79,3 +79,4 @@ export function buildHookDelivery(cwd,state,session,eventName,{structureOptions=
   if (key===session.lastSurfacedExplanationKey) return null;
   return {key,message:userMessage(explanation,phase,session),explanation,signals,phase};
 }
+

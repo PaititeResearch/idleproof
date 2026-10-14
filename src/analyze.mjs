@@ -18,7 +18,14 @@ export function eventText(event = {}) {
   // Hook protocol metadata (event name, tool name) is transport, not project evidence, and must
   // never fabricate a semantic concept. Only real prompt/input/error content is classified.
   return [
-    compactText(event.prompt, 8000),
+    // Prohibited actions are constraints, not topics observed in this turn.
+    // This bounded sentence filter affects lesson suggestions only, never policy.
+    compactText(event.prompt, 8000)
+      // A comma/conjunction continues the same list across a soft line break.
+      // Keep independent lines and blank paragraphs as separate instructions.
+      .replace(/(,|\b(?:and|or))[ \t]*\r?\n[ \t]*(?=\S)/giu, '$1 ')
+      .split(/(?<=[.!?])\s+|[\r\n]+/u)
+      .filter(sentence => !/^\s*(?:do not|don['’]t|never|must not|no)\b/iu.test(sentence)).join('\n'),
     compactText(event.tool_input, 16000),
     compactText(event.error, 4000)
   ].filter(Boolean).join('\n');

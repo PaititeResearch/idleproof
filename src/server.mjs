@@ -127,7 +127,7 @@ function presentState(cwd) {
   const featureModel = currentFeatureModel(cwd, state, liveSession);
   const projectModel = buildProjectModel(state, liveSession, featureModel.raw);
   let publicConcept = null;
-  if (learning.card) { const { answer, patterns, ...safeCard } = learning.card; publicConcept = safeCard; }
+  if (session && learning.card) { const { answer, patterns, ...safeCard } = learning.card; publicConcept = safeCard; }
   const policy = loadPolicy(cwd); const chain = verifyProvenanceChain(cwd); const bom = buildAgentBom(cwd, { write:false }); const responsibility = responsibilityReport(cwd);
   const maxRecentRisk = Math.max(0, ...recentEvents.map((record) => Number(record.event?.policy?.risk || 0)));
   const latestDecision = [...recentEvents].reverse().find((record) => record.event?.policy)?.event?.policy || null;
@@ -196,6 +196,7 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT } = {}) 
         const {previewByok,interpretByok,testByokConnection}=await import('./byok.mjs');
         if(body.action==='test')return json(res,200,await testByokConnection(cwd,{allowNetwork:body.allowNetwork===true}));
         const options={source:body.source||'HEAD',paths:body.paths||[],includeSource:body.includeSource===true,includeMemory:body.includeMemory===true,question:body.question||'Explain known behavior, unknowns and next discriminating tests.'};
+        if(body.retryOf!==undefined)options.retryOf=body.retryOf;
         if(body.action==='preview')return json(res,200,previewByok(cwd,options));
         if(body.action!=='explain')return json(res,400,{error:'Unknown optional interpretation action'});
         if(optionalInterpretation)return json(res,409,{error:'An optional interpretation is already running'});

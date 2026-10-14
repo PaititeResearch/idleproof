@@ -1,3 +1,4 @@
+import {renderByokPreview,renderByokResult,formatByokStatus} from './byok-view.js';
 const $=id=>document.getElementById(id);
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let latest=null,busy=false;
@@ -94,21 +95,64 @@ $('scanMemoryLoad').onclick=async()=>{
 $('scanHandoff').onclick=async()=>{try{const data=await get('/api/project-handoff?source='+$('scanSource').value);await navigator.clipboard.writeText(JSON.stringify(data,null,2));$('scanProgress').textContent='Copied the local sourced handoff. It contains local project descriptions; review it before sharing.';}catch(e){$('scanProgress').textContent=e.message+' Use idleproof project handoff --json if clipboard access is unavailable.';}};
 refresh();setInterval(()=>{if(!document.hidden)refresh();},5000);
 
-let consent=null;
+let consent=null,lastFailure=null,aiBusy=false,previewSequence=0;
 const aiOptions=()=>({source:$('scanSource').value,paths:$('aiPaths').value.split(/\r?\n/).map(p=>p.trim()).filter(Boolean),includeSource:$('aiIncludeSource').checked,includeMemory:$('aiIncludeMemory').checked,question:$('aiQuestion').value});
 const aiRequest=body=>get('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-const invalidate=()=>{consent=null;$('aiSend').disabled=true;};
+const invalidate=()=>{previewSequence++;consent=null;lastFailure=null;$('aiRetry').hidden=true;$('aiSend').disabled=true;};
 for(const id of ['aiPaths','aiQuestion','aiIncludeSource','aiIncludeMemory','scanSource'])$(id).addEventListener('input',invalidate);
-$('aiTestConnection').onclick=async()=>{try{$('aiStatus').textContent=JSON.stringify(await aiRequest({action:'test',allowNetwork:true}));}catch(e){$('aiStatus').textContent=e.message;}};
-$('optionalAI').addEventListener('toggle',async()=>{if($('optionalAI').open)try{$('aiStatus').textContent=JSON.stringify(await get('/api/ai/status'));}catch(e){$('aiStatus').textContent=e.message;}});
-$('aiPreviewButton').onclick=async()=>{
-  try{invalidate();const options=aiOptions(),preview=await aiRequest({action:'preview',...options});consent={...options,consentDigest:preview.digest};$('aiPreview').textContent=JSON.stringify(preview,null,2);$('aiSend').disabled=!preview.configured;}catch(e){$('aiPreview').textContent=e.message;}
-};
+$('aiTestConnection').onclick=async()=>{try{$('aiStatus').textContent=formatByokStatus(await aiRequest({action:'test',allowNetwork:true}));}catch(e){$('aiStatus').textContent=e.message;}};
+$('optionalAI').addEventListener('toggle',async()=>{if($('optionalAI').open)try{$('aiStatus').textContent=formatByokStatus(await get('/api/ai/status'));}catch(e){$('aiStatus').textContent=e.message;}});
+async function preparePreview(retryOf=null) {
+  if(aiBusy)return;
+  invalidate();const sequence=previewSequence;
+  try{
+    const options={...aiOptions(),...(retryOf?{retryOf}:{})},preview=await aiRequest({action:'preview',...options});
+    if(sequence!==previewSequence)return;
+    consent={...options,consentDigest:preview.digest};
+    $('aiPreview').innerHTML=renderByokPreview(preview);$('aiSend').disabled=!preview.configured;
+    $('aiResult').textContent='';
+  }catch(e){if(sequence===previewSequence)$('aiPreview').textContent=e.message;}
+}
+$('aiPreviewButton').onclick=()=>preparePreview();
+$('aiRetry').onclick=()=>preparePreview(lastFailure);
 $('aiSend').onclick=async()=>{
-  if(!consent)return;const approved=consent;invalidate();$('aiResult').textContent='Optional request in progress. Deterministic evidence remains available above.';
-  try{$('aiResult').textContent=JSON.stringify(await aiRequest({action:'explain',...approved}),null,2);}catch(e){$('aiResult').textContent=e.message;}
+  if(!consent||aiBusy)return;
+  const approved=consent;invalidate();const sequence=previewSequence;aiBusy=true;
+  $('aiPreviewButton').disabled=true;$('aiResult').textContent='Generating an explanation. Local observations remain available.';
+  try{
+    const result=await aiRequest({action:'explain',...approved});
+    $('aiResult').innerHTML=renderByokResult(result);
+    // Input edits during a request invalidate retry consent too.
+    if(sequence===previewSequence&&result.status==='FALLBACK'&&result.retryable){lastFailure=result.digest;$('aiRetry').hidden=false;}
+  }catch(e){$('aiResult').textContent=e.message;}
+  finally{aiBusy=false;$('aiPreviewButton').disabled=false;}
 };
 $('aiCancel').onclick=async()=>{try{await aiRequest({action:'cancel'});}catch(e){$('aiResult').textContent=e.message;}};
+let sourceSequence=0;
+$('aiResult').onclick=async event=>{
+  const button=event.target.closest('[data-ai-source]');if(!button)return;
+  const sequence=++sourceSequence;
+  let target=$('aiSourceDetail');
+  if(!target){target=document.createElement('pre');target.id='aiSourceDetail';}
+  target.setAttribute('tabindex','-1');
+  target.setAttribute('aria-live','polite');
+  target.setAttribute('aria-label','Captured source');
+  button.after(target);
+  target.hidden=false;
+  target.textContent='Loading captured source: '+button.dataset.aiSource+'…';
+  target.focus({preventScroll:true});
+  target.scrollIntoView({block:'nearest'});
+  try{
+    const source=await get('/api/project-source?'+new URLSearchParams({snapshot:button.dataset.aiSnapshot,path:button.dataset.aiSource,line:'1'}));
+    if(sequence!==sourceSequence||$('aiSourceDetail')!==target)return;
+    target.textContent='Captured source: '+source.path+'\n'+source.snapshotId+' | '+source.sourceSha256+'\n'+source.lines.map(l=>l.line+': '+l.text+(l.truncated?' [truncated]':'')).join('\n');
+    target.scrollIntoView({block:'nearest'});
+  }catch(e){
+    if(sequence!==sourceSequence||$('aiSourceDetail')!==target)return;
+    target.textContent='Unable to load captured source: '+e.message;
+    target.scrollIntoView({block:'nearest'});
+  }
+};
 
 $('scanMemoryAsk').onclick=async()=>{
   try {

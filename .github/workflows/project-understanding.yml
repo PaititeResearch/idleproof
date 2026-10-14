@@ -17,8 +17,8 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
-          repository: TFourniax/tooltest
-          ref: 0933d5caebc087b4f2321e283879dd2a83d54d17
+          repository: PaititeResearch/diffwitness
+          ref: 7f043a3cbaf1b2c3e59d48bc6509a1ae627f8a23
           path: producer-core
           persist-credentials: false
       - uses: actions/setup-python@v7

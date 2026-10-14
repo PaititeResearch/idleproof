@@ -1,6 +1,6 @@
 # Optional Local OpenRouter interpretation
 
-Status: implementation candidate. MACHINE transport/permission tests are separate from the unperformed HUMAN provider/cost/utility recipe in #33. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
+Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
 Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The transport has a 30-second deadline, input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
 
@@ -47,3 +47,46 @@ paid failures: it does not silently retry or recharge. API refusals, invalid or
 oversized responses, missing tariffs/provider cap, exhausted budgets, offline
 service and cancellation retain the deterministic fallback. No response creates
 canonical intent, Proof, technical debt or a quiz score.
+
+## Human-recipe recovery (2026-10-13)
+
+- The 12-file default now balances selected intention documents, production
+  components ranked by declared references/static links, and test candidates.
+  This is bounded triage, not proof of importance or a whole-project analysis.
+  The preview reports the selected/eligible/omitted counts, exact paths and full
+  outbound packet. Explicit paths still restrict the selection exactly.
+- The question is a separate user message, distinct from untrusted project data.
+  Output is requested in English, with short sourced claims and
+  concrete unknowns. Static relations between selected files accompany the packet.
+- For models advertising reasoning support, the request sends
+  `reasoning: { enabled: false }` with `provider.require_parameters: true`.
+  This small-budget explanation feature does not silently fall back to extended
+  reasoning. A provider may reject the setting; a live response is still required
+  to qualify compatibility. A reported mandatory-reasoning model fails before
+  payment. Output remains capped at the configured value (maximum 2000).
+- `finish_reason: length` becomes `BYOK_OUTPUT_TRUNCATED` before parsing content,
+  including when truncated content happens to be valid JSON. Missing content,
+  malformed JSON, schema violations and empty claims have distinct outcomes.
+  Fixed validation reason codes and token/finish metadata are safe diagnostics;
+  raw completions, reasoning and keys are not persisted in diagnostics.
+- Provider-reported cost is reconciled and displayed even when the answer is
+  rejected. If cost is absent, the reservation remains explicitly uncertain.
+- Failed paid attempts remain cached. The UI's explicit retry prepares a new
+  preview tied to the prior failure and unchanged context; a separate Send is
+  required. Replaying the same retry digest returns its cache. A crash-pending
+  UNKNOWN is not automatically retried. CLI equivalence: add the failed digest
+  via `--retry-of` to both preview and explain, with the new `--consent` digest.
+- Request version 3 invalidates earlier previews/caches without deleting evidence
+  or resetting consumption. Existing configuration, credential and scan persist.
+- The cockpit renders escaped prose, source buttons and collapsed technical
+  details. Without an observed session it does not invent live agent activity.
+
+Provider semantics checked against official documentation on 2026-10-13:
+https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+(`exclude` hides reasoning; it does not stop token consumption).
+
+Resume the HUMAN test with the same global question, empty paths, source
+descriptions explicitly checked, memory unchecked, a newly reviewed preview,
+then one Send. Check useful English prose, rules/service/access/view and declared
+plans, clickable citations, no invented execution, visible omissions and cost.
+Success on that step does not qualify task/memory/Portal or the entire recipe.

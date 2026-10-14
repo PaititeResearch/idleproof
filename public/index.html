@@ -45,20 +45,21 @@
         <p id="aiStatus">Configuration is local. No credential is entered or displayed in this page.</p>
         <button type="button" id="aiTestConnection">Test OpenRouter connection without sending project context</button>
         <p>Interpretations remain INFERRED and need review. They never change Proof, debt, declared memory or human mastery. Configure a dedicated capped key from the CLI, as described in docs/OPENROUTER_LOCAL.md.</p>
-        <label>Question <input id="aiQuestion" value="Explain known behavior, unknowns and next discriminating tests."></label>
-        <label>Exact captured paths (one per line; empty means the first 12)<textarea id="aiPaths" rows="2"></textarea></label>
+        <label>Question <input id="aiQuestion" value="Explain this project in plain English: its purpose, main rules, component relationships and planned features. Cite your sources and state the limits of the supplied context."></label>
+        <label>Exact paths (one per line; empty selects up to 12 files balancing intentions, linked components and tests)<textarea id="aiPaths" rows="2"></textarea></label>
         <label><input type="checkbox" id="aiIncludeSource"> Include bounded source descriptions and selected-document excerpts in the preview</label>
         <label><input type="checkbox" id="aiIncludeMemory"> Include bounded recorded Core objectives, decisions and task context in the preview</label>
         <button type="button" id="aiPreviewButton">Preview remote context locally</button>
-        <pre id="aiPreview">No preview prepared. No network request has been authorized.</pre>
+        <div id="aiPreview">No preview prepared. No network request authorized.</div>
         <button type="button" id="aiSend" disabled>Send this preview to OpenRouter using my configured budget</button><button type="button" id="aiCancel">Cancel request</button>
-        <pre id="aiResult"></pre>
+        <div id="aiResult" role="status" aria-live="polite"></div>
+        <button type="button" id="aiRetry" hidden>Prepare a retry (a new call may incur a charge)</button>
       </details>
     </section>
 
     <section class="workspace">
       <article id="learningCard" class="learning-card panel">
-        <div class="section-head"><div><span class="mini-label">LIVE TASK LESSON</span><h2 id="cardTitle">Testing strategy</h2></div><span id="cardRisk" class="risk-badge">CORE</span></div>
+        <div class="section-head"><div><span class="mini-label">LIVE TASK LESSON</span><h2 id="cardTitle">Current task</h2></div><span id="cardRisk" class="risk-badge">WAITING</span></div>
         <div class="learning-meta"><span id="cardTime">≈ 30 sec</span><span id="cardConfidence">0% mastery</span></div>
         <p id="cardWhy" class="why"></p><p id="cardLesson" class="lesson"></p>
         <div id="learningJourney" class="ledger"><p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p></div>

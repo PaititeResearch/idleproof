@@ -40,6 +40,23 @@ test('context admission rejects partial, malformed, oversized and upgraded revie
   assert.equal(__continuityTest.validContext({schema_version:'continuity-context-1',context_id:`dwctx_${'a'.repeat(24)}`}),false);
 });
 
+test('Core empty journal is connected memory, while empty anchors cannot back assertions',()=>{
+  const c=fixture();
+  c.state={eventHead:'',structureTree:null,structureCoverage:null};
+  for(const key of ['objectives','tasks','decisions','invariants','failedApproaches','components','relations','knownDebt','recentRelatedChanges']) c[key]=[];
+  assert.equal(__continuityTest.validContext(c),true);
+  assert.equal(continuityCounts(c).tasks,0);
+  assert.match(renderContinuityForAgent(c),/none \(empty journal\)/);
+  for(const key of ['tasks','decisions','relations','recentRelatedChanges']) {
+    const populated=structuredClone(c); populated[key]=fixture()[key];
+    assert.equal(__continuityTest.validContext(populated),false,key);
+  }
+  for(const eventHead of ['bad',' ','0'.repeat(63)]) {
+    assert.equal(__continuityTest.validContext({...c,state:{...c.state,eventHead}}),false);
+  }
+  assert.equal(__continuityTest.validContext({...c,state:{...c.state,structureTree:'d'.repeat(40)}}),false);
+});
+
 test('agent context retains tasks, declared review, warnings and related changes without raw details', () => {
   const text=renderContinuityForAgent(fixture());
   assert.match(text,/RELATED TASKS/); assert.match(text,/TASK-REFUND \[DECLARED\]/);

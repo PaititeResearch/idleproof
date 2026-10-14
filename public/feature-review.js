@@ -106,7 +106,7 @@ function installOptionalLiveCheck() {
     const nextKey = liveQuestion.textContent.trim();
     if (nextKey !== key) { key = nextKey; revealed = false; }
     const available = Boolean(nextKey && document.querySelector('#answers .answer'));
-    liveChallenge.hidden = available && !revealed;
+    liveChallenge.hidden = available ? !revealed : !document.querySelector('#answers button');
     button.hidden = !available || revealed;
   };
   button.addEventListener('click', () => { revealed = true; sync(); liveQuestion.focus?.(); });
@@ -167,3 +167,4 @@ applyLocalEditionUi();
 installOptionalLiveCheck();
 installOptionalFeatureCheck();
 // Longitudinal spaced-recall polling is intentionally not part of the Local cockpit.
+

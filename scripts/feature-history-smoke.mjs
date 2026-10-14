@@ -67,14 +67,12 @@ try {
   const history=JSON.parse(exec(process.execPath,[bin,'feature-history','--feature',old.featureKey,'--limit','100','--json'],repo));
   assert.equal(history.items.length,13);assert.equal(history.olderHistory,'unknown');
   assert.deepEqual(history.items.find(item=>item.id===oldest.id),oldest);
-  assert.match(exec(process.execPath,[bin,'feature-history','--feature',old.featureKey,'--language','fr'],repo),/Observations locales/);
   assert.match(exec(process.execPath,[bin,'feature-history','--feature',old.featureKey,'--language','en'],repo),/Retained local/);
   assert.equal(result.transfersScores,false);assert.equal(result.transfersAssertionAuthority,false);
   const events=journalBytes.toString('utf8').trim().split('\n').map(JSON.parse);
   const cited=events.find(event=>event.event_id===result.links[0].source.event_id);
   assert.equal(result.links[0].source.event_hash,cited.event_hash);
   assert.equal(result.links[0].source.commit,cited.payload.commit);
-  assert.match(exec(process.execPath,[bin,...args,'--language','fr'],repo),/Filiation de fonctionnalités/);
   assert.match(exec(process.execPath,[bin,...args,'--language','en'],repo),/Feature lineage/);
   assert.deepEqual(fs.readFileSync(statePath),stateBytes);assert.deepEqual(fs.readFileSync(path.join(repo,'.git','index')),index);
   assert.deepEqual(fs.readFileSync(journal),journalBytes);
@@ -84,7 +82,7 @@ try {
   assert.equal(rejected.status,2);assert.equal(JSON.parse(rejected.stdout).status,'unavailable');
   assert.deepEqual(fs.readFileSync(statePath),stateBytes);assert.deepEqual(fs.readFileSync(path.join(repo,'.git','index')),index);
   console.log(JSON.stringify({schema:'idleproof-feature-history-smoke-1',classification:'MACHINE',passed:true,
-    actualCore:true,installedPackage:true,packageSha256,sourceEvent:cited.event_id,sourceHash:cited.event_hash,languages:['fr','en'],
+    actualCore:true,installedPackage:true,packageSha256,sourceEvent:cited.event_id,sourceHash:cited.event_hash,languages:['en'],
     noScoreTransfer:true,readOnly:true,corruptJournalRejected:true,archivedObservations:13,oldestSelectedBeyondHotWindow:true}));
 } finally {
   fs.rmSync(temp,{recursive:true,force:true});if(tarball) fs.rmSync(tarball,{force:true});

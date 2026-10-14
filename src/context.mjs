@@ -151,7 +151,7 @@ function preferredContextFile(session = {}) {
 function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
   const safe = admitted.get(file);
   if (!safe) {
-    const fallback = { file:file || null, symbol:null, route:null, table:null, technologies:technologiesFrom(prompt), dependencies:[], importReferences:[], symbols:[],
+    const fallback = { file:file || null, symbol:null, route:null, table:null, technologies:[], dependencies:[], importReferences:[], symbols:[],
       structureCoverage:{provider:'unavailable',parsed:null,canonical:false,reason:'source-unavailable'} };
     return { ...fallback, fileRole:inferFileRole(file || '', fallback) };
   }
@@ -170,7 +170,10 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
                                  canonical||structureCoverage]);
   if (cache.has(cacheKey)) return structuredClone(cache.get(cacheKey));
 
-  const evidenceText = stripCommentEvidence(safe.text);
+  // The request can rank observed symbols, but cannot create file-specific facts.
+  // Documentation is declared prose, including any code examples it may quote.
+  const documentSource = inferFileRole(safe.relative).role === 'docs';
+  const evidenceText = documentSource ? '' : stripCommentEvidence(safe.text);
   const sourceLanguage = canonical?.language || structureLanguageFor(safe.relative);
   const dataSource = ['sql','json','toml','yaml'].includes(sourceLanguage);
   const unresolvedOrigin = ['java','kotlin','csharp','ruby','php'].includes(sourceLanguage);
@@ -182,10 +185,10 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
                             : dataSource||providerFailed ? [] : symbolsFromText(evidenceText);
   // Data syntax has its own admitted facts. Values and SQL literal/query text
   // must not re-enter task facts through the legacy code-language heuristics.
-  const routes = dataSource ? [] : routesFromText(`${prompt}\n${evidenceText}`);
+  const routes = dataSource ? [] : routesFromText(evidenceText);
   const tables = dataSource ? sourceLanguage==='sql'&&canonical
     ? canonical.symbols.filter(symbol=>symbol.kind==='table').map(displayName) : []
-    : tablesFromText(`${prompt}\n${evidenceText}`);
+    : tablesFromText(evidenceText);
   const importReferences = canonical ? unique(canonical.imports.map(item=>item.target)).slice(0,24) : [];
   const dependencies = dataSource||unresolvedOrigin||providerFailed ? [] : canonical ? unique(canonical.imports.map(item=>externalDependency(
     canonical.language==='python' ? item.target.split('.')[0] : item.target,canonical.language))).slice(0,24)
@@ -195,7 +198,7 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
     symbol:chooseSymbol(symbols, prompt),
     route:routes[0] || null,
     table:tables[0] || null,
-    technologies:unique(technologiesFrom(dataSource ? prompt : `${prompt}\n${evidenceText}`)).slice(0, 12),
+    technologies:unique(technologiesFrom(dataSource ? '' : evidenceText)).slice(0, 12),
     dependencies,
     importReferences,
     symbols:symbols.slice(0, 12),
@@ -221,3 +224,4 @@ export function extractTaskSignals(cwd = process.cwd(), session = {}, {onStructu
   const allTechnologies = unique([...(current.technologies || []), ...relatedFiles.flatMap((item) => item.technologies || [])]).slice(0, 16);
   return { ...current, technologies:allTechnologies, relatedFiles };
 }
+

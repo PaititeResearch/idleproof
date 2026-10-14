@@ -64,6 +64,20 @@ function renderLearning(state) {
   const handoff = state.session?.status === 'complete';
   const recap = learning.recap || {};
 
+  if (!state.session) {
+    $('cardRisk').textContent = 'WAITING';
+    $('cardTime').textContent = 'No activity observed';
+    $('cardConfidence').textContent = 'Understanding not assessed';
+    $('cardTitle').textContent = 'No agent session observed';
+    $('cardWhy').textContent = 'The project scan is available above. No agent activity has been observed in this installation.';
+    $('cardLesson').textContent = '';
+    $('question').textContent = '';
+    $('answers').innerHTML = '';
+    $('feedback').textContent = '';
+    renderJourney(state);
+    return;
+  }
+
   if (learning.paused) {
     const first = learning.snoozedConceptIds?.[0] || '';
     $('cardRisk').textContent = 'PAUSED';
@@ -85,11 +99,11 @@ function renderLearning(state) {
   $('cardTime').textContent = `≈ ${card.seconds || 20} sec${depth}`;
   $('cardConfidence').textContent = handoff
     ? `${recap.mastered || 0} mastered · ${recap.building || 0} building · ${recap.review || 0} review`
-    : `${card.confidence || 0}% mastery · ${learning.phase || 'live'}`;
+    : card.id ? `${card.confidence || 0}% mastery · ${learning.phase || 'live'}` : 'Understanding not assessed';
   $('cardTitle').textContent = card.title || 'Current task';
   $('cardWhy').textContent = card.why || 'IdleProof will connect a useful concept to the task as soon as the agent starts working.';
   $('cardLesson').textContent = card.lesson || '';
-  $('question').textContent = card.question || 'What should you understand before accepting this change?';
+  $('question').textContent = card.id ? card.question || 'What should you understand about this task?' : '';
   if (!feedbackLock || feedbackLock !== card.id) $('feedback').textContent = '';
   const choices = (card.options || []).map((option, index) => `<button class="answer" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
   const snooze = card.id ? '<button class="text-button" id="snoozeLesson" type="button">not now · 10 min</button>' : '';
@@ -135,7 +149,7 @@ function renderFeatureModel(state) {
 
   if (!model) {
     $('featureModelStatus').textContent = 'waiting for code context';
-    $('currentFeatureFluency').textContent = '0%';
+    $('currentFeatureFluency').textContent = 'Not assessed';
     $('featureDisclaimer').textContent = 'IdleProof will build a bounded static map once the agent touches project-local code.';
     $('featureDrift').className = 'drift-banner hidden';
     $('featureStory').innerHTML = '<p class="empty">No connected feature structure observed yet.</p>';
@@ -246,7 +260,7 @@ function renderControlPlane(state) {
   $('agentSources').textContent = bom.sources?.length ? `Observed: ${bom.sources.join(', ') || 'none'} · ${control.provenance?.events || 0} events` : 'No agent execution observed yet.';
   const att = control.attestation || {}; $('attestationState').textContent = !att.exists ? 'waiting' : att.valid ? 'signed · valid' : 'signature invalid'; $('attestationSigner').textContent = att.fingerprint ? `recorder ${shortHash(att.fingerprint, 12)}` : 'no completed turn';
   const responsibility = control.responsibility || { ownerCoverage:0, responsibilityCoverage:0, obligations:[] };
-  $('responsibilityCoverage').textContent = `${responsibility.responsibilityCoverage || 0}%`; $('ownerCoverage').textContent = `${responsibility.ownerCoverage || 0}% owners mapped`;
+  $('responsibilityCoverage').textContent = state.session ? `${responsibility.responsibilityCoverage || 0}%` : 'Not assessed'; $('ownerCoverage').textContent = state.session ? `${responsibility.ownerCoverage || 0}% owners mapped` : 'No ownership evidence yet';
   $('responsibilityText').textContent = responsibility.obligations?.length ? `${responsibility.obligations.length} high-risk ownership obligation${responsibility.obligations.length === 1 ? '' : 's'} remain.` : state.session?.status === 'complete' ? 'No uncovered high-risk ownership obligation.' : 'Ownership evidence becomes available after a completed change.';
   $('acceptResponsibility').disabled = state.session?.status !== 'complete';
   renderDecision(control); renderTimeline(control);

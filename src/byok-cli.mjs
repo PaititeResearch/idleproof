@@ -13,7 +13,7 @@ export async function byokCli(cwd,args) {
   else if(action==='test')result=await testByokConnection(cwd,{allowNetwork:args.includes('--allow-network')});
   else if(action==='preview'||action==='explain') {
     const options={source:value('--source')||'HEAD',paths:args.flatMap((v,i)=>v==='--file'?[args[i+1]]:[]),includeSource:args.includes('--include-source'),includeMemory:args.includes('--include-memory'),
-      ...(value('--question')?{question:value('--question')}:{})};
+      ...(value('--question')?{question:value('--question')}:{}),...(value('--retry-of')?{retryOf:value('--retry-of')}:{})};
     result=action==='preview'?previewByok(cwd,options):await interpretByok(cwd,{...options,consentDigest:value('--consent')});
   }else throw new Error('Usage: idleproof ai configure|status|remove|test|preview|explain. See docs/OPENROUTER_LOCAL.md.');
   console.log(JSON.stringify(result,null,2));
