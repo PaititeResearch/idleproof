@@ -3,9 +3,13 @@
 const links = [...document.querySelectorAll('.section-nav a[href^="#"]')];
 const byId = new Map(links.map((link) => [link.getAttribute('href').slice(1), link]));
 const sections = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
-const visible = new Map();
+const bar = document.querySelector('.topbar');
+let current = null;
+let pending = false;
 
 function mark(id) {
+  if (id === current) return;
+  current = id;
   for (const [key, link] of byId) {
     if (key === id) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
@@ -19,11 +23,23 @@ function mark(id) {
   }
 }
 
-if ('IntersectionObserver' in window && sections.length) {
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) visible.set(entry.target.id, entry.isIntersecting ? entry.boundingClientRect.top : null);
-    const current = sections.find((section) => visible.get(section.id) != null);
-    if (current) mark(current.id);
-  }, { rootMargin: '-120px 0px -55% 0px' });
-  sections.forEach((section) => observer.observe(section));
+// The active section is the last one whose top has passed just below the sticky bar;
+// at the very bottom of the page the last section is active.
+function update() {
+  pending = false;
+  if (!sections.length) return;
+  const line = (bar?.getBoundingClientRect().bottom || 0) + 24;
+  const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+  let active = sections[0];
+  for (const section of sections) if (section.getBoundingClientRect().top <= line) active = section;
+  mark(atBottom ? sections[sections.length - 1].id : active.id);
 }
+
+function schedule() {
+  if (!pending) { pending = true; requestAnimationFrame(update); }
+}
+
+window.addEventListener('scroll', schedule, { passive: true });
+window.addEventListener('resize', schedule);
+window.addEventListener('hashchange', schedule);
+update();
