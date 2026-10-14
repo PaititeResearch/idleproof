@@ -139,9 +139,9 @@ function installOptionalFeatureCheck() {
 
 function applyLocalEditionUi() {
   document.body.dataset.edition='local';
-  document.querySelector('#learningCard .mini-label')?.replaceChildren(document.createTextNode('LIVE PROJECT EXPLANATION'));
-  const liveKicker=document.querySelector('#learningCard .challenge-kicker'); if (liveKicker) liveKicker.textContent='OPTIONAL · CHECK YOUR UNDERSTANDING';
-  const evidenceKicker=document.querySelector('.evidence .mini-label'); if (evidenceKicker) evidenceKicker.textContent='LOCAL · SOURCE STAYS ON THIS MACHINE';
+  document.querySelector('#learningCard .mini-label')?.replaceChildren(document.createTextNode('Live project explanation'));
+  const liveKicker=document.querySelector('#learningCard .challenge-kicker'); if (liveKicker) liveKicker.textContent='Optional · check your understanding';
+  const evidenceKicker=document.querySelector('.evidence .mini-label'); if (evidenceKicker) evidenceKicker.textContent='Local · source stays on this machine';
   const footerFirst=document.querySelector('footer span'); if (footerFirst) footerFirst.textContent='IdleProof Local · understand what your coding agent is building';
 
   // Local is the immediate product: explain the current task and current feature map.
@@ -158,7 +158,7 @@ function applyLocalEditionUi() {
     const card=document.createElement('article');
     card.id='portalBoundary';
     card.className='panel';
-    card.innerHTML='<div class="section-head"><div><span class="mini-label">IDLEPROOF PORTAL · PRO</span><h2>Understand now. Remember later.</h2></div><span class="chip">long-term</span></div><p class="memory-intro">IdleProof Local explains the task in front of you. Portal adds persistent project history, Knowledge Debt over time, feature drift, spaced recall, multi-project visibility and proof/debt history — without requiring source code to leave this machine.</p>';
+    card.innerHTML='<div class="section-head"><div><span class="mini-label">DiffWitness Portal · Pro</span><h2>Understand now. Remember later.</h2></div><span class="chip">long-term</span></div><p class="memory-intro">IdleProof Local explains the task in front of you. Portal adds persistent project history, Knowledge Debt over time, feature drift, spaced recall, multi-project visibility and proof/debt history — without requiring source code to leave this machine.</p>';
     grid.appendChild(card);
   }
 }

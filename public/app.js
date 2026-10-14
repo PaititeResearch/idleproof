@@ -4,6 +4,10 @@ let featureFeedbackLock = null;
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[ch]));
 const shortHash = (value, size = 12) => value ? `${String(value).slice(0, size)}…` : 'waiting';
+// The page CSP refuses inline style attributes, so bars use a native <progress> element.
+const meter = (className, value, label) => { const n = Number(value); return `<progress class="${className}" max="100" value="${Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"></progress>`; };
+// Presentation only: a value that was not assessed is shown quieter than a measured one.
+const markAssessed = (...ids) => ids.forEach((id) => { const el = $(id); if (el) el.dataset.assessed = String(el.textContent.trim() !== 'Not assessed'); });
 
 async function api(path, options = {}) {
   const res = await fetch(path, { ...options, headers: { 'content-type': 'application/json', ...(options.headers || {}) } });
@@ -45,7 +49,7 @@ function renderFindings(session) {
 function renderLedger(ledger) {
   const rows = Object.values(ledger || {}).sort((a,b) => (b.risk * b.exposures * (100 - b.confidence)) - (a.risk * a.exposures * (100 - a.confidence)));
   $('ledger').innerHTML = rows.length
-    ? rows.slice(0, 8).map((entry) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(entry.title)}</span><span class="ledger-risk">×${entry.exposures} · r${entry.risk}</span><span class="ledger-meter" title="${entry.confidence}% confidence"><i style="width:${entry.confidence}%"></i></span></div>`).join('')
+    ? rows.slice(0, 8).map((entry) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(entry.title)}</span><span class="ledger-risk">×${entry.exposures} · r${entry.risk}</span>${meter('ledger-meter', entry.confidence, `${entry.confidence}% confidence`)}</div>`).join('')
     : '<p class="empty">Concepts appear as the coding agent touches your codebase.</p>';
 }
 
@@ -54,7 +58,7 @@ function renderJourney(state) {
   const complete = state.session?.status === 'complete';
   const visible = concepts.slice(0, complete ? 6 : 3);
   $('learningJourney').innerHTML = visible.length
-    ? visible.map((item) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(item.title)}</span><span class="ledger-risk">${escapeHtml(item.status)} · ${item.confidence}%</span><span class="ledger-meter" title="${item.confidence}% mastery"><i style="width:${item.confidence}%"></i></span></div>`).join('')
+    ? visible.map((item) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(item.title)}</span><span class="ledger-risk">${escapeHtml(item.status)} · ${item.confidence}%</span>${meter('ledger-meter', item.confidence, `${item.confidence}% mastery`)}</div>`).join('')
     : '<p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p>';
 }
 
@@ -135,7 +139,7 @@ function renderFeatureMemory(memory = []) {
     const surfaces = [...(item.surfaces?.technologies || []).slice(0, 2), ...(item.surfaces?.routes || []).slice(0, 1), ...(item.surfaces?.tables || []).slice(0, 1)];
     const status = item.needsRefresh ? '<span class="refresh-badge">refresh</span>' : `<span>${item.confidence || 0}% fluent</span>`;
     const drift = item.needsRefresh && item.drift?.summary ? `<div class="memory-drift">${escapeHtml(item.drift.summary)}</div>` : '';
-    return `<article class="memory-card ${item.needsRefresh ? 'needs-refresh' : ''}"><div class="memory-top"><strong>${escapeHtml(item.task || 'Previous feature')}</strong>${status}</div><p>${story || 'Feature structure captured from a completed task.'}</p>${drift}<div class="memory-tags">${surfaces.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div><div class="memory-meter"><i style="width:${item.confidence || 0}%"></i></div></article>`;
+    return `<article class="memory-card ${item.needsRefresh ? 'needs-refresh' : ''}"><div class="memory-top"><strong>${escapeHtml(item.task || 'Previous feature')}</strong>${status}</div><p>${story || 'Feature structure captured from a completed task.'}</p>${drift}<div class="memory-tags">${surfaces.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div>${meter('memory-meter', item.confidence || 0, `${item.confidence || 0}% fluent`)}</article>`;
   }).join('') : '<p class="empty">Completed feature tasks will accumulate here and become spaced-review material.</p>';
 }
 
@@ -280,6 +284,7 @@ function render(state) {
   $('task').textContent = session?.prompt || 'Run `idleproof on`, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and feature understanding.';
   if (active && learning.file) $('currentTool').textContent = `${session.currentTool || 'Working'} · ${learning.file}`;
   renderControlPlane(state); renderLearning(state); renderFeatureModel(state); renderProjectModel(state); renderFiles(session); renderFindings(session); renderLedger(state.ledger); $('proofId').textContent = shortHash(session?.proof?.diffSha256, 20);
+  markAssessed('runtimeRisk', 'featureFluency', 'debt', 'coverage', 'currentFeatureFluency', 'responsibilityCoverage');
 }
 
 async function submitAnswer(conceptId, choice) {
