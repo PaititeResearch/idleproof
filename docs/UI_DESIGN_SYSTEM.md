@@ -49,12 +49,35 @@ code is correct or that tests passed.
 - Evidence is shown as **badges**, such as VERIFIED, accepted proof, OBSERVED or
   INFERRED.
 - Green may mark a healthy state, but the label always names what is healthy.
+- Observation and receipt kinds (OBSERVED, "observed", "post-proof receipt") are
+  neutral badges. Only VERIFIED or an accepted proof gets a green badge.
+
+## Connection and freshness
+
+Local polls `/api/state`. When a request fails:
+
+- A banner under the section tabs says so. If an earlier state was loaded, it gives the
+  time of the last update and says the values below may be out of date. If not, it says
+  that no project state has been loaded yet.
+- Panels are desaturated and their headers hatched, the live-agent pulse stops, and the
+  status light turns neutral.
+- The next successful response removes the banner and the stale styling.
+
+## Actions that commit the human
+
+"Accept current change" and "Approve" stay disabled until the state they act on is loaded
+and current. Acceptance is enabled only for a completed change. Both are disabled again
+as soon as a refresh fails.
 
 ## Absent data
 
 - Before data arrives, or when it cannot be read, show "not loaded".
 - When something was not checked, show "Not assessed".
+- When checks exist but none was answered correctly, show "no correct check yet". A
+  percentage appears only after at least one correct answer.
 - When it was not measured, show "not measured".
+- When a count or field is missing from a Portal record, show "not reported" or "Not
+  available" for that field.
 - Never show 0, 0% or a policy name as a placeholder, and never show a stale value as
   current.
 
@@ -72,12 +95,18 @@ code is correct or that tests passed.
   Owe (DiffWitness). Each lane is marked with its tool colour.
 - **Readouts.** Metrics are label/value rows with tabular numbers. Activity reads as a
   log. Identifiers use monospace.
+- **View switches.** Local's "Scan view" (Guided or Technical) changes only the project
+  scan panel. Portal's "Experience" switch changes the whole workspace. The labels say
+  which one the reader is using.
 - **Icons.** One 16 px stroke set. Icons are decorative only: `aria-hidden`, always next
   to a text label, and never inside a button whose text the script rewrites.
 
 ## Foundations
 
 - Themes: light and dark follow `prefers-color-scheme`; every colour is a token.
+- Contrast: every text token reaches 4.5:1 on every surface, in both themes. `--faint`
+  is for decorative strokes, dots and icons only, never for text. Tests read the
+  shipped stylesheets and enforce both rules.
 - Type: system sans (`--font-sans`, Inter when installed) for reading; `--font-mono` only
   for real identifiers (paths, hashes, commands, status codes).
 - Labels are sentence case. Upper case is reserved for status codes and lane codes.
@@ -87,5 +116,8 @@ code is correct or that tests passed.
   style attributes, so bars use native `<progress>` elements.
 - Motion is limited to the live-agent pulse (stopped when no agent is active) and respects
   `prefers-reduced-motion`.
-- Responsive: no horizontal page scroll at 360 px; navigation becomes a horizontally
-  scrollable strip; Portal tables stack per row on small screens.
+- Responsive: no horizontal page scroll at any width from 360 px up.
+  - Local: below 1100 px the section tabs drop their icons so all seven fit. Below
+    760 px they wrap as chips under the app bar.
+  - Portal: on small screens the navigation wraps as pills.
+  - Stacked tables (Portal) repeat each column name before its cell (`data-label`).

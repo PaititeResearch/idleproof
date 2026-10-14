@@ -88,13 +88,36 @@ placeholders read as measurements: risk 0, debt 0, 0% fluency and ownership,
 verified" chip. They now say "not loaded", and the chip is neutral until the recorder
 answers. The page after a successful load is unchanged.
 
+## Display fixes made after the UI audit (separate commit)
+
+These changes are in the renderer only. `/api/state`, its numbers and the acceptance
+endpoint are unchanged.
+
+- **Out-of-date values.** When a state refresh fails after a successful one, a banner
+  gives the time of the last update and says the values may be out of date, and the
+  panels are desaturated. If no state was ever loaded, the banner says so.
+- **Premature acceptance.** "Accept current change" is disabled in the HTML and enabled
+  only when the loaded session is complete. It is disabled again, together with
+  "Approve", when a refresh fails.
+- **0% for never-checked items.** The current feature map, hotspots, review queue,
+  journey, project memory and concept map now show "Not assessed" when no check exists
+  for that scope (`fluency.checks`, `featureMemory[].checks`,
+  `metrics.featuresChecked`, `metrics.conceptsChecked`). They show "no correct check
+  yet" when checks exist but none was answered correctly. The API still returns `0` in
+  both cases. A percentage appears only when it is above zero, or when the feature
+  itself has checks.
+- **Portal promise.** The Local card about Portal now lists what Portal actually keeps:
+  received changes with their proof and debt results, human learning checks, and
+  recorded project memory.
+- **Privacy line.** "source stays local" became "source leaves only with your approval",
+  because the optional OpenRouter explanation can send bounded excerpts after
+  confirmation.
+
+`test/local-ui-state.test.mjs` covers each of these.
+
 ## Open items for the decision (not changed)
 
 1. Per element and per state (no session, active task, completed task, after checks),
    decide whether to show it in Local.
-2. "0%" for never-checked features in hotspots, the review queue and the current
-   feature map (`currentFeatureFluency` uses `confidence || 0`). This is computed by
-   the renderer and the API, so changing it is a behaviour change.
-3. After a later disconnect, values stay visible without a stale marker.
-4. "accept current change" is enabled until the first state response.
-5. Spaced recall is returned by the API but never rendered.
+2. Change impact still calls unchecked features "learned".
+3. Spaced recall is returned by the API but never rendered.
