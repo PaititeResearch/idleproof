@@ -125,7 +125,7 @@ label{color:var(--ink-2);font-size:12.5px;font-weight:550}
 .shell{max-width:var(--page);margin:0 auto;padding:20px var(--gutter) 36px}
 .shell>section+section{margin-top:16px}
 /* Connection state: a failed refresh keeps earlier values but marks them as out of date. */
-.connection-banner{position:sticky;top:calc(var(--bar) + var(--navh));z-index:20;margin:0 0 16px;padding:10px 14px;border:1px solid var(--warn-line);border-left:3px solid var(--warn);border-radius:var(--r-sm);background:var(--warn-soft);color:var(--ink);font-size:13px;font-weight:550}
+.connection-banner{position:sticky;top:calc(var(--bar) + var(--navh));z-index:20;margin:0 0 16px;padding:10px 14px;border:1px solid var(--warn-line);border-left:3px solid var(--warn);border-radius:var(--r-sm);background:var(--surface) linear-gradient(var(--warn-soft),var(--warn-soft));box-shadow:0 2px 8px rgba(0,0,0,.08);color:var(--ink);font-size:13px;font-weight:550}
 body[data-connection="stale"] .shell>section{filter:grayscale(1)}
 body:is([data-connection="stale"],[data-connection="offline"]) .pulse-track i{animation:none;opacity:0}
 body:is([data-connection="stale"],[data-connection="offline"]) .status-dot{background:var(--faint);box-shadow:0 0 0 4px var(--sunken)}
