@@ -4,6 +4,7 @@ const links = [...document.querySelectorAll('.section-nav a[href^="#"]')];
 const byId = new Map(links.map((link) => [link.getAttribute('href').slice(1), link]));
 const sections = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
 const bar = document.querySelector('.topbar');
+const navBar = document.querySelector('.section-nav-bar');
 let current = null;
 let pending = false;
 
@@ -28,7 +29,10 @@ function mark(id) {
 function update() {
   pending = false;
   if (!sections.length) return;
-  const line = (bar?.getBoundingClientRect().bottom || 0) + 24;
+  // The tab bar is sticky under the app bar on wide screens and scrolls away on small ones.
+  let line = bar?.getBoundingClientRect().bottom || 0;
+  if (navBar && getComputedStyle(navBar).position === 'sticky') line = Math.max(line, navBar.getBoundingClientRect().bottom);
+  line += 24;
   const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
   let active = sections[0];
   for (const section of sections) if (section.getBoundingClientRect().top <= line) active = section;
