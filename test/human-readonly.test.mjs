@@ -47,3 +47,37 @@ test('a read-only task with no matched concept does not inherit a historical tes
   assert.equal(result.recap.touched,0);
   assert.equal(state.ledger.testing.exposures,20,'retain historical learning evidence');
 });
+
+test('wrapped prohibitions in the real memory retrieval prompt stay constraints',()=>{
+  const memoryPrompt = [
+    'Retrieve the recorded project decision DEC-HUMAN-RULES-20261014.',
+    '',
+    'Report the recorded decision, its reason, epistemic status and source',
+    'event ID. Distinguish recorded intent from verified implementation.',
+    'Do not invent any additional rationale.',
+    '',
+    'Do not modify files, record new memories, install dependencies,',
+    'execute project code or run tests.'
+  ].join('\n');
+  for (const lineEnding of ['\n','\r\n']) {
+    const input=memoryPrompt.replaceAll('\n',lineEnding);
+    const ids=detectConcepts(eventText({hook_event_name:'UserPromptSubmit',prompt:input}));
+    assert.equal(ids.includes('testing'),false);
+    const session={prompt:input,status:'complete',concepts:Object.fromEntries(ids.map(id=>[id,{events:1}])),touchedFiles:[]};
+    const result=buildLearningExperience({ledger:{}},session,'testing');
+    assert.equal(result.selectedConceptId,null);
+    assert.deepEqual(result.card.options,[]);
+  }
+});
+
+test('wrapped negative lists retain separate positive requests and tool evidence',()=>{
+  for (const prompt of [
+    'Do not edit files,\n  install dependencies or\nrun tests.',
+    'Never install dependencies and\nrun tests.'
+  ]) {
+    assert.equal(detectConcepts(eventText({prompt})).includes('testing'),false);
+    assert.equal(detectConcepts(eventText({prompt:prompt+'\nExplain the existing tests.'})).includes('testing'),true);
+    assert.equal(detectConcepts(eventText({prompt,tool_input:{command:'pytest tests/test_rules.py'}})).includes('testing'),true);
+  }
+  assert.equal(detectConcepts(eventText({prompt:'Do not modify files\nExplain the existing tests.'})).includes('testing'),true);
+});

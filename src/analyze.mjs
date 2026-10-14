@@ -20,7 +20,11 @@ export function eventText(event = {}) {
   return [
     // Prohibited actions are constraints, not topics observed in this turn.
     // This bounded sentence filter affects lesson suggestions only, never policy.
-    compactText(event.prompt, 8000).split(/(?<=[.!?])\s+|[\r\n]+/u)
+    compactText(event.prompt, 8000)
+      // A comma/conjunction continues the same list across a soft line break.
+      // Keep independent lines and blank paragraphs as separate instructions.
+      .replace(/(,|\b(?:and|or))[ \t]*\r?\n[ \t]*(?=\S)/giu, '$1 ')
+      .split(/(?<=[.!?])\s+|[\r\n]+/u)
       .filter(sentence => !/^\s*(?:do not|don['’]t|never|must not|no)\b/iu.test(sentence)).join('\n'),
     compactText(event.tool_input, 16000),
     compactText(event.error, 4000)
