@@ -46,6 +46,7 @@
   </div>
 
   <main class="shell">
+    <div id="connectionBanner" class="connection-banner" role="status" aria-live="polite" hidden></div>
     <section id="nowSection" class="now panel" aria-label="What is happening now">
       <article class="execution">
         <div class="eyebrow-row"><div class="status-wrap"><span id="statusDot" class="status-dot"></span><span id="status">Connecting to IdleProof Local</span></div><span id="window" class="chip">not loaded</span></div>
@@ -63,7 +64,7 @@
     </section>
 
     <section id="projectSection" class="panel global-project" aria-labelledby="globalProjectTitle">
-      <div class="section-head panel-head"><div><span class="mini-label">Project baseline + active task</span><h2 id="globalProjectTitle">Understand the whole selected project</h2></div><label class="view-switch">View <select id="scanView"><option value="guided">Guided</option><option value="technical">Technical</option></select></label></div>
+      <div class="section-head panel-head"><div><span class="mini-label">Project baseline + active task</span><h2 id="globalProjectTitle">Understand the whole selected project</h2></div><label class="view-switch">Scan view <select id="scanView"><option value="guided">Guided</option><option value="technical">Technical</option></select></label></div>
       <div class="panel-body">
         <p id="scanActiveTask" class="memory-intro">The current task remains visible above and within this project view.</p>
         <div class="scan-controls"><label>Source <select id="scanSource"><option value="HEAD">Committed Git snapshot</option><option value="WORKTREE">Current working files (separate snapshot)</option></select></label><label class="scan-documents">Selected documents (one exact path per line)<textarea id="scanDocuments" rows="2" placeholder="README.md&#10;docs/blueprint.md"></textarea></label><label class="scan-check"><input type="checkbox" id="scanCI"> Include .github/workflows only</label><div class="scan-actions"><button id="scanStart" type="button"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>Scan selected project</button><button id="scanCancel" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg>Pause</button><button id="scanResume" type="button"><svg class="icon" aria-hidden="true"><use href="#i-resume"/></svg>Resume</button></div></div>
@@ -140,6 +141,7 @@
             <div><span class="sub-label">Shared code hotspots</span><div id="projectHotspots" class="compact-list"><p class="empty">Hotspots emerge when multiple learned features share code.</p></div></div>
             <div><span class="sub-label">Feature review queue</span><div id="featureReviewQueue" class="compact-list"><p class="empty">Feature reviews appear as your project memory grows.</p></div></div>
           </div>
+          <p class="memory-intro model-note">Percentages are recall demonstrated by your answers. A feature without a correct answer shows no percentage.</p>
           <div id="memoryReviewChallenge" class="challenge memory-review-challenge hidden">
             <span class="challenge-kicker">Spaced feature recall · one tap</span>
             <h3 id="memoryReviewQuestion"></h3>

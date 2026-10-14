@@ -1,5 +1,9 @@
 let feedbackLock = null;
 let featureFeedbackLock = null;
+// Whether the last loaded state allows accepting the current change; false until state is known.
+let acceptAllowed = false;
+// Time of the last successful /api/state response; null until one arrives.
+let lastStateAt = null;
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[ch]));
@@ -266,7 +270,8 @@ function renderControlPlane(state) {
   const responsibility = control.responsibility || { ownerCoverage:0, responsibilityCoverage:0, obligations:[] };
   $('responsibilityCoverage').textContent = state.session ? `${responsibility.responsibilityCoverage || 0}%` : 'Not assessed'; $('ownerCoverage').textContent = state.session ? `${responsibility.ownerCoverage || 0}% owners mapped` : 'No ownership evidence yet';
   $('responsibilityText').textContent = responsibility.obligations?.length ? `${responsibility.obligations.length} high-risk ownership obligation${responsibility.obligations.length === 1 ? '' : 's'} remain.` : state.session?.status === 'complete' ? 'No uncovered high-risk ownership obligation.' : 'Ownership evidence becomes available after a completed change.';
-  $('acceptResponsibility').disabled = state.session?.status !== 'complete';
+  acceptAllowed = state.session?.status === 'complete';
+  $('acceptResponsibility').disabled = !acceptAllowed;
   renderDecision(control); renderTimeline(control);
 }
 
@@ -311,9 +316,30 @@ async function snoozeLesson(conceptId, minutes = 10) {
   catch (error) { feedbackLock = null; $('feedback').textContent = `Could not pause this lesson: ${error.message}`; }
 }
 
+function markConnected() {
+  lastStateAt = new Date();
+  document.body.dataset.connection = 'live';
+  const banner = $('connectionBanner'); if (banner) { banner.hidden = true; banner.textContent = ''; }
+}
+
+// A failed refresh must not leave earlier values looking current, nor leave engaging actions available.
+function markDisconnected() {
+  $('status').textContent = 'IdleProof disconnected'; $('integrityChip').textContent = 'offline'; $('integrityChip').className = 'chip chip-bad';
+  document.body.dataset.connection = lastStateAt ? 'stale' : 'offline';
+  const banner = $('connectionBanner');
+  if (banner) {
+    banner.hidden = false;
+    banner.textContent = lastStateAt
+      ? `IdleProof Local is not responding. Everything below is from the last update at ${lastStateAt.toLocaleTimeString()} and may be out of date.`
+      : 'IdleProof Local is not responding. No project state has been loaded yet.';
+  }
+  acceptAllowed = false; $('acceptResponsibility').disabled = true;
+  const approve = $('approveAction'); if (approve) approve.disabled = true;
+}
+
 async function poll() {
-  try { const state = await api('/api/state'); if (!feedbackLock && !featureFeedbackLock) render(state); }
-  catch { $('status').textContent = 'IdleProof disconnected'; $('integrityChip').textContent = 'offline'; $('integrityChip').className = 'chip chip-bad'; }
+  try { const state = await api('/api/state'); markConnected(); if (!feedbackLock && !featureFeedbackLock) render(state); }
+  catch { markDisconnected(); }
 }
 
 $('copyEvidence').addEventListener('click', async () => {
@@ -327,7 +353,7 @@ $('acceptResponsibility').addEventListener('click', async () => {
   const button = $('acceptResponsibility'); const before = button.textContent;
   try { button.disabled = true; button.textContent = 'binding acceptance…'; const result = await api('/api/responsibility/accept', { method:'POST', body:JSON.stringify({}) }); button.textContent = `accepted · ${result.responsibility.responsibilityCoverage}% covered`; await poll(); }
   catch { button.textContent = 'acceptance failed'; }
-  finally { setTimeout(() => { button.disabled = false; button.textContent = before; }, 1800); }
+  finally { setTimeout(() => { button.disabled = !acceptAllowed; button.textContent = before; }, 1800); }
 });
 
 poll();
