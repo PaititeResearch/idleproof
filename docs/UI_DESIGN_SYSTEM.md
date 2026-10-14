@@ -38,6 +38,43 @@ or the Local "DiffWitness Core" product tag (`.product-dw`).
 - Warning (`--warn`) marks things to review; danger (`--bad`) marks failures, denials and
   destructive actions. Paid actions (optional OpenRouter send) use the warning tone.
 
+## Health is not evidence
+
+A runtime guard, a recorder chain or a connection can be healthy; that never means the
+code is correct or that tests passed.
+
+- Health is shown as a **status light**: a dot or shield icon plus an explicit label,
+  for example "Runtime guard healthy", "guard health: ready" or "local trace verified".
+  It never uses a badge.
+- Evidence is shown as **badges**, such as VERIFIED, accepted proof, OBSERVED or
+  INFERRED.
+- Green may mark a healthy state, but the label always names what is healthy.
+
+## Absent data
+
+- Before data arrives, or when it cannot be read, show "not loaded".
+- When something was not checked, show "Not assessed".
+- When it was not measured, show "not measured".
+- Never show 0, 0% or a policy name as a placeholder, and never show a stale value as
+  current.
+
+## Structure and navigation
+
+- **App chrome.** Local has an app bar (mark, edition tag, project breadcrumb, privacy
+  and trace status) and section tabs that mark the section in view. Portal has a
+  sidebar grouped as Projects, Workspace and Help, with the Guided/Technical switch
+  under the navigation.
+- **Panels.** A panel has a header bar and a body. Never nest cards inside cards. Use
+  hairline grids for related cells: summary strips, the Under the hood strip, receipt
+  lanes.
+- **Receipt ledger** (Portal). Each receipt shows its signals in process order:
+  Protect first (while the agent worked), then Understand (IdleProof), then Prove and
+  Owe (DiffWitness). Each lane is marked with its tool colour.
+- **Readouts.** Metrics are label/value rows with tabular numbers. Activity reads as a
+  log. Identifiers use monospace.
+- **Icons.** One 16 px stroke set. Icons are decorative only: `aria-hidden`, always next
+  to a text label, and never inside a button whose text the script rewrites.
+
 ## Foundations
 
 - Themes: light and dark follow `prefers-color-scheme`; every colour is a token.
