@@ -7,6 +7,29 @@ import { createServer } from '../src/server.mjs';
 import { processHookEvent } from '../src/hook.mjs';
 import { mutateState } from '../src/state.mjs';
 
+test('dashboard keeps a shell read-only task neutral despite historical test exposure',async()=>{
+  const cwd=fs.mkdtempSync(path.join(os.tmpdir(),'idleproof-human-read-dashboard-'));
+  fs.writeFileSync(path.join(cwd,'rules.py'),'def adjusted(value):\n    return value\n');
+  processHookEvent({cwd,session_id:'human-read',hook_event_name:'UserPromptSubmit',prompt:'Read rules.py. Do not run tests.'});
+  processHookEvent({cwd,session_id:'human-read',hook_event_name:'PostToolUse',tool_name:'Bash',tool_input:{command:'nl -ba rules.py'},tool_response:{exit_code:0}});
+  mutateState(cwd,state=>{state.ledger.testing.exposures=20;return state;});
+  const {server,url}=await createServer({cwd,port:0});
+  try {
+    const state=await fetch(`${url}/api/state`).then(res=>res.json());
+    assert.equal(state.card.title,'Current task');
+    assert.equal(state.card.id,null);
+    assert.deepEqual(state.learning.concepts,[]);
+    assert.deepEqual(state.card.options,[]);
+    assert.deepEqual(state.session.touchedFiles,['rules.py']);
+    assert.equal(state.session.taskSignals.file,'rules.py');
+    assert.match(state.card.lesson,/current local contents separately/);
+    assert.doesNotMatch(state.card.lesson,/strongest test|testing topic/i);
+  } finally {
+    await new Promise(resolve=>server.close(resolve));
+    fs.rmSync(cwd,{recursive:true,force:true});
+  }
+});
+
 test('local dashboard serves state and records one-tap proof answers', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'idleproof-server-'));
   processHookEvent({ cwd, session_id: 'web', hook_event_name: 'UserPromptSubmit', prompt: 'Add authentication tests' });
@@ -73,7 +96,7 @@ test('feature mental model is public without its answer and feature check update
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ fingerprint: state.featureModel.fingerprint, choice: 0 })
     }).then((res) => res.json());
-    assert.equal(result.correct, true);
+    assert.equal(result.correct, true, JSON.stringify(result));
     assert.match(result.explanation, /Stripe/i);
     assert.ok(result.state.featureModel.fluency.confidence > 0);
     assert.ok(result.state.metrics.featureCoverage > 0);

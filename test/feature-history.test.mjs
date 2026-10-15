@@ -105,7 +105,7 @@ test('unsafe keys, cursors, duplicate JSON and symlink archives are rejected',()
     const item=state.features[key].lineageObservations.items[0],file=path.join(cwd,'.idleproof','feature-observations',key,item.id+'.json');
     for(const options of [{limit:0},{limit:101},{after:'../outside'}])assert.throws(()=>readFeatureHistory(cwd,key,options));
     assert.throws(()=>readFeatureHistory(cwd,'../outside'));assert.throws(()=>readFeatureObservation(cwd,key,'../outside'));
-    for(const args of [[],['--feature',key,'--feature',key],['--feature',key,'--limit','0'],['--feature',key,'--language','zz']])assert.throws(()=>featureHistoryCli(cwd,args));
+    for(const args of [[],['--feature',key,'--feature',key],['--feature',key,'--limit','0'],['--feature',key,'--language','zz'],['--feature',key,'--language','fr']])assert.throws(()=>featureHistoryCli(cwd,args));
     const original=fs.readFileSync(file,'utf8');fs.writeFileSync(file,original.replace('"schema":','"id":"forged","schema":'));
     assert.throws(()=>readFeatureObservation(cwd,key,item.id),/Corrupt/);
     if(process.platform!=='win32'){

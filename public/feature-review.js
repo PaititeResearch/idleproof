@@ -106,10 +106,11 @@ function installOptionalLiveCheck() {
     const nextKey = liveQuestion.textContent.trim();
     if (nextKey !== key) { key = nextKey; revealed = false; }
     const available = Boolean(nextKey && document.querySelector('#answers .answer'));
-    liveChallenge.hidden = available && !revealed;
+    liveChallenge.hidden = available ? !revealed : !document.querySelector('#answers button');
     button.hidden = !available || revealed;
   };
-  button.addEventListener('click', () => { revealed = true; sync(); liveQuestion.focus?.(); });
+  // The reveal button hides itself, so keyboard focus moves to the first answer instead of the page.
+  button.addEventListener('click', () => { revealed = true; sync(); liveChallenge.querySelector('#answers button')?.focus(); });
   new MutationObserver(sync).observe(liveChallenge, { childList:true, subtree:true, characterData:true });
   sync();
 }
@@ -132,16 +133,16 @@ function installOptionalFeatureCheck() {
     challenge.hidden=available && !revealed;
     button.hidden=!available || revealed;
   };
-  button.addEventListener('click',()=>{ revealed=true; sync(); });
+  button.addEventListener('click',()=>{ revealed=true; sync(); challenge.querySelector('.feature-answer')?.focus(); });
   new MutationObserver(sync).observe(challenge,{childList:true,subtree:true,characterData:true});
   sync();
 }
 
 function applyLocalEditionUi() {
   document.body.dataset.edition='local';
-  document.querySelector('#learningCard .mini-label')?.replaceChildren(document.createTextNode('LIVE PROJECT EXPLANATION'));
-  const liveKicker=document.querySelector('#learningCard .challenge-kicker'); if (liveKicker) liveKicker.textContent='OPTIONAL · CHECK YOUR UNDERSTANDING';
-  const evidenceKicker=document.querySelector('.evidence .mini-label'); if (evidenceKicker) evidenceKicker.textContent='LOCAL · SOURCE STAYS ON THIS MACHINE';
+  document.querySelector('#learningCard .mini-label')?.replaceChildren(document.createTextNode('Live project explanation'));
+  const liveKicker=document.querySelector('#learningCard .challenge-kicker'); if (liveKicker) liveKicker.textContent='Optional · check your understanding';
+  const evidenceKicker=document.querySelector('.evidence .mini-label'); if (evidenceKicker) evidenceKicker.textContent='Local · source leaves only with your approval';
   const footerFirst=document.querySelector('footer span'); if (footerFirst) footerFirst.textContent='IdleProof Local · understand what your coding agent is building';
 
   // Local is the immediate product: explain the current task and current feature map.
@@ -158,7 +159,7 @@ function applyLocalEditionUi() {
     const card=document.createElement('article');
     card.id='portalBoundary';
     card.className='panel';
-    card.innerHTML='<div class="section-head"><div><span class="mini-label">IDLEPROOF PORTAL · PRO</span><h2>Understand now. Remember later.</h2></div><span class="chip">long-term</span></div><p class="memory-intro">IdleProof Local explains the task in front of you. Portal adds persistent project history, Knowledge Debt over time, feature drift, spaced recall, multi-project visibility and proof/debt history — without requiring source code to leave this machine.</p>';
+    card.innerHTML='<div class="section-head"><div><span class="mini-label">DiffWitness Portal · Pro</span><h2>Understand now. Remember later.</h2></div><span class="chip">long-term</span></div><p class="memory-intro">IdleProof Local explains the task in front of you. DiffWitness Portal keeps what Local sends it across projects and devices: received changes with their proof and debt results, human learning checks and recorded project memory — without requiring source code to leave this machine.</p>';
     grid.appendChild(card);
   }
 }
@@ -167,3 +168,4 @@ applyLocalEditionUi();
 installOptionalLiveCheck();
 installOptionalFeatureCheck();
 // Longitudinal spaced-recall polling is intentionally not part of the Local cockpit.
+

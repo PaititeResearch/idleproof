@@ -61,13 +61,22 @@ function change(value) {
   return true;
 }
 
+// Core uses an empty string before the first journal event. Admit that sentinel
+// only for a wholly empty memory, never as an anchor for recorded assertions.
+export function emptyContinuityJournal(value) {
+  return value?.state?.eventHead === '' && value.state.structureTree === null
+    && ['objectives','tasks','decisions','invariants','failedApproaches','components',
+      'relations','knownDebt','recentRelatedChanges'].every(key =>
+      (key === 'tasks' && value[key] === undefined) || Array.isArray(value[key]) && value[key].length === 0);
+}
+
 export function validContext(value,{expectedTask}={}) {
   try {
     if (!object(value) || !boundedJson(value) || value.schema_version!=='continuity-context-1'
       || !matches(value.context_id,/^dwctx_[a-f0-9]{24}$/) || !text(value.generated_at,80)
       || !object(value.project) || !text(value.project.name,512) || !matches(value.project.fingerprint,/^dwrepo_[a-f0-9]{24}$/)
       || !text(value.task,16000) || expectedTask!==undefined && value.task!==expectedTask
-      || !object(value.state) || !hash(value.state.eventHead,/^[a-f0-9]{64}$/)
+      || !object(value.state) || !(hash(value.state.eventHead,/^[a-f0-9]{64}$/) || emptyContinuityJournal(value))
       || !hash(value.state.structureTree,/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/)
       || !object(value.trustBoundary) || value.trustBoundary.contextIsAdvisory!==true || value.trustBoundary.proofRemainsAuthoritative!==true) return false;
     for (const [key,kind] of [['objectives','objective'],['decisions','decision'],['invariants','invariant'],['failedApproaches','failed-approach'],['tasks','task']]) {
@@ -82,3 +91,4 @@ export function validContext(value,{expectedTask}={}) {
       && array(value.warnings,item=>text(item,4096),64);
   } catch { return false; }
 }
+

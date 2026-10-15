@@ -72,9 +72,10 @@ test('Core relocation links two exact retained observations without changing sta
   assert.equal(result.links[0].fromObservation,state.features[a].lineageObservations.items[0].id);
   assert.equal(result.transfersScores,false);assert.equal(result.transfersAssertionAuthority,false);
   assert.deepEqual(state,before);
-  assert.match(renderFeatureLineage(result,'fr'),/Filiation de fonctionnalités/);
   assert.match(renderFeatureLineage(result,'en'),/Feature lineage/);
-  assert.match(renderFeatureLineage(result,'fr'),/dwev_/);
+  assert.throws(()=>renderFeatureLineage(result,'fr'),/Only English/);
+  assert.match(renderFeatureLineage(result,'en'),/Feature lineage/);
+  assert.match(renderFeatureLineage(result,'en'),/dwev_/);
 });
 
 test('hash mismatch, missing history and corruption cannot inherit feature memory',()=>{
@@ -117,7 +118,7 @@ test('empty or incomplete imported views state coverage without claiming absence
   assert.match(renderFeatureLineage(empty),/retained observations/);
   const partial=view();partial.items[0].coverage.excluded_before=1;partial.items[0].coverage.complete=false;
   const result=queryFeatureLineage('.',state,a,b,{command:'dw',run:()=>output(partial)});
-  assert.equal(result.coverage.completeRetainedView,false);assert.match(renderFeatureLineage(result,'fr'),/limités/);
+  assert.equal(result.coverage.completeRetainedView,false);assert.match(renderFeatureLineage(result,'en'),/Limited/);
 });
 
 test('multiple retained snapshots are bounded without hiding omitted hypotheses',()=>{

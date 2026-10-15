@@ -310,6 +310,69 @@ test('resending the same measurement of a change adds no receipt; a new measurem
   } finally { cleanup(cwd); }
 });
 
+test('syncs after a measurement of the unchanged project add no receipt; a later change still does', async () => {
+  const { syncPortal } = await import('../src/portal-client.mjs');
+  const { syncPortalAssurance } = await import('../src/portal-assurance.mjs');
+  const cwd = configuredProject();
+  try {
+    const portal = portalEmulator();
+    // The change is synced, then the project state moves on before the change is measured (Core
+    // records the debt), so the measurement's receipt is the first to carry the current state.
+    assert.equal((await syncPortal(cwd, { fetchImpl:portal.fetchImpl })).ok, true);
+    const state = loadState(cwd);
+    state.sessions.second.touchedFiles = ['app.py', 'tests/test_app.py'];
+    saveState(cwd, state);
+    const measured = await syncPortalAssurance(cwd, envelopeFor(`dwchg_${'2'.repeat(24)}`, 8), { fetchImpl:portal.fetchImpl });
+    assert.equal(measured.ok, true);
+    assert.equal(portal.stored.size, 2);
+    // Repeated syncs without a change: Portal already holds this state, with its measurement.
+    const results = [];
+    for (let i = 0; i < 3; i += 1) results.push(await syncPortal(cwd, { fetchImpl:portal.fetchImpl }));
+    assert.deepEqual(results.map((r) => [r.ok, r.pending, r.errorCode ?? null]), [[true, 0, null], [true, 0, null], [true, 0, null]]);
+    assert.equal(portal.stored.size, 2);
+    // Another Portal never received the measurement: the same state is sent there.
+    const other = portalEmulator();
+    writePortalConfig(cwd, { endpoint:'http://127.0.0.1:8788/api/v1/snapshots', token:`ipd_${'z'.repeat(32)}` });
+    assert.equal((await syncPortal(cwd, { fetchImpl:other.fetchImpl })).ok, true);
+    assert.equal(other.stored.size, 1);
+    // Back on the first Portal, a new state is a new receipt.
+    writePortalConfig(cwd, { endpoint:'http://127.0.0.1:8787/api/v1/snapshots', token:`ipd_${'x'.repeat(32)}` });
+    const next = loadState(cwd);
+    next.sessions.third = { ...next.sessions.second, id:'third', lastEventAt:'2026-09-26T12:00:00.000Z', proof:{ changeId:`dwchg_${'4'.repeat(24)}`, diffSha256:'d'.repeat(64) } };
+    saveState(cwd, next);
+    assert.equal((await syncPortal(cwd, { fetchImpl:portal.fetchImpl })).ok, true);
+    assert.equal(portal.stored.size, 3);
+  } finally { cleanup(cwd); }
+});
+
+test('after a Portal restore the documented resynchronization sends the measured state again', async () => {
+  const { syncPortal } = await import('../src/portal-client.mjs');
+  const { syncPortalAssurance } = await import('../src/portal-assurance.mjs');
+  const { resyncPortalMemory } = await import('../src/portal-memory-sync.mjs');
+  const cwd = configuredProject();
+  try {
+    execFileSync('git', ['init', '-q'], { cwd });
+    execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'root'], { cwd });
+    const portal = portalEmulator();
+    assert.equal((await syncPortalAssurance(cwd, envelopeFor(`dwchg_${'2'.repeat(24)}`, 8), { fetchImpl:portal.fetchImpl })).ok, true);
+    assert.equal((await syncPortal(cwd, { fetchImpl:portal.fetchImpl })).ok, true);
+    assert.equal(portal.stored.size, 1);
+    // Portal is restored to a state that predates the measurement: same endpoint and credential.
+    const restored = portalEmulator();
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 0, 'the client cannot detect the restore by itself');
+    const emptyJournal = () => ({ ok:true, stdout:JSON.stringify({ schema_version:'project-event-page-1', journal:{ genesisHash:null, eventCount:0 }, after:0, events:[], next:0, head:null, hasMore:false }) });
+    const resync = resyncPortalMemory(cwd, { coreRunner:emptyJournal });
+    assert.equal(resync.ok, true);
+    assert.equal(resync.heldForgotten, 1);
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 1);
+    // And it is a duplicate, not a new receipt, wherever Portal still holds it.
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 1);
+  } finally { cleanup(cwd); }
+});
+
 test('the first saved state excludes .idleproof/ locally, even when a task runs before any identity command', () => {
   const cwd = tmp();
   try {

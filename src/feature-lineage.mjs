@@ -103,19 +103,17 @@ export function queryFeatureLineage(cwd,state,fromKey,toKey,{command=null,run=sp
 }
 
 export function renderFeatureLineage(result,language='en') {
-  if(!['en','fr'].includes(language)) throw new Error('Language must be en or fr.');
-  const tr=(en,fr)=>language==='fr'?fr:en;
-  const lines=[tr('Feature lineage: ','Filiation de fonctionnalités : ')+result.fromFeature+' → '+result.toFeature];
-  if(result.status!=='available') lines.push(tr('Unavailable: ','Indisponible : ')+result.reason);
+  if(language!=='en') throw new Error('Only English (en) output is supported.');
+  const lines=['Feature lineage: '+result.fromFeature+' → '+result.toFeature];
+  if(result.status!=='available') lines.push('Unavailable: '+result.reason);
   else {
     for(const link of result.links) lines.push(`[INFERRED] ${link.from} → ${link.to}`,
       `  ${link.source.event_id} · ${link.source.event_hash} · commit ${link.source.commit}`,
       `  ${link.fromObservation} → ${link.toObservation}`);
-    if(!result.links.length) lines.push(tr('No matching hypothesis in retained observations.','Aucune hypothèse correspondante dans les observations conservées.'));
-    if(!result.coverage.completeRetainedView) lines.push(tr('Limited retained history or result coverage; inspect --json.','Historique conservé ou résultats limités ; consulter --json.'));
+    if(!result.links.length) lines.push('No matching hypothesis in retained observations.');
+    if(!result.coverage.completeRetainedView) lines.push('Limited retained history or result coverage; inspect --json.');
   }
-  lines.push(tr('Inferred links between recorded snapshots. Current applicability requires confirmation; scores and authority remain separate.',
-    'Liens déduits entre observations enregistrées. Applicabilité actuelle à confirmer ; scores et autorité restent distincts.'));
+  lines.push('Inferred links between recorded snapshots. Current applicability requires confirmation; scores and authority remain separate.');
   return lines.join('\n');
 }
 
@@ -140,13 +138,13 @@ export function featureLineageCli(cwd,state,args) {
   for(let i=0;i<args.length;i++) {
     const arg=args[i];
     if(arg==='--json') { if(options.json) throw new Error('Duplicate --json.');options.json=true;continue; }
-    if(!['--from','--to','--language','--from-observation','--to-observation'].includes(arg)||args[i+1]===undefined) throw new Error('Usage: feature-lineage --from KEY --to KEY [--from-observation ID --to-observation ID] [--json] [--language en|fr]');
+    if(!['--from','--to','--language','--from-observation','--to-observation'].includes(arg)||args[i+1]===undefined) throw new Error('Usage: feature-lineage --from KEY --to KEY [--from-observation ID --to-observation ID] [--json] [--language en]');
     const key=arg.slice(2);
     if(options[key]!==undefined&&key!=='language') throw new Error('Duplicate lineage option.');
     if(key==='language'&&options.languageSeen) throw new Error('Duplicate language option.');
     options[key]=args[++i];if(key==='language') options.languageSeen=true;
   }
-  if(!['en','fr'].includes(options.language)) throw new Error('Language must be en or fr.');
+  if(options.language!=='en') throw new Error('Only English (en) output is supported.');
   const result=queryFeatureLineage(cwd,state,options.from,options.to,{fromObservation:options['from-observation']??null,toObservation:options['to-observation']??null});
   console.log(options.json?JSON.stringify(result,null,2):renderFeatureLineage(result,options.language));
   if(result.status!=='available') process.exitCode=2;

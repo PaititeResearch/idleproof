@@ -7,11 +7,12 @@ import { PACKAGE_ROOT, projectPaths } from './paths.mjs';
 import { computeMetrics, excludeLocalState, freshState, loadPersistedState, loadState, mutateState } from './state.mjs';
 import { repositoryFingerprint } from './change-identity.mjs';
 import { validatePortalIngestAck } from './portal-ingest-ack.mjs';
-import { assertPortalSnapshotSafe, buildPortalSnapshot, projectLocalId } from './portal-snapshot.mjs';
+import { assertPortalSnapshotSafe, buildPortalSnapshot, plainStateSnapshotId, projectLocalId } from './portal-snapshot.mjs';
 import { buildProjectModel } from './project-model.mjs';
 import { loadContinuityContext } from './continuity.mjs';
 import { taskContinuityQuery } from './task.mjs';
 import { withMemoryLock } from './portal-memory-lock.mjs';
+import { loadPortalStructureSummary } from './project-scan.mjs';
 
 const CONFIG_SCHEMA = 'idleproof.portal-config.v1';
 const DELIVERY_HEALTH_SCHEMA = 'idleproof.portal-delivery-health.v1';
@@ -118,6 +119,9 @@ export function buildPortalProjectModel(cwd, state, session, featureModel) {
   } catch { continuity=null; }
   let repoFingerprint=null;
   try { repoFingerprint=repositoryFingerprint(cwd); } catch {}
+  let structure=null;
+  try { structure=loadPortalStructureSummary(cwd); } catch {}
+  const checked=computeMetrics(state);
   return {
     repositoryFingerprint:repoFingerprint,
     stats:{
@@ -127,7 +131,10 @@ export function buildPortalProjectModel(cwd, state, session, featureModel) {
       boundaryNodes:Number(mental?.topology?.sharedBoundaries?.length || 0)
     },
     impact:{ blastRadius:Number(mental?.impact?.blastRadius || 0) },
-    continuity
+    continuity,
+    structure,
+    assessment:{schema:'idleproof.human-assessment.v1',conceptsChecked:checked.conceptsChecked,
+      conceptsSeen:checked.conceptsSeen,featuresChecked:checked.featuresChecked,featuresSeen:checked.featuresSeen}
   };
 }
 
@@ -344,6 +351,27 @@ function markHeldByPortal(cwd, config, snapshotId) {
   atomicJson(projectPaths(cwd).portalHeld, { schema:HELD_SCHEMA, entries:entries.slice(-MAX_HELD) });
 }
 
+// A measurement's receipt carries the project state with its assurance attached. Once a destination
+// holds it, that state without the assurance tells it nothing new: a later sync of the unchanged
+// project sends nothing there, instead of storing the same state as a second receipt.
+function markStateHeldWithAssurance(cwd, config, snapshot) {
+  if (snapshot?.assurance) markHeldByPortal(cwd, config, plainStateSnapshotId(snapshot));
+}
+
+// After a Portal restore the destination may no longer hold what it acknowledged before. The
+// documented resynchronization forgets those assumptions for the current destination, so later
+// syncs send the current state again; Portal answers "duplicate" for whatever it still holds.
+export function forgetHeldByPortal(cwd = process.cwd(), config = readPortalConfig(cwd)) {
+  if (!config?.enabled) return 0;
+  const destination = destinationKey(config);
+  return withQueueLock(cwd, () => {
+    const entries = readHeld(cwd);
+    const kept = entries.filter((item) => item.destination !== destination);
+    if (kept.length !== entries.length) atomicJson(projectPaths(cwd).portalHeld, { schema:HELD_SCHEMA, entries:kept });
+    return entries.length - kept.length;
+  });
+}
+
 function heldByDestination(cwd, config, snapshotId) {
   const destination = destinationKey(config);
   return readHeld(cwd).some((item) => item.destination === destination && item.snapshotId === snapshotId);
@@ -467,7 +495,7 @@ export async function flushPortalQueue(cwd = process.cwd(), { fetchImpl = global
     if (response.status === 409 && body?.error?.code === 'SNAPSHOT_CONFLICT') {
       // The rejected generatedAt is never recorded as reusable; this destination is marked as
       // already holding the content, so later unchanged syncs send nothing for it.
-      withQueueLock(cwd, () => { markHeldByPortal(cwd, config, snapshot.snapshotId); forgetSnapshotTime(cwd, snapshot); });
+      withQueueLock(cwd, () => { markHeldByPortal(cwd, config, snapshot.snapshotId); markStateHeldWithAssurance(cwd, config, snapshot); forgetSnapshotTime(cwd, snapshot); });
       removeQueuedSnapshot(cwd, snapshot.snapshotId);
       delivered += 1;
       heldByPortal += 1;
@@ -485,7 +513,7 @@ export async function flushPortalQueue(cwd = process.cwd(), { fetchImpl = global
       recordDeliveryError(cwd, errorCode);
       return { configured:true, attempted:delivered + 1, delivered, pending:readQueue(cwd).length, ok:false, httpStatus:response.status, errorCode };
     }
-    withQueueLock(cwd, () => rememberSnapshotTime(cwd, snapshot));
+    withQueueLock(cwd, () => { rememberSnapshotTime(cwd, snapshot); markStateHeldWithAssurance(cwd, config, snapshot); });
     removeQueuedSnapshot(cwd, snapshot.snapshotId);
     delivered += 1;
   }

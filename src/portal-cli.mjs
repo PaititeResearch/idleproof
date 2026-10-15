@@ -105,7 +105,7 @@ export async function runPortalCli(args, { cwd = process.cwd() } = {}) {
     if (!result) throw new Error('Usage: idleproof portal memory status|sync|resync [--json]');
     if (json) print(result, true);
     else if (sub === 'status') console.log(`Portal memory export: ${result.status}${result.statusCode ? ` (${result.statusCode})` : ''} · acknowledged through event ${result.next ?? 0}${result.pending ? ' · 1 page pending' : ''}`);
-    else if (sub === 'resync') console.log(result.ok ? `✓ Memory export restarts at event 0 · stream epoch ${result.epoch}` : `Memory resync unavailable · ${result.errorCode || result.status}`);
+    else if (sub === 'resync') console.log(result.ok ? `✓ Memory export restarts at event 0 · stream epoch ${result.epoch}${result.heldForgotten ? ` · ${result.heldForgotten} receipt(s) previously held by Portal will be sent again by the next sync` : ''}` : `Memory resync unavailable · ${result.errorCode || result.status}`);
     else console.log(result.ok ? `✓ Memory export ${result.status} · acknowledged through event ${result.next ?? 0} · ${result.acknowledged ?? 0} page(s) acknowledged`
       : `Memory export ${result.status} · ${result.errorCode || 'not acknowledged'} · acknowledged through event ${result.next ?? 0}; unacknowledged work is kept.`);
     if (sub !== 'status' && result.configured && result.ok === false) process.exitCode = 2;
@@ -140,6 +140,8 @@ export async function runPortalCli(args, { cwd = process.cwd() } = {}) {
     return true;
   }
   if (cmd === 'assurance') {
+    const source=argValue(args,'--source')||'manual';
+    if(!['manual','ide'].includes(source))throw new Error('Assurance source must be manual or ide.');
     const file=argValue(args,'--envelope');
     if (!file) throw new Error('Usage: idleproof portal assurance --envelope FILE');
     const envelope=readChangeEnvelope(file,cwd);
@@ -148,7 +150,7 @@ export async function runPortalCli(args, { cwd = process.cwd() } = {}) {
     // job of this change is settled. A receipt sent to an earlier enrollment and refused now settles nothing.
     const recorded=result.configured!==false && result.accepted===true;
     if (recorded) {
-      try { result.autoDebt=settleWithManualAssurance(cwd,result.changeId,{ snapshotId:result.snapshotId, softwareDebt:result.assurance?.softwareDebt, queueReason:result.queueReason }); }
+      try { result.autoDebt=settleWithManualAssurance(cwd,result.changeId,{ snapshotId:result.snapshotId, softwareDebt:result.assurance?.softwareDebt, queueReason:result.queueReason, source }); }
       catch (error) { result.autoDebt={ settled:false, errorCode:error?.code || 'IDLEPROOF_AUTO_DEBT_SETTLE_FAILED', message:String(error?.message || error).slice(0,300) }; }
     }
     if (!quiet) {

@@ -267,7 +267,7 @@ its cursor when more pages remain, then inspect:
 ```bash
 idleproof feature-lineage --list --json
 idleproof feature-lineage --from OLD_KEY --to NEW_KEY --json
-idleproof feature-lineage --from OLD_KEY --to NEW_KEY --language fr
+idleproof feature-lineage --from OLD_KEY --to NEW_KEY --language en
 ```
 
 Both features must already have source-bound observations captured during normal
@@ -427,7 +427,7 @@ read without changing state or contacting Portal:
 ```sh
 idleproof feature-lineage --list --json
 idleproof feature-history --feature FEATURE_KEY --limit 20 --json
-idleproof feature-history --feature FEATURE_KEY --after OBSERVATION_ID --language fr
+idleproof feature-history --feature FEATURE_KEY --after OBSERVATION_ID --language en
 idleproof feature-lineage --from OLD_KEY --to NEW_KEY --from-observation OLD_ID --to-observation NEW_ID --json
 ```
 
@@ -438,3 +438,7 @@ evidence. They do not transfer scores or prove that an old feature still applies
 Back up the complete `.idleproof` directory to retain this local history. Archive
 corruption or an unsupported filesystem publication fails visibly; it is not
 silently replaced. Removing an installed package does not erase the project files.
+
+## Initial global project baseline
+
+Run `idleproof project scan` before any task history, or use the cockpit's global project panel. See [GLOBAL_PROJECT_SCAN.md](docs/GLOBAL_PROJECT_SCAN.md) for selected documents, HEAD/WORKTREE, source citations, task memory, refresh and bounded Portal projection. Optional OpenRouter requires explicit local configuration and consent; the scan itself works offline.

@@ -194,12 +194,27 @@ export function isReviewDue(entry = {}) {
   return minutesSince(entry.lastAnsweredAt) >= nextReviewMinutes(entry.confidence || 0);
 }
 
-export function selectLearningCard(state = {}, session = {}, fallbackId = 'testing') {
-  const sessionIds = Object.keys(session?.concepts || {}).filter((id) => CONCEPT_BY_ID[id]);
-  const pool = sessionIds.length
-    ? sessionIds
-    : Object.keys(state.ledger || {}).filter((id) => CONCEPT_BY_ID[id] && state.ledger[id]?.exposures > 0);
-  if (!pool.length) return fallbackId;
+// Event text can include natural-language "select" or other coincidental words.
+// A database-specific learning recommendation needs a corroborating SQL file,
+// parsed data surface, or an explicit database task; otherwise it is misleading.
+export function sqlLessonSupported(session = {}) {
+  const signals = session?.taskSignals || {};
+  if (typeof signals.table === 'string' && signals.table.trim()) return true;
+  const paths = [signals.file, session.currentResource, ...(session.touchedFiles || [])].filter((value) => typeof value === 'string');
+  if (paths.some((file) => /(?:^|\/)(?:db|database|migrations?|repositories?|persistence)(?:\/|$)|\.sql$/i.test(file))) return true;
+  const prompt = String(session?.task?.anchor || session?.prompt || '');
+  return /\b(?:sql|transactions?|database|postgres(?:ql)?|sqlite|mysql)\b|\bselect\b[\s\S]{1,120}\bfrom\b|\binsert\s+into\b|\bupdate\s+\w+\s+set\b/i.test(prompt);
+}
+
+function applicableConcept(session, id) {
+  return id !== 'sql' || sqlLessonSupported(session);
+}
+
+export function selectLearningCard(state = {}, session = {}, fallbackId = null) {
+  const sessionIds = Object.keys(session?.concepts || {}).filter((id) => CONCEPT_BY_ID[id] && applicableConcept(session,id));
+  // Historical exposure and a caller's default are not evidence about this task.
+  const pool = sessionIds;
+  if (!pool.length) return null;
 
   const scored = pool.map((id) => {
     const concept = CONCEPT_BY_ID[id];
@@ -277,7 +292,7 @@ function conceptProgress(state, session, id) {
 }
 
 export function buildLearningJourney(state = {}, session = {}) {
-  const ids = Object.keys(session?.concepts || {});
+  const ids = Object.keys(session?.concepts || {}).filter(id => applicableConcept(session,id));
   const journey = ids.map((id) => conceptProgress(state, session, id)).filter(Boolean)
     .sort((a, b) => b.score - a.score || b.risk - a.risk);
   const mastered = journey.filter((item) => item.status === 'mastered');
@@ -299,13 +314,18 @@ export function buildLearningJourney(state = {}, session = {}) {
   };
 }
 
-export function buildLearningExperience(state = {}, session = {}, fallbackId = 'testing') {
+export function buildLearningExperience(state = {}, session = {}, fallbackId = null) {
   const cardId = selectLearningCard(state, session, fallbackId);
-  const concept = CONCEPT_BY_ID[cardId] || CONCEPT_BY_ID.testing;
+  const concept = CONCEPT_BY_ID[cardId];
   const journey = buildLearningJourney(state, session);
   return {
     ...journey,
     selectedConceptId: cardId,
-    card: buildContextualCard(concept, state, session)
+    card: concept ? buildContextualCard(concept, state, session) : {
+      id:null, title:'Current task', question:'', options:[], confidence:null,
+      context:{task:summarizeTask(session.prompt), phase:journey.phase,
+        file:journey.file, signals:session.taskSignals || null}
+    }
   };
 }
+

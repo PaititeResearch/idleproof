@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { projectPaths } from './paths.mjs';
 import { loadState } from './state.mjs';
 import { repositoryFingerprint } from './change-identity.mjs';
-import { readPortalConfig } from './portal-client.mjs';
+import { forgetHeldByPortal, readPortalConfig } from './portal-client.mjs';
 import { withMemoryLock } from './portal-memory-lock.mjs';
 import {
   PORTAL_FORBIDDEN_KEYS,
@@ -700,7 +700,10 @@ export function resyncPortalMemory(cwd = process.cwd(), { coreRunner = null } = 
     return { ...freshState(binding, journal, epoch), previous:current ? { journal:current.journal, epoch:current.epoch, next:current.next, status:current.status, statusCode:current.statusCode } : null };
   });
   if (!applied) return { configured:true, ok:false, status:'superseded', errorCode:'CONFIG_CHANGED' };
-  return { configured:true, ok:true, status:'active', journal:state.journal, epoch:state.epoch, next:0 };
+  // A resync follows a Portal restore: receipts this destination held may be gone, so none is
+  // assumed held any more and the next sync sends the current state again.
+  const heldForgotten = forgetHeldByPortal(cwd, config);
+  return { configured:true, ok:true, status:'active', journal:state.journal, epoch:state.epoch, next:0, heldForgotten };
 }
 
 // Status describes the export to the Portal enrollment configured now. A cursor saved for another

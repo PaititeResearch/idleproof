@@ -37,6 +37,8 @@ test('handoff gets a new explanation key and explicit proof boundary',()=>{
     assert.ok(result);
     assert.equal(result.phase,'handoff');
     assert.match(result.message,/does not claim the code is correct/i);
+    assert.match(result.message,/explains the observed activity/);
+    assert.doesNotMatch(result.message,/explains the observed change/);
     assert.match(result.message,/DiffWitness/);
   } finally { fs.rmSync(cwd,{recursive:true,force:true}); }
 });

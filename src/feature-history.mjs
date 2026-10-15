@@ -123,16 +123,16 @@ export function featureHistoryCli(cwd,args) {
   for(let i=0;i<args.length;i++){
     const arg=args[i];if(seen.has(arg))throw new Error('Duplicate history option.');seen.add(arg);
     if(arg==='--json'){opts.json=true;continue;}
-    if(!['--feature','--after','--limit','--language'].includes(arg)||args[i+1]===undefined)throw new Error('Usage: feature-history --feature KEY [--after ID] [--limit 1..100] [--json] [--language en|fr]');
+    if(!['--feature','--after','--limit','--language'].includes(arg)||args[i+1]===undefined)throw new Error('Usage: feature-history --feature KEY [--after ID] [--limit 1..100] [--json] [--language en]');
     opts[arg.slice(2)]=args[++i];
   }
-  if(!['en','fr'].includes(opts.language)||opts.limit!==undefined&&!/^[1-9][0-9]{0,2}$/.test(opts.limit))throw new Error('Invalid history language or limit.');
+  if(opts.language!=='en'||opts.limit!==undefined&&!/^[1-9][0-9]{0,2}$/.test(opts.limit))throw new Error('Invalid history language or limit.');
   const result=readFeatureHistory(cwd,opts.feature,{after:opts.after??null,limit:opts.limit===undefined?20:Number(opts.limit)});
   if(opts.json)console.log(JSON.stringify(result,null,2));
   else {
-    console.log(opts.language==='fr'?'Observations locales conservées (ordre des identifiants, pas chronologique)':'Retained local observations (ID order, not chronology)');
+    console.log('Retained local observations (ID order, not chronology)');
     for(const item of result.items)console.log(`${item.id} · ${item.anchor.entry} · sha256:${item.anchor.source_sha256}`);
-    console.log(opts.language==='fr'?'Historique antérieur inconnu ; aucune autorité ou note transférée.':'Earlier history unknown; no authority or score transferred.');
+    console.log('Earlier history unknown; no authority or score transferred.');
     if(result.next)console.log(`--after ${result.next}`);
   }
   if(result.status!=='available')process.exitCode=2;
