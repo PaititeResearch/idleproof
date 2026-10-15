@@ -451,6 +451,25 @@ await section('D1 recorder health is a labelled status light; product promises m
   await ui.close();
 });
 
+await section('D2 panel visibility is unchanged: displayed panels stay displayed, hidden ones stay hidden', async () => {
+  const ui = await open(completeUrl); await waitConnection(ui.page, 'live'); await ui.page.waitForTimeout(300);
+  const shown = await ui.page.evaluate(() => {
+    const visible = (el) => Boolean(el) && getComputedStyle(el).display !== 'none' && el.getClientRects().length > 0;
+    return {
+      featureMastery: visible(document.getElementById('featureFluency')?.closest('.metric')),
+      knowledgeDebt: visible(document.getElementById('debt')?.closest('.metric')),
+      conceptMastery: visible(document.getElementById('coverage')?.closest('.metric')),
+      impactAndModel: visible(document.querySelector('.project-intel-grid')),
+      projectMemory: visible(document.querySelector('.feature-memory-panel')),
+      conceptMap: visible(document.querySelector('.ledger-panel')),
+      spacedRecall: visible(document.getElementById('memoryReviewChallenge')),
+    };
+  });
+  check('D2 panel visibility is unchanged: displayed panels stay displayed, hidden ones stay hidden',
+    shown.featureMastery && shown.knowledgeDebt && shown.conceptMastery && shown.impactAndModel && !shown.projectMemory && !shown.conceptMap && !shown.spacedRecall, shown);
+  await ui.close();
+});
+
 // ---------- E. Layout, navigation and accessibility ----------
 const longProject = project({ long: true }); const longUrl = await serve(longProject);
 const WIDTHS = [320, 360, 390, 640, 759, 760, 761, 768, 1024, 1099, 1100, 1101, 1179, 1180, 1181, 1440];

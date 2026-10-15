@@ -102,9 +102,10 @@ endpoint are unchanged.
 - **0% for never-checked items.** The current feature map, hotspots, review queue,
   journey, project memory and concept map now show "Not assessed" when no check exists
   for that scope (`fluency.checks`, `featureMemory[].checks`,
-  `metrics.featuresChecked`, `metrics.conceptsChecked`). They show "no correct check
-  yet" when checks exist but none was answered correctly. The API still returns `0` in
-  both cases. A percentage appears only when it is above zero, or when the feature
+  `metrics.featuresChecked`, `metrics.conceptsChecked`). Since `744df6e`, when only a
+  project-wide count exists and the item's value is zero, they show "assessment
+  unavailable": a check elsewhere does not prove this item was checked. The API still
+  returns `0`. A percentage appears only when it is above zero, or when the feature
   itself has checks.
 - **Portal promise.** The Local card about Portal now lists what Portal actually keeps:
   received changes with their proof and debt results, human learning checks, and
@@ -115,9 +116,21 @@ endpoint are unchanged.
 
 `test/local-ui-state.test.mjs` covers each of these.
 
+## Later display fixes
+
+- `744df6e`: impact summaries use "tracked" instead of "learned" for the server's
+  known templates (paths and task text are never rewritten).
+- Candidate of 2026-10-15: runtime risk with no recorded agent activity reads "Not
+  assessed" instead of 0. See `UI_CANDIDATE_20261015.md`.
+
+## Panel visibility in the candidate of 2026-10-15
+
+Checked in Chromium on a completed task: the three metric cards, Change impact and
+Project mental model are still displayed; Project memory, the concept map and spaced
+recall are still hidden. Nothing was enabled or hidden by this candidate.
+
 ## Open items for the decision (not changed)
 
 1. Per element and per state (no session, active task, completed task, after checks),
    decide whether to show it in Local.
-2. Change impact still calls unchecked features "learned".
-3. Spaced recall is returned by the API but never rendered.
+2. Spaced recall is returned by the API but never rendered. It is not enabled.

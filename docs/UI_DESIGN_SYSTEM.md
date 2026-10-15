@@ -51,30 +51,58 @@ code is correct or that tests passed.
 - Green may mark a healthy state, but the label always names what is healthy.
 - Observation and receipt kinds (OBSERVED, "observed", "post-proof receipt") are
   neutral badges. Only VERIFIED or an accepted proof gets a green badge.
+- Operational states are status lights too: in Portal, project active, device
+  connected, repository bound, plan active and onboarding steps use `HealthLight`.
+- A favorable observation stays neutral wherever it appears: a debt budget that is not
+  exceeded, no new obligation reported, a snapshot within the freshness window. The
+  readiness matrix names it ("Within debt budget"); its aggregate reads "Bounded signals
+  aligned", never "Looks good".
 
 ## Connection and freshness
 
-Local polls `/api/state`. When a request fails:
+Local polls `/api/state` (one read at a time, 8 s deadline). When a read fails:
 
-- A banner under the section tabs says so. If an earlier state was loaded, it gives the
-  time of the last update and says the values below may be out of date. If not, it says
-  that no project state has been loaded yet.
+- A banner under the section tabs says what happened: Local is not responding, returned
+  an HTTP error, or returned a state the page could not read. If an earlier state was
+  rendered, the banner gives the date and time of that state and says the live-task
+  values may be out of date; the project scan keeps its own captured snapshot. If not,
+  it says that no project state has been loaded yet.
 - Panels are desaturated and their headers hatched, the live-agent pulse stops, and the
   status light turns neutral.
-- The next successful response removes the banner and the stale styling.
+- Data older than 10 s (for example after a suspended tab) is re-read before any action.
+  A pause message appears only if that read is slow.
+- The next successful read removes the banner and the stale styling. A late answer to
+  an abandoned read is ignored.
+
+## Refreshes keep what the reader is doing
+
+A refresh rewrites a container only when its content changed. Keyboard focus, open
+details and a click in progress survive the 1.5 s poll.
 
 ## Actions that commit the human
 
-"Accept current change" and "Approve" stay disabled until the state they act on is loaded
-and current. Acceptance is enabled only for a completed change. Both are disabled again
-as soon as a refresh fails.
+- "Accept current change" and "Approve" stay disabled until the state they act on is
+  loaded and current. Acceptance is enabled only for a completed change. Both are
+  disabled again as soon as a refresh fails, and stay locked until a read that started
+  after the request has settled.
+- One click sends one request. A request is never resent automatically.
+- The outcome says what is known: confirmed, refused by Local (with its reason), or
+  not confirmed (no answer, or no answer within 20 s: it may or may not be recorded).
+- A refresh never brings back an action that was already done: a confirmed approval
+  stays "approved once" for that decision event, and an accepted change reads
+  "accepted · accept again". A new block of the same action starts clean.
+- An action that a local approval let through once reads "allowed once by your
+  approval" in a neutral tone; it is neither a block nor a success.
 
 ## Absent data
 
 - Before data arrives, or when it cannot be read, show "not loaded".
 - When something was not checked, show "Not assessed".
-- When checks exist but none was answered correctly, show "no correct check yet". A
-  percentage appears only after at least one correct answer.
+- A project-wide check count does not show that a particular item was checked. When
+  only that count exists and the item's value is zero, show "assessment unavailable".
+  A per-item check count makes a zero a real "0%".
+- When nothing was recorded at all (for example no agent activity), a score reads "Not
+  assessed", not 0.
 - When it was not measured, show "not measured".
 - When a count or field is missing from a Portal record, show "not reported" or "Not
   available" for that field.
