@@ -7,6 +7,9 @@ const bar = document.querySelector('.topbar');
 const navBar = document.querySelector('.section-nav-bar');
 let current = null;
 let pending = false;
+// A tab the reader just chose stays current while its section is on screen, even when the page
+// cannot scroll far enough to bring a short last section up to the bar. Scrolling by hand releases it.
+let chosen = byId.has(location.hash.slice(1)) ? location.hash.slice(1) : null;
 
 function mark(id) {
   if (id === current) return;
@@ -33,6 +36,11 @@ function update() {
   let line = bar?.getBoundingClientRect().bottom || 0;
   if (navBar && getComputedStyle(navBar).position === 'sticky') line = Math.max(line, navBar.getBoundingClientRect().bottom);
   line += 24;
+  if (chosen) {
+    const box = document.getElementById(chosen)?.getBoundingClientRect();
+    if (box && box.bottom > line && box.top < window.innerHeight) { mark(chosen); return; }
+    chosen = null;
+  }
   const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
   let active = sections[0];
   for (const section of sections) if (section.getBoundingClientRect().top <= line) active = section;
@@ -43,6 +51,9 @@ function schedule() {
   if (!pending) { pending = true; requestAnimationFrame(update); }
 }
 
+for (const [id, link] of byId) link.addEventListener('click', () => { chosen = id; mark(id); });
+const release = () => { chosen = null; };
+for (const name of ['wheel', 'touchstart', 'keydown']) window.addEventListener(name, release, { passive: true });
 window.addEventListener('scroll', schedule, { passive: true });
 window.addEventListener('resize', schedule);
 window.addEventListener('hashchange', schedule);
