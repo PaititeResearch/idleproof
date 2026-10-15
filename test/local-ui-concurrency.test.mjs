@@ -255,3 +255,24 @@ test('no recorded agent activity leaves runtime risk not assessed; a recorded ze
   ui = harness([quiet]); await ui.settle();
   assert.equal(ui.get('runtimeRisk').textContent, '0');
 });
+
+test('an unconfirmed answer stays reported after the refresh of the same card', async () => {
+  const withCard = state({ session: { status: 'active', prompt: 'Task' }, card: { id: 'auth', question: 'Which?', options: ['a', 'b', 'c'] } });
+  const ui = harness([withCard, new Error('connection reset'), withCard, withCard]); await ui.settle();
+  await ui.context.submitAnswer('auth', 0); await ui.settle();
+  assert.match(ui.get('feedback').textContent, /was not confirmed/);
+  await ui.context.poll();
+  assert.match(ui.get('feedback').textContent, /was not confirmed/);
+  const next = structuredClone(withCard); next.card.id = 'sql';
+  ui.responses.push(next); await ui.context.poll();
+  assert.equal(ui.get('feedback').textContent, '');
+});
+
+test('a refused feature check keeps the server reason after the refresh of the same map', async () => {
+  const withMap = state({ featureModel: { fingerprint: 'fp-1', generatedFrom: { filesInspected: 1 }, fluency: { checks: 0 }, challenge: { question: 'Where?', options: ['x', 'y'] } } });
+  const refused = { ok: false, status: 409, json: async () => ({ error: 'Feature model changed; refresh before answering' }) };
+  const ui = harness([withMap, refused, withMap, withMap]); await ui.settle();
+  await ui.context.submitFeatureAnswer('fp-1', 0); await ui.settle(); await ui.context.poll();
+  assert.match(ui.get('featureFeedback').textContent, /Could not record feature check: Feature model changed/);
+  assert.equal(ui.document.body.dataset.connection, 'live');
+});

@@ -378,25 +378,31 @@ await section('B10 a slow answer during a task change does not bring the old tas
   await ui.close();
 });
 
-await section('B11 an answer without a reply is unconfirmed and does not claim Local is offline', async () => {
+await section('B11 an answer without a reply is unconfirmed, stays reported through refreshes, and does not claim Local is offline', async () => {
   const p = project({ deny: false, complete: false }); const url = await serve(p);
   const ui = await open(url, { before: (page) => page.route('**/api/answer', (route) => route.abort('connectionreset')) });
   await waitConnection(ui.page, 'live'); await ui.page.waitForTimeout(300);
   await ui.page.locator('#revealUnderstandingCheck').click().catch(() => {});
   await ui.page.locator('#answers .answer').first().click();
   await ui.page.waitForFunction(() => /was not confirmed/.test(document.getElementById('feedback').textContent));
-  await ui.page.waitForTimeout(1600);
-  check('B11 an answer without a reply is unconfirmed and does not claim Local is offline', (await connection(ui.page)) === 'live' && await ui.page.locator('#connectionBanner').isHidden(), { posts: ui.posts });
+  await ui.page.waitForTimeout(3200);
+  // The message survives the refreshes that follow, so the reader actually sees it.
+  const kept = await text(ui.page, '#feedback');
+  check('B11 an answer without a reply is unconfirmed, stays reported through refreshes, and does not claim Local is offline',
+    /was not confirmed/.test(kept) && (await connection(ui.page)) === 'live' && await ui.page.locator('#connectionBanner').isHidden(), { posts: ui.posts, kept });
   await ui.close();
 });
 
-await section('B12 a feature check refused because the map changed shows the server reason', async () => {
+await section('B12 a feature check refused because the map changed shows the server reason through refreshes', async () => {
   const ui = await open(completeUrl, { before: (page) => page.route('**/api/feature-answer', (route) => route.fulfill({ status: 409, contentType: 'application/json', body: '{"error":"Feature model changed; refresh before answering"}' })) });
   await waitConnection(ui.page, 'live'); await ui.page.waitForTimeout(300);
   await ui.page.getByText('check this feature map · optional').click();
   await ui.page.locator('.feature-answer').first().click();
   await ui.page.waitForFunction(() => /Feature model changed; refresh before answering/.test(document.getElementById('featureFeedback').textContent));
-  check('B12 a feature check refused because the map changed shows the server reason', await ui.page.locator('#connectionBanner').isHidden(), {});
+  await ui.page.waitForTimeout(3200);
+  const kept = await text(ui.page, '#featureFeedback');
+  check('B12 a feature check refused because the map changed shows the server reason through refreshes',
+    /Feature model changed/.test(kept) && await ui.page.locator('#connectionBanner').isHidden(), { kept });
   await ui.close();
 });
 
