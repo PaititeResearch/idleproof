@@ -345,6 +345,34 @@ test('syncs after a measurement of the unchanged project add no receipt; a later
   } finally { cleanup(cwd); }
 });
 
+test('after a Portal restore the documented resynchronization sends the measured state again', async () => {
+  const { syncPortal } = await import('../src/portal-client.mjs');
+  const { syncPortalAssurance } = await import('../src/portal-assurance.mjs');
+  const { resyncPortalMemory } = await import('../src/portal-memory-sync.mjs');
+  const cwd = configuredProject();
+  try {
+    execFileSync('git', ['init', '-q'], { cwd });
+    execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'root'], { cwd });
+    const portal = portalEmulator();
+    assert.equal((await syncPortalAssurance(cwd, envelopeFor(`dwchg_${'2'.repeat(24)}`, 8), { fetchImpl:portal.fetchImpl })).ok, true);
+    assert.equal((await syncPortal(cwd, { fetchImpl:portal.fetchImpl })).ok, true);
+    assert.equal(portal.stored.size, 1);
+    // Portal is restored to a state that predates the measurement: same endpoint and credential.
+    const restored = portalEmulator();
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 0, 'the client cannot detect the restore by itself');
+    const emptyJournal = () => ({ ok:true, stdout:JSON.stringify({ schema_version:'project-event-page-1', journal:{ genesisHash:null, eventCount:0 }, after:0, events:[], next:0, head:null, hasMore:false }) });
+    const resync = resyncPortalMemory(cwd, { coreRunner:emptyJournal });
+    assert.equal(resync.ok, true);
+    assert.equal(resync.heldForgotten, 1);
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 1);
+    // And it is a duplicate, not a new receipt, wherever Portal still holds it.
+    assert.equal((await syncPortal(cwd, { fetchImpl:restored.fetchImpl })).ok, true);
+    assert.equal(restored.stored.size, 1);
+  } finally { cleanup(cwd); }
+});
+
 test('the first saved state excludes .idleproof/ locally, even when a task runs before any identity command', () => {
   const cwd = tmp();
   try {

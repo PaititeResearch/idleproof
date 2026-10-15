@@ -358,6 +358,20 @@ function markStateHeldWithAssurance(cwd, config, snapshot) {
   if (snapshot?.assurance) markHeldByPortal(cwd, config, plainStateSnapshotId(snapshot));
 }
 
+// After a Portal restore the destination may no longer hold what it acknowledged before. The
+// documented resynchronization forgets those assumptions for the current destination, so later
+// syncs send the current state again; Portal answers "duplicate" for whatever it still holds.
+export function forgetHeldByPortal(cwd = process.cwd(), config = readPortalConfig(cwd)) {
+  if (!config?.enabled) return 0;
+  const destination = destinationKey(config);
+  return withQueueLock(cwd, () => {
+    const entries = readHeld(cwd);
+    const kept = entries.filter((item) => item.destination !== destination);
+    if (kept.length !== entries.length) atomicJson(projectPaths(cwd).portalHeld, { schema:HELD_SCHEMA, entries:kept });
+    return entries.length - kept.length;
+  });
+}
+
 function heldByDestination(cwd, config, snapshotId) {
   const destination = destinationKey(config);
   return readHeld(cwd).some((item) => item.destination === destination && item.snapshotId === snapshotId);
