@@ -470,6 +470,32 @@ await section('D2 panel visibility is unchanged: displayed panels stay displayed
   await ui.close();
 });
 
+// ---------- F. Optional OpenRouter interpretation, without a key (no paid call is possible) ----------
+await section('F1 OpenRouter: preview and refusals are explained, Send stays unavailable without a key, cancel answers, nothing leaves 127.0.0.1', async () => {
+  const outside = [];
+  const ui = await open(completeUrl, { before: (page) => page.on('request', (r) => { if (!/^http:\/\/127\.0\.0\.1:/.test(r.url())) outside.push(r.url()); }) });
+  await waitConnection(ui.page, 'live');
+  await ui.page.locator('#optionalAI > summary').click();
+  await ui.page.waitForFunction(() => !/^\s*$/.test(document.getElementById('aiStatus').textContent));
+  const status = await text(ui.page, '#aiStatus');
+  await ui.page.locator('#aiTestConnection').click();
+  await ui.page.waitForFunction((before) => document.getElementById('aiStatus').textContent !== before, status);
+  const tested = await text(ui.page, '#aiStatus');
+  await ui.page.locator('#aiPreviewButton').click();
+  await ui.page.waitForFunction(() => !/No preview prepared/.test(document.getElementById('aiPreview').textContent));
+  const preview = await text(ui.page, '#aiPreview');
+  const send = await ui.page.locator('#aiSend').isDisabled();
+  await ui.page.locator('#aiCancel').click();
+  await ui.page.waitForFunction(() => document.getElementById('aiResult').textContent.trim() !== '');
+  const cancelled = await text(ui.page, '#aiResult');
+  check('F1 OpenRouter: preview and refusals are explained, Send stays unavailable without a key, cancel answers, nothing leaves 127.0.0.1',
+    /Configure a dedicated capped key through the CLI/.test(status) && /No OpenRouter key is configured/.test(tested) && /Run a project scan first[\s\S]*Nothing was sent/.test(preview)
+      && ![status, tested, preview, cancelled].some((value) => /BYOK_/.test(value)) && send && /No request in progress\. Nothing was sent\./.test(cancelled)
+      && count(ui.posts, '/api/ai') === 3 && outside.length === 0,
+    { status, tested, preview, send, cancelled, posts: ui.posts, outside });
+  await ui.close();
+});
+
 // ---------- E. Layout, navigation and accessibility ----------
 const longProject = project({ long: true }); const longUrl = await serve(longProject);
 const WIDTHS = [320, 360, 390, 640, 759, 760, 761, 768, 1024, 1099, 1100, 1101, 1179, 1180, 1181, 1440];

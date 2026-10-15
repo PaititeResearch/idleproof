@@ -42,6 +42,14 @@ try {
   await page.locator('#scanMemoryCitations button').first().click();
   await page.waitForFunction(()=>document.querySelector('#scanMemoryCitations pre')?.textContent.includes('memory-event-detail-1'));
   results.push({check:'original Core declaration is directly navigable',status:'PASS'});
+  // Optional OpenRouter interpretation without a configured key: the preview shows exactly what would be sent,
+  // Send stays unavailable, and no request leaves the local server.
+  const outside=[];page.on('request',r=>{if(!r.url().startsWith(started.url))outside.push(r.url());});
+  await page.locator('#optionalAI > summary').click();await page.locator('#aiPreviewButton').click();
+  await page.waitForFunction(()=>/Context to send/.test(document.querySelector('#aiPreview')?.textContent||''));
+  assert.match(await page.locator('#aiPreview').innerText(),/files selected/);assert.equal(await page.locator('#aiSend').isDisabled(),true);
+  await page.locator('#aiCancel').click();await page.waitForFunction(()=>/Nothing was sent/.test(document.querySelector('#aiResult')?.textContent||''));
+  assert.deepEqual(outside,[]);results.push({check:'optional interpretation previews the scanned context; without a key nothing can be sent',status:'PASS'});
   await page.locator('#scanView').selectOption('technical');await page.screenshot({path:path.join(out,'cockpit.png'),fullPage:true});
   assert.deepEqual(errors,[]);assert.equal(fs.existsSync(path.join(p.cwd,'SCAN_MUST_NOT_EXECUTE')),false);
   results.push({check:'no browser error and no source execution',status:'PASS'});
