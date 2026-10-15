@@ -75,13 +75,17 @@ const hangUrl = `http://127.0.0.1:${hangServer.address().port}/`;
 // ---------- Browser helpers ----------
 const browser = await chromium.launch({ headless: true });
 cleanup.unshift(() => browser.close());
-async function open(url, { width = 1280, height = 900, scheme = 'light', before } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, colorScheme: scheme });
+// Machines without Inter (Ubuntu runners: DejaVu; Windows: Segoe UI) render wider text. The fallback pass
+// replaces the font stack for layout checks only; it needs a CSP bypass to add that one stylesheet.
+const FALLBACK_FONTS = ':root{--font-sans:"DejaVu Sans","Liberation Sans",sans-serif !important;--font-mono:"DejaVu Sans Mono",monospace !important}';
+async function open(url, { width = 1280, height = 900, scheme = 'light', before, fallbackFonts = false } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, colorScheme: scheme, bypassCSP: fallbackFonts });
   const page = await context.newPage();
   const errors = []; page.on('pageerror', (error) => { errors.push(error.message); pageErrors.push(error.message); });
   const posts = []; page.on('request', (request) => { if (request.method() === 'POST') posts.push(new URL(request.url()).pathname); });
   if (before) await before(page);
   await page.goto(url);
+  if (fallbackFonts) await page.addStyleTag({ content: FALLBACK_FONTS });
   return { page, errors, posts, close: () => context.close() };
 }
 const connection = (page) => page.evaluate(() => document.body.dataset.connection);
@@ -475,8 +479,10 @@ await section('F1 OpenRouter: preview and refusals are explained, Send stays una
   const outside = [];
   const ui = await open(completeUrl, { before: (page) => page.on('request', (r) => { if (!/^http:\/\/127\.0\.0\.1:/.test(r.url())) outside.push(r.url()); }) });
   await waitConnection(ui.page, 'live');
+  const initial = await ui.page.locator('#aiStatus').textContent();
   await ui.page.locator('#optionalAI > summary').click();
-  await ui.page.waitForFunction(() => !/^\s*$/.test(document.getElementById('aiStatus').textContent));
+  // Opening the panel replaces the static text with the status read from Local.
+  await ui.page.waitForFunction((before) => document.getElementById('aiStatus').textContent !== before, initial);
   const status = await text(ui.page, '#aiStatus');
   await ui.page.locator('#aiTestConnection').click();
   await ui.page.waitForFunction((before) => document.getElementById('aiStatus').textContent !== before, status);
@@ -499,22 +505,27 @@ await section('F1 OpenRouter: preview and refusals are explained, Send stays una
 // ---------- E. Layout, navigation and accessibility ----------
 const longProject = project({ long: true }); const longUrl = await serve(longProject);
 const WIDTHS = [320, 360, 390, 640, 759, 760, 761, 768, 1024, 1099, 1100, 1101, 1179, 1180, 1181, 1440];
-for (const scheme of ['light', 'dark']) {
-  await section(`E1 ${scheme}: no sideways scroll, every tab reachable, no overlap, at ${WIDTHS.join('/')} px`, async () => {
+for (const [scheme, fallbackFonts] of [['light', false], ['dark', false], ['light', true]]) {
+  const label = `${scheme}${fallbackFonts ? ', fallback fonts' : ''}`;
+  await section(`E1 ${label}: no sideways scroll or content wider than its box, every tab reachable, no overlap, at ${WIDTHS.join('/')} px`, async () => {
     const failures = [];
     for (const width of WIDTHS) {
-      const ui = await open(longUrl, { width, height: 900, scheme }); await waitConnection(ui.page, 'live'); await ui.page.waitForTimeout(250);
+      const ui = await open(longUrl, { width, height: 900, scheme, fallbackFonts }); await waitConnection(ui.page, 'live'); await ui.page.waitForTimeout(250);
       const layout = await ui.page.evaluate(() => {
         const vw = document.documentElement.clientWidth; const sw = document.documentElement.scrollWidth;
         const tabs = [...document.querySelectorAll('.section-nav a')].map((a) => { const r = a.getBoundingClientRect(); return { left: r.left, right: r.right, height: r.height }; });
         const brand = document.querySelector('.brand').getBoundingClientRect(); const meta = document.querySelector('.top-meta').getBoundingClientRect();
-        return { vw, sw, tabs: tabs.length, clipped: tabs.filter((t) => t.left < 0 || t.right > vw + 0.5 || t.height === 0).length, overlap: brand.right > meta.left + 0.5 };
+        // Content wider than a box that does not scroll or clip it spills over its border.
+        const spill = [...document.querySelectorAll('body *')].filter((el) => el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1
+          && getComputedStyle(el).overflowX === 'visible' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))
+          .map((el) => `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}.${String(el.className).split(' ')[0]} ${el.scrollWidth}>${el.clientWidth}`).slice(0, 5);
+        return { vw, sw, tabs: tabs.length, clipped: tabs.filter((t) => t.left < 0 || t.right > vw + 0.5 || t.height === 0).length, overlap: brand.right > meta.left + 0.5, spill };
       });
-      if (layout.sw > layout.vw || layout.clipped || layout.tabs !== 7 || layout.overlap) failures.push({ width, ...layout });
-      if ([360, 768, 1440].includes(width)) await ui.page.screenshot({ path: path.join(out, 'screenshots', `e1-${scheme}-${width}.png`), fullPage: false });
+      if (layout.sw > layout.vw || layout.clipped || layout.tabs !== 7 || layout.overlap || layout.spill.length) failures.push({ width, ...layout });
+      if ([320, 360, 768, 1440].includes(width)) await ui.page.screenshot({ path: path.join(out, 'screenshots', `e1-${scheme}${fallbackFonts ? '-fallback' : ''}-${width}.png`), fullPage: false });
       await ui.close();
     }
-    check(`E1 ${scheme}: no sideways scroll, every tab reachable, no overlap, at ${WIDTHS.join('/')} px`, failures.length === 0, { failures });
+    check(`E1 ${label}: no sideways scroll or content wider than its box, every tab reachable, no overlap, at ${WIDTHS.join('/')} px`, failures.length === 0, { failures });
   });
 }
 
