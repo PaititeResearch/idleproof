@@ -271,6 +271,11 @@ function stableSnapshotId(snapshot) {
   return `ipsnap_${digest(canonical(stable)).slice(0,24)}`;
 }
 
+// The identity the same project state has as a plain sync, without the assurance attached to it.
+export function plainStateSnapshotId(snapshot) {
+  return stableSnapshotId({...snapshot,assurance:null});
+}
+
 function fitContinuitySnapshotBudget(snapshot) {
   const memory=snapshot.projectMemory?.continuity;
   if (!memory || Buffer.byteLength(JSON.stringify(snapshot),'utf8')<=MAX_SNAPSHOT_BYTES) return;
