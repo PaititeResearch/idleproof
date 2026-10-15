@@ -11,7 +11,17 @@ let statePoll = null;
 let acceptanceBusy = false;
 let approvalBusy = false;
 let approvalFingerprint = null;
+// Identity of the decision event the approve button belongs to, and what happened to our request for it.
+let approvalKey = null;
+let approvalOutcome = null;
 let acceptanceSequence = 0;
+// Committing requests that never answer are reported as unconfirmed instead of staying locked forever.
+const ACTION_TIMEOUT_MS = 20000;
+const CHECKING_BANNER_DELAY_MS = 600;
+let checkingTimer = null;
+// Label of the acceptance button derived from the loaded state; a transient result message wins briefly.
+let acceptLabel = 'accept current change';
+let acceptMessage = null;
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[ch]));
@@ -28,11 +38,34 @@ const recallText = (value, anyChecks) => {
   return Number.isFinite(n) && n > 0 ? `${Math.round(n)}%` : 'assessment unavailable';
 };
 const recallMeter = (className, value, label) => Number(value) > 0 ? meter(className, value, label) : '<span class="meter-empty" aria-hidden="true"></span>';
+// Rewriting identical markup on every poll drops keyboard focus, open details and clicks in progress.
+// Containers are only rewritten when their markup changes; callers that alter rendered children forget it.
+const renderedHtml = new WeakMap();
+function patchHtml(el, html) {
+  if (!el || renderedHtml.get(el) === html) return false;
+  el.innerHTML = html; renderedHtml.set(el, html); return true;
+}
+const forgetHtml = (el) => { if (el) renderedHtml.delete(el); };
 
+// An HTTP error is an answer from IdleProof Local (error.status is set); a thrown fetch is not.
 async function api(path, options = {}) {
   const res = await fetch(path, { ...options, headers: { 'content-type': 'application/json', ...(options.headers || {}) } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try { const body = await res.json(); const detail = typeof body?.error === 'string' ? body.error : body?.error?.message; if (detail) message = String(detail); } catch {}
+    const error = new Error(message); error.status = res.status; throw error;
+  }
+  // A body that is not JSON was answered but cannot be read; a cut connection stays a network error.
+  try { return await res.json(); }
+  catch (error) { if (error instanceof SyntaxError) throw Object.assign(new Error('Response is not readable JSON'), { unreadable: true }); throw error; }
+}
+
+// Committing request with a deadline. A timeout is an uncertain outcome, never a refusal.
+async function commitRequest(path, body) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ACTION_TIMEOUT_MS);
+  try { return await api(path, { method: 'POST', body: JSON.stringify(body), signal: controller.signal }); }
+  finally { clearTimeout(timer); }
 }
 
 function riskLabel(card = {}) {
@@ -51,9 +84,9 @@ function resumeLabel(value) {
 
 function renderFiles(session) {
   const files = session?.touchedFiles || [];
-  $('files').innerHTML = files.length
+  patchHtml($('files'), files.length
     ? files.slice(-10).reverse().map((file) => `<div class="file-row"><span>${escapeHtml(file)}</span><span>touched</span></div>`).join('')
-    : '<p class="empty">No files observed yet.</p>';
+    : '<p class="empty">No files observed yet.</p>');
   const changed = session?.changed || { added: 0, deleted: 0 };
   $('linesChanged').textContent = `+${changed.added || 0} −${changed.deleted || 0}`;
 }
@@ -61,25 +94,25 @@ function renderFiles(session) {
 function renderFindings(session) {
   const findings = session?.findings || [];
   $('findingCount').textContent = findings.length;
-  $('findings').innerHTML = findings.length
+  patchHtml($('findings'), findings.length
     ? findings.slice(0, 7).map((f) => `<div class="finding ${escapeHtml(f.severity)}"><strong>${escapeHtml(f.title)}</strong><p>${escapeHtml(f.message)}</p></div>`).join('')
-    : `<p class="empty">${session?.status === 'complete' ? 'No narrow deterministic rule fired on this diff. This is not a guarantee of safety.' : 'Checks appear when the agent completes a turn.'}</p>`;
+    : `<p class="empty">${session?.status === 'complete' ? 'No narrow deterministic rule fired on this diff. This is not a guarantee of safety.' : 'Checks appear when the agent completes a turn.'}</p>`);
 }
 
 function renderLedger(ledger) {
   const rows = Object.values(ledger || {}).sort((a,b) => (b.risk * b.exposures * (100 - b.confidence)) - (a.risk * a.exposures * (100 - a.confidence)));
-  $('ledger').innerHTML = rows.length
+  patchHtml($('ledger'), rows.length
     ? rows.slice(0, 8).map((entry) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(entry.title)}</span><span class="ledger-risk">×${entry.exposures} · r${entry.risk}</span>${recallMeter('ledger-meter', entry.confidence, `${entry.confidence}% confidence`)}</div>`).join('')
-    : '<p class="empty">Concepts appear as the coding agent touches your codebase.</p>';
+    : '<p class="empty">Concepts appear as the coding agent touches your codebase.</p>');
 }
 
 function renderJourney(state) {
   const concepts = state.learning?.concepts || [];
   const complete = state.session?.status === 'complete';
   const visible = concepts.slice(0, complete ? 6 : 3);
-  $('learningJourney').innerHTML = visible.length
+  patchHtml($('learningJourney'), visible.length
     ? visible.map((item) => `<div class="ledger-row"><span class="ledger-title">${escapeHtml(item.title)}</span><span class="ledger-risk">${escapeHtml(item.status)} · ${recallText(item.confidence, state.metrics?.conceptsChecked)}</span>${recallMeter('ledger-meter', item.confidence, `${item.confidence}% mastery`)}</div>`).join('')
-    : '<p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p>';
+    : '<p class="empty">The task knowledge map will appear as the agent reveals relevant concepts.</p>');
 }
 
 function renderLearning(state) {
@@ -96,7 +129,7 @@ function renderLearning(state) {
     $('cardWhy').textContent = 'The project scan is available above. No agent activity has been observed in this installation.';
     $('cardLesson').textContent = '';
     $('question').textContent = '';
-    $('answers').innerHTML = '';
+    patchHtml($('answers'), '');
     $('feedback').textContent = '';
     renderJourney(state);
     return;
@@ -111,9 +144,10 @@ function renderLearning(state) {
     $('cardWhy').textContent = 'You chose “not now”. IdleProof does not count that as a wrong answer or reduce your mastery.';
     $('cardLesson').textContent = 'The agent can keep working. A useful lesson returns when context changes or the snooze expires.';
     $('question').textContent = '';
-    $('answers').innerHTML = first ? '<button class="text-button" id="resumeLesson" type="button">resume learning now</button>' : '';
+    if (patchHtml($('answers'), first ? `<button class="text-button" id="resumeLesson" type="button" data-concept="${escapeHtml(first)}">resume learning now</button>` : '')) {
+      $('resumeLesson')?.addEventListener('click', () => snoozeLesson(first, 0));
+    }
     $('feedback').textContent = '';
-    $('resumeLesson')?.addEventListener('click', () => snoozeLesson(first, 0));
     renderJourney(state);
     return;
   }
@@ -129,11 +163,13 @@ function renderLearning(state) {
   $('cardLesson').textContent = card.lesson || '';
   $('question').textContent = card.id ? card.question || 'What should you understand about this task?' : '';
   if (!feedbackLock || feedbackLock !== card.id) $('feedback').textContent = '';
-  const choices = (card.options || []).map((option, index) => `<button class="answer" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
-  const snooze = card.id ? '<button class="text-button" id="snoozeLesson" type="button">not now · 10 min</button>' : '';
-  $('answers').innerHTML = `${choices}${snooze}`;
-  document.querySelectorAll('#answers .answer').forEach((button) => button.addEventListener('click', () => submitAnswer(card.id, Number(button.dataset.choice))));
-  $('snoozeLesson')?.addEventListener('click', () => snoozeLesson(card.id, 10));
+  const concept = escapeHtml(card.id || '');
+  const choices = (card.options || []).map((option, index) => `<button class="answer" type="button" data-concept="${concept}" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
+  const snooze = card.id ? `<button class="text-button" id="snoozeLesson" type="button" data-concept="${concept}">not now · 10 min</button>` : '';
+  if (patchHtml($('answers'), `${choices}${snooze}`)) {
+    document.querySelectorAll('#answers .answer').forEach((button) => button.addEventListener('click', () => submitAnswer(card.id, Number(button.dataset.choice))));
+    $('snoozeLesson')?.addEventListener('click', () => snoozeLesson(card.id, 10));
+  }
   renderJourney(state);
 }
 
@@ -154,13 +190,13 @@ function driftDetails(drift = {}) {
 
 function renderFeatureMemory(memory = []) {
   $('featureMemoryCount').textContent = `${memory.length} tracked`;
-  $('featureMemory').innerHTML = memory.length ? memory.map((item) => {
+  patchHtml($('featureMemory'), memory.length ? memory.map((item) => {
     const story = (item.story || []).slice(0, 4).map((step) => escapeHtml(step.label)).join(' → ');
     const surfaces = [...(item.surfaces?.technologies || []).slice(0, 2), ...(item.surfaces?.routes || []).slice(0, 1), ...(item.surfaces?.tables || []).slice(0, 1)];
     const status = item.needsRefresh ? '<span class="refresh-badge">refresh</span>' : `<span>${item.checks > 0 ? `${item.confidence || 0}% fluent` : 'not assessed'}</span>`;
     const drift = item.needsRefresh && item.drift?.summary ? `<div class="memory-drift">${escapeHtml(item.drift.summary)}</div>` : '';
     return `<article class="memory-card ${item.needsRefresh ? 'needs-refresh' : ''}"><div class="memory-top"><strong>${escapeHtml(item.task || 'Previous feature')}</strong>${status}</div><p>${story || 'Feature structure captured from a completed task.'}</p>${drift}<div class="memory-tags">${surfaces.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div>${item.checks > 0 ? meter('memory-meter', item.confidence || 0, `${item.confidence || 0}% fluent`) : ''}</article>`;
-  }).join('') : '<p class="empty">Completed feature tasks will accumulate here and become spaced-review material.</p>';
+  }).join('') : '<p class="empty">Completed feature tasks will accumulate here and become spaced-review material.</p>');
 }
 
 function renderFeatureModel(state) {
@@ -176,9 +212,9 @@ function renderFeatureModel(state) {
     $('currentFeatureFluency').textContent = 'Not assessed';
     $('featureDisclaimer').textContent = 'IdleProof will build a bounded static map once the agent touches project-local code.';
     $('featureDrift').className = 'drift-banner hidden';
-    $('featureStory').innerHTML = '<p class="empty">No connected feature structure observed yet.</p>';
-    $('featureSurfaces').innerHTML = '';
-    $('featureRiskNotes').innerHTML = '';
+    patchHtml($('featureStory'), '<p class="empty">No connected feature structure observed yet.</p>');
+    patchHtml($('featureSurfaces'), '');
+    patchHtml($('featureRiskNotes'), '');
     $('featureExplainBack').className = 'explain-back hidden';
     $('featureChallenge').className = 'challenge feature-challenge hidden';
     return;
@@ -190,34 +226,36 @@ function renderFeatureModel(state) {
 
   if (model.drift?.changed) {
     $('featureDrift').className = `drift-banner ${escapeHtml(model.drift.level || 'minor')}`;
-    $('featureDrift').innerHTML = `<div><span>${model.drift.preview ? 'LIVE MENTAL MODEL DRIFT' : 'MENTAL MODEL DRIFT'} · ${escapeHtml((model.drift.level || 'changed').toUpperCase())}</span><strong>${escapeHtml(model.drift.summary || 'Feature structure changed.')}</strong></div><div class="drift-tokens">${driftDetails(model.drift)}</div>`;
+    patchHtml($('featureDrift'), `<div><span>${model.drift.preview ? 'LIVE MENTAL MODEL DRIFT' : 'MENTAL MODEL DRIFT'} · ${escapeHtml((model.drift.level || 'changed').toUpperCase())}</span><strong>${escapeHtml(model.drift.summary || 'Feature structure changed.')}</strong></div><div class="drift-tokens">${driftDetails(model.drift)}</div>`);
   } else {
     $('featureDrift').className = 'drift-banner hidden';
-    $('featureDrift').innerHTML = '';
+    patchHtml($('featureDrift'), '');
   }
 
   const story = model.story || [];
-  $('featureStory').innerHTML = story.length ? story.map((step, index) => storyStep(step, index === story.length - 1 ? -1 : index)).join('') : '<p class="empty">IdleProof sees code, but not enough connected structure to tell a useful feature story yet.</p>';
+  patchHtml($('featureStory'), story.length ? story.map((step, index) => storyStep(step, index === story.length - 1 ? -1 : index)).join('') : '<p class="empty">IdleProof sees code, but not enough connected structure to tell a useful feature story yet.</p>');
   const surfaces = [
     ...(model.surfaces?.routes || []).slice(0, 4).map((v) => ['route', v]),
     ...(model.surfaces?.technologies || []).slice(0, 4).map((v) => ['external', v]),
     ...(model.surfaces?.tables || []).slice(0, 4).map((v) => ['data', v]),
     ...(model.tests || []).slice(0, 3).map((v) => ['test', v])
   ];
-  $('featureSurfaces').innerHTML = surfaces.map(([type, value]) => surfaceChip(type, value)).join('');
-  $('featureRiskNotes').innerHTML = (model.riskNotes || []).map((note) => `<p>↳ ${escapeHtml(note)}</p>`).join('');
+  patchHtml($('featureSurfaces'), surfaces.map(([type, value]) => surfaceChip(type, value)).join(''));
+  patchHtml($('featureRiskNotes'), (model.riskNotes || []).map((note) => `<p>↳ ${escapeHtml(note)}</p>`).join(''));
 
   if (model.explainBack) {
     $('featureExplainBack').className = 'explain-back';
-    $('featureExplainBack').innerHTML = `<span>60-SECOND EXPLAIN-BACK</span><p>${escapeHtml(model.explainBack)}</p>`;
+    patchHtml($('featureExplainBack'), `<span>60-SECOND EXPLAIN-BACK</span><p>${escapeHtml(model.explainBack)}</p>`);
   } else $('featureExplainBack').className = 'explain-back hidden';
 
   if (model.challenge) {
     $('featureChallenge').className = 'challenge feature-challenge';
     $('featureQuestion').textContent = model.challenge.question;
     if (!featureFeedbackLock || featureFeedbackLock !== model.fingerprint) $('featureFeedback').textContent = '';
-    $('featureAnswers').innerHTML = (model.challenge.options || []).map((option, index) => `<button class="answer feature-answer" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
-    document.querySelectorAll('.feature-answer').forEach((button) => button.addEventListener('click', () => submitFeatureAnswer(model.fingerprint, Number(button.dataset.choice))));
+    const fingerprint = escapeHtml(model.fingerprint || '');
+    if (patchHtml($('featureAnswers'), (model.challenge.options || []).map((option, index) => `<button class="answer feature-answer" type="button" data-fingerprint="${fingerprint}" data-choice="${index}">${escapeHtml(option)}</button>`).join(''))) {
+      document.querySelectorAll('.feature-answer').forEach((button) => button.addEventListener('click', () => submitFeatureAnswer(model.fingerprint, Number(button.dataset.choice))));
+    }
   } else $('featureChallenge').className = 'challenge feature-challenge hidden';
 }
 
@@ -231,20 +269,24 @@ function renderProjectModel(state) {
     .replace(/^(This task's observed feature surface overlaps \d+ other )learned (features?\b)/, '$1tracked $2')
     .replace(/^No other learned feature currently overlaps/, 'No other tracked feature currently overlaps')
     || 'IdleProof will compare touched files with previously captured feature models.';
-  $('impactFeatures').innerHTML = impact.otherFeatures?.length ? impact.otherFeatures.slice(0, 6).map((item) => {
+  patchHtml($('impactFeatures'), impact.otherFeatures?.length ? impact.otherFeatures.slice(0, 6).map((item) => {
     const shared = (item.sharedFiles || []).map((entry) => `${entry.role} · ${entry.file}`).join(' · ');
     const status = item.needsRefresh || item.confidence < 60 ? 'review recommended' : `${item.confidence}% fluent`;
     return `<article class="impact-card ${item.needsRefresh || item.confidence < 60 ? 'weak' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(status)}</span></div><p>shared through ${escapeHtml(shared)}</p></article>`;
-  }).join('') : '<p class="empty">No other tracked feature currently shares the files touched by this task.</p>';
+  }).join('') : '<p class="empty">No other tracked feature currently shares the files touched by this task.</p>');
 
   const hotspots = model.topology?.hotspots || [];
   const queue = model.reviewQueue || [];
   $('projectModelStats').textContent = `${hotspots.length} hotspot${hotspots.length === 1 ? '' : 's'} · ${model.stats?.pendingFeatureReviews || 0} review`;
-  $('projectHotspots').innerHTML = hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${recallText(item.averageFluency, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple tracked features share code.</p>';
-  $('featureReviewQueue').innerHTML = queue.length ? queue.slice(0, 7).map((item) => `<div class="compact-row ${item.needsRefresh ? 'refresh-row' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(item.reason)}</span></div><b>${recallText(item.confidence, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Feature reviews appear as your project memory grows.</p>';
+  patchHtml($('projectHotspots'), hotspots.length ? hotspots.slice(0, 7).map((item) => `<div class="compact-row"><div><strong>${escapeHtml(item.file)}</strong><span>${escapeHtml(item.role)} · ${item.featureCount} features</span></div><b>${recallText(item.averageFluency, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Hotspots emerge when multiple tracked features share code.</p>');
+  patchHtml($('featureReviewQueue'), queue.length ? queue.slice(0, 7).map((item) => `<div class="compact-row ${item.needsRefresh ? 'refresh-row' : ''}"><div><strong>${escapeHtml(item.task)}</strong><span>${escapeHtml(item.reason)}</span></div><b>${recallText(item.confidence, state.metrics?.featuresChecked)}</b></div>`).join('') : '<p class="empty">Feature reviews appear as your project memory grows.</p>');
 }
 
+// An ask/deny rule that a local approval let through once: the rule fired, the action was allowed.
+const approvedOnce = (policy) => ['allow', 'observe'].includes(policy?.decision) && ['ask', 'deny'].includes(policy?.originalDecision);
+
 function eventClass(policy) {
+  if (approvedOnce(policy)) return 'approved';
   const decision = policy?.originalDecision || policy?.decision;
   if (decision === 'deny') return 'deny';
   if (decision === 'ask') return 'ask';
@@ -254,10 +296,11 @@ function eventClass(policy) {
 
 function renderTimeline(control) {
   const rows = [...(control.recentEvents || [])].reverse();
-  $('timeline').innerHTML = rows.length ? rows.slice(0, 18).map((record) => {
+  patchHtml($('timeline'), rows.length ? rows.slice(0, 18).map((record) => {
     const e = record.event || {}; const p = e.policy;
-    return `<div class="trace-row ${eventClass(p)}"><span class="trace-seq">#${record.sequence}</span><div class="trace-main"><strong>${escapeHtml(e.eventType || 'event')}${e.tool ? ` · ${escapeHtml(e.tool)}` : ''}</strong><span>${escapeHtml(e.source || 'agent')}${e.resource ? ` · ${escapeHtml(e.resource)}` : ''}${e.mcp?.server ? ` · MCP ${escapeHtml(e.mcp.server)}` : ''}</span></div><div class="trace-side">${p ? `<span class="decision ${escapeHtml(p.originalDecision || p.decision)}">${escapeHtml((p.originalDecision || p.decision || 'allow').toUpperCase())}</span><small>risk ${p.risk || 0}</small>` : '<small>observed</small>'}</div></div>`;
-  }).join('') : '<p class="empty">Agent activity appears here so each lesson can be grounded in what is actually happening.</p>';
+    const decision = p ? (approvedOnce(p) ? 'approved' : p.originalDecision || p.decision || 'allow') : '';
+    return `<div class="trace-row ${eventClass(p)}"><span class="trace-seq">#${record.sequence}</span><div class="trace-main"><strong>${escapeHtml(e.eventType || 'event')}${e.tool ? ` · ${escapeHtml(e.tool)}` : ''}</strong><span>${escapeHtml(e.source || 'agent')}${e.resource ? ` · ${escapeHtml(e.resource)}` : ''}${e.mcp?.server ? ` · MCP ${escapeHtml(e.mcp.server)}` : ''}</span></div><div class="trace-side">${p ? `<span class="decision ${escapeHtml(decision)}">${escapeHtml(decision.toUpperCase())}</span><small>risk ${p.risk || 0}</small>` : '<small>observed</small>'}</div></div>`;
+  }).join('') : '<p class="empty">Agent activity appears here so each lesson can be grounded in what is actually happening.</p>');
 }
 
 function stateIsFresh() {
@@ -267,57 +310,78 @@ function stateIsFresh() {
 
 function requireFreshState() {
   if (stateIsFresh()) return true;
-  markDisconnected();
+  if (document.body.dataset.connection === 'live') markChecking();
   void poll();
   return false;
 }
 
+function approvalNote(outcome) {
+  if (approvalBusy || !outcome) return '';
+  if (outcome.status === 'confirmed') return 'Approval recorded for one use within 10 minutes. Ask the agent to retry the action.';
+  if (outcome.status === 'refused') return `IdleProof Local refused the approval: ${outcome.message}`;
+  return 'The approval request got no confirmed answer, so it may or may not have been recorded. Approving again replaces it and never adds uses.';
+}
+
 function syncCommitControls() {
   const fresh = stateIsFresh();
-  $('acceptResponsibility').disabled = !fresh || !acceptAllowed || acceptanceBusy;
+  const accept = $('acceptResponsibility');
+  accept.disabled = !fresh || !acceptAllowed || acceptanceBusy;
+  if (!acceptanceBusy && !acceptMessage) accept.textContent = acceptLabel;
   const approve = $('approveAction');
   if (approve) {
-    approve.disabled = !fresh || approvalBusy || !approvalFingerprint;
-    if (approvalBusy) approve.textContent = 'confirming approval…';
+    // Only the outcome for this exact decision event is shown; a new event starts clean.
+    const outcome = approvalOutcome && approvalOutcome.key === approvalKey ? approvalOutcome : null;
+    approve.disabled = !fresh || approvalBusy || !approvalFingerprint || outcome?.status === 'confirmed';
+    approve.textContent = approvalBusy ? 'confirming approval…' : outcome?.status === 'confirmed' ? 'approved once' : 'approve once';
+    const note = $('approvalNote'); if (note) note.textContent = approvalNote(outcome);
   }
   for (const button of document.querySelectorAll('#answers button')) button.disabled = !fresh || Boolean(feedbackLock);
   for (const button of document.querySelectorAll('.feature-answer')) button.disabled = !fresh || Boolean(featureFeedbackLock);
 }
 
+async function approveCurrentAction(event) {
+  const button = event.currentTarget;
+  if (!requireFreshState() || approvalBusy || button.disabled || button.dataset.fingerprint !== approvalFingerprint) return;
+  const fingerprint = approvalFingerprint; const key = approvalKey;
+  approvalBusy = true; syncCommitControls();
+  try {
+    await commitRequest('/api/approve', { fingerprint, uses:1, minutes:10 });
+    approvalOutcome = { key, status: 'confirmed' };
+  } catch (error) {
+    // No answer, or a timeout, does not tell whether the approval was recorded. It is never retried automatically.
+    approvalOutcome = { key, status: error?.status ? 'refused' : 'unconfirmed', message: error?.message || '' };
+  } finally {
+    // Keep the action locked until a read that starts after the mutation has settled.
+    await refreshAfterAction();
+    approvalBusy = false; syncCommitControls();
+  }
+}
+
 function renderDecision(control) {
   const latest = control.latestDecision; const banner = $('decisionBanner');
-  if (!latest || ['allow', 'observe'].includes(latest.originalDecision || latest.decision)) {
-    approvalFingerprint = null;
-    banner.className = 'decision-banner hidden'; banner.innerHTML = ''; return;
+  const original = latest?.originalDecision || latest?.decision;
+  if (latest && approvedOnce(latest)) {
+    approvalFingerprint = null; approvalKey = null;
+    banner.className = 'decision-banner approved';
+    patchHtml(banner, `<div><strong>ALLOWED ONCE BY YOUR APPROVAL · ${escapeHtml(String(original).toUpperCase())} RULE · risk ${latest.risk || 0}</strong><span>${escapeHtml(latest.reason || 'Allowed by a local approval.')}</span></div>`);
+    return;
   }
-  const decision = latest.originalDecision || latest.decision;
-  banner.className = `decision-banner ${decision}`;
-  const canApprove = ['ask', 'deny'].includes(decision) && latest.approvalFingerprint;
+  if (!latest || !['ask', 'deny'].includes(original)) {
+    approvalFingerprint = null; approvalKey = null;
+    banner.className = 'decision-banner hidden'; patchHtml(banner, ''); return;
+  }
+  banner.className = `decision-banner ${original}`;
+  const canApprove = Boolean(latest.approvalFingerprint);
+  const record = [...(control.recentEvents || [])].reverse().find((item) => item.event?.policy);
   approvalFingerprint = canApprove ? latest.approvalFingerprint : null;
-  banner.innerHTML = `<div><strong>${escapeHtml(decision.toUpperCase())} · risk ${latest.risk || 0}</strong><span>${escapeHtml(latest.reason || 'IdleProof paused a risky agent action.')}</span></div>${canApprove ? `<button id="approveAction" disabled data-fingerprint="${escapeHtml(latest.approvalFingerprint)}">approve once</button>` : ''}`;
-  $('approveAction')?.addEventListener('click', async (event) => {
-    const button = event.currentTarget;
-    if (!requireFreshState() || approvalBusy || button.disabled || button.dataset.fingerprint !== approvalFingerprint) return;
-    const fingerprint = button.dataset.fingerprint;
-    approvalBusy = true; syncCommitControls();
-    try {
-      await api('/api/approve', { method:'POST', body:JSON.stringify({ fingerprint, uses:1, minutes:10 }) });
-      if ($('approveAction')?.dataset.fingerprint === fingerprint) $('approveAction').textContent = 'approved · retry action';
-    } catch {
-      // A failed transport is not evidence that a committing request was not applied. Never retry it automatically.
-      markDisconnected();
-      if ($('approveAction')?.dataset.fingerprint === fingerprint) $('approveAction').textContent = 'approval not confirmed';
-    } finally {
-      // Keep the action locked until a read that starts after the mutation has settled.
-      await refreshAfterAction();
-      approvalBusy = false; syncCommitControls();
-    }
-  });
+  approvalKey = canApprove ? `${latest.approvalFingerprint}:${record?.hash ?? record?.sequence ?? ''}` : null;
+  const updated = patchHtml(banner, `<div><strong>${escapeHtml(original.toUpperCase())} · risk ${latest.risk || 0}</strong><span>${escapeHtml(latest.reason || 'IdleProof paused a risky agent action.')}</span><span id="approvalNote" class="approval-note" role="status"></span></div>${canApprove ? `<button id="approveAction" type="button" disabled data-fingerprint="${escapeHtml(latest.approvalFingerprint)}">approve once</button>` : ''}`);
+  if (updated) $('approveAction')?.addEventListener('click', approveCurrentAction);
 }
 
 function renderControlPlane(state) {
   const control = state.controlPlane || {};
-  $('runtimeRisk').textContent = control.runtimeRisk || 0;
+  $('runtimeRisk').textContent = control.recentEvents?.length ? control.runtimeRisk || 0 : 'Not assessed';
   $('integrityChip').textContent = control.provenance?.valid ? 'local trace verified' : 'trace invalid';
   $('integrityChip').className = `chip ${control.provenance?.valid ? 'chip-ok' : 'chip-bad'}`;
   $('chainHead').textContent = `head: ${shortHash(control.provenance?.headHash, 14)}`;
@@ -333,8 +397,9 @@ function renderControlPlane(state) {
   $('responsibilityCoverage').textContent = state.session ? `${responsibility.responsibilityCoverage || 0}%` : 'Not assessed'; $('ownerCoverage').textContent = state.session ? `${responsibility.ownerCoverage || 0}% owners mapped` : 'No ownership evidence yet';
   $('responsibilityText').textContent = responsibility.obligations?.length ? `${responsibility.obligations.length} high-risk ownership obligation${responsibility.obligations.length === 1 ? '' : 's'} remain.` : state.session?.status === 'complete' ? 'No uncovered high-risk ownership obligation.' : 'Ownership evidence becomes available after a completed change.';
   acceptAllowed = state.session?.status === 'complete';
-  syncCommitControls();
+  acceptLabel = acceptAllowed && responsibility.acceptances?.length ? 'accepted · accept again' : 'accept current change';
   renderDecision(control); renderTimeline(control);
+  syncCommitControls();
 }
 
 function render(state) {
@@ -358,49 +423,74 @@ function render(state) {
   markAssessed('runtimeRisk', 'featureFluency', 'debt', 'coverage', 'currentFeatureFluency', 'responsibilityCoverage', 'policyProfile', 'agentCount');
 }
 
+// A refusal is an answer from IdleProof Local; no answer leaves the outcome unknown.
+function actionFailure(what, error) {
+  return error?.status ? `Could not record ${what}: ${error.message}` : `The ${what} was not confirmed: IdleProof Local did not answer. Check the result once it reconnects.`;
+}
+
 async function submitAnswer(conceptId, choice) {
   if (!requireFreshState() || feedbackLock) return;
   try {
-    feedbackLock = conceptId; syncCommitControls(); const result = await api('/api/answer', { method: 'POST', body: JSON.stringify({ conceptId, choice }) });
+    feedbackLock = conceptId; syncCommitControls(); const result = await commitRequest('/api/answer', { conceptId, choice });
+    forgetHtml($('answers'));
     [...document.querySelectorAll('#answers .answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
     $('feedback').textContent = result.correct ? `Correct. ${result.review}` : `Not quite. ${result.review}`;
     setTimeout(() => { feedbackLock = null; void refreshAfterAction(); }, 1700);
-  } catch (error) { feedbackLock = null; $('feedback').textContent = `Could not record answer: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
+  } catch (error) { feedbackLock = null; $('feedback').textContent = actionFailure('answer', error); void refreshAfterAction(); }
 }
 
 async function submitFeatureAnswer(fingerprint, choice) {
   if (!requireFreshState() || featureFeedbackLock) return;
   try {
-    featureFeedbackLock = fingerprint; syncCommitControls(); const result = await api('/api/feature-answer', { method: 'POST', body: JSON.stringify({ fingerprint, choice }) });
+    featureFeedbackLock = fingerprint; syncCommitControls(); const result = await commitRequest('/api/feature-answer', { fingerprint, choice });
+    forgetHtml($('featureAnswers'));
     [...document.querySelectorAll('.feature-answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
     $('featureFeedback').textContent = `${result.correct ? 'Correct.' : 'Not quite.'} ${result.explanation}`;
     setTimeout(() => { featureFeedbackLock = null; void refreshAfterAction(); }, 2200);
-  } catch (error) { featureFeedbackLock = null; $('featureFeedback').textContent = `Could not record feature check: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
+  } catch (error) { featureFeedbackLock = null; $('featureFeedback').textContent = actionFailure('feature check', error); void refreshAfterAction(); }
 }
 
 async function snoozeLesson(conceptId, minutes = 10) {
   if (!conceptId || !requireFreshState() || feedbackLock) return;
-  try { feedbackLock = conceptId; syncCommitControls(); await api('/api/snooze', { method: 'POST', body: JSON.stringify({ conceptId, minutes }) }); feedbackLock = null; await refreshAfterAction(); }
-  catch (error) { feedbackLock = null; $('feedback').textContent = `Could not pause this lesson: ${error.message}`; markDisconnected(); void refreshAfterAction(); }
+  try { feedbackLock = conceptId; syncCommitControls(); await commitRequest('/api/snooze', { conceptId, minutes }); feedbackLock = null; await refreshAfterAction(); }
+  catch (error) { feedbackLock = null; $('feedback').textContent = actionFailure(minutes ? 'pause' : 'resume', error); void refreshAfterAction(); }
 }
 
 function markConnected() {
+  clearTimeout(checkingTimer);
   lastStateAt = new Date();
   document.body.dataset.connection = 'live';
   const banner = $('connectionBanner'); if (banner) { banner.hidden = true; banner.textContent = ''; }
   syncCommitControls();
 }
 
+// Data older than the freshness window (for example after a background tab) is re-read before
+// any action. The banner only appears if that read is slow, so a normal return does not flicker.
+function markChecking() {
+  document.body.dataset.connection = 'checking';
+  syncCommitControls();
+  clearTimeout(checkingTimer);
+  checkingTimer = setTimeout(() => {
+    if (document.body.dataset.connection !== 'checking') return;
+    const banner = $('connectionBanner');
+    if (banner) { banner.hidden = false; banner.textContent = `Updating live-task data. The last update was at ${lastStateAt.toLocaleString()}; actions are paused until it is current.`; }
+  }, CHECKING_BANNER_DELAY_MS);
+}
+
 // A failed refresh must not leave earlier values looking current, nor leave engaging actions available.
-function markDisconnected() {
-  $('status').textContent = 'IdleProof disconnected'; $('integrityChip').textContent = 'offline'; $('integrityChip').className = 'chip chip-bad';
+// The wording says what actually happened: no answer, an HTTP error, or a state the page could not read.
+function markDisconnected(error) {
+  clearTimeout(checkingTimer);
+  const what = error?.status ? `returned an error (HTTP ${error.status})` : error?.unreadable ? 'returned a state this page could not read' : 'is not responding';
+  $('status').textContent = error?.status || error?.unreadable ? 'IdleProof state unavailable' : 'IdleProof disconnected';
+  $('integrityChip').textContent = error?.status || error?.unreadable ? 'state unavailable' : 'offline'; $('integrityChip').className = 'chip chip-bad';
   document.body.dataset.connection = lastStateAt ? 'stale' : 'offline';
   const banner = $('connectionBanner');
   if (banner) {
     banner.hidden = false;
     banner.textContent = lastStateAt
-      ? `IdleProof Local is not responding. Live-task data is from the last update at ${lastStateAt.toLocaleString()} and may be out of date. The project scan has its own captured snapshot.`
-      : 'IdleProof Local is not responding. No project state has been loaded yet.';
+      ? `IdleProof Local ${what}. Live-task data is from the last update at ${lastStateAt.toLocaleString()} and may be out of date. The project scan has its own captured snapshot.`
+      : `IdleProof Local ${what}. No project state has been loaded yet.`;
   }
   acceptAllowed = false; $('acceptResponsibility').disabled = true;
   syncCommitControls();
@@ -422,12 +512,12 @@ function poll() {
     try {
       const state = await Promise.race([api('/api/state', { signal: controller.signal }), deadline]);
       if (!state || typeof state !== 'object' || !state.metrics || typeof state.metrics !== 'object') {
-        throw new Error('Local state is unavailable');
+        throw Object.assign(new Error('Local state is unreadable'), { unreadable: true });
       }
-      render(state);
+      try { render(state); } catch (error) { throw Object.assign(error, { unreadable: true }); }
       // Only a successfully rendered state is evidence of an update, not merely received headers.
       markConnected();
-    } catch { markDisconnected(); }
+    } catch (error) { markDisconnected(error); }
     finally { clearTimeout(timer); statePoll = null; }
   })();
   return statePoll;
@@ -449,21 +539,21 @@ $('copyEvidence').addEventListener('click', async () => {
 $('acceptResponsibility').addEventListener('click', async () => {
   const button = $('acceptResponsibility');
   if (!requireFreshState() || !acceptAllowed || acceptanceBusy || button.disabled) return;
-  const before = 'accept current change'; const sequence = ++acceptanceSequence;
-  acceptanceBusy = true; syncCommitControls();
+  const sequence = ++acceptanceSequence;
+  acceptanceBusy = true; acceptMessage = 'binding acceptance…'; button.textContent = acceptMessage; syncCommitControls();
   try {
-    button.textContent = 'binding acceptance…';
-    const result = await api('/api/responsibility/accept', { method:'POST', body:JSON.stringify({}) });
-    button.textContent = `accepted · ${result.responsibility.responsibilityCoverage}% covered`;
-  } catch {
-    button.textContent = 'acceptance not confirmed';
-    markDisconnected();
+    const result = await commitRequest('/api/responsibility/accept', {});
+    acceptMessage = `accepted · ${result.responsibility.responsibilityCoverage}% covered`;
+  } catch (error) {
+    // Without an answer the acceptance may or may not be recorded; the refreshed coverage tells which.
+    acceptMessage = error?.status ? 'acceptance refused' : 'acceptance not confirmed';
   } finally {
+    button.textContent = acceptMessage;
     await refreshAfterAction();
     acceptanceBusy = false; syncCommitControls();
     setTimeout(() => {
       if (sequence !== acceptanceSequence || acceptanceBusy) return;
-      button.textContent = before; syncCommitControls();
+      acceptMessage = null; syncCommitControls();
     }, 1800);
   }
 });
@@ -472,7 +562,7 @@ $('acceptResponsibility').addEventListener('click', async () => {
 if (typeof document.addEventListener === 'function') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    if (!stateIsFresh()) markDisconnected();
+    if (!stateIsFresh() && document.body.dataset.connection === 'live') markChecking();
     void poll();
   });
 }

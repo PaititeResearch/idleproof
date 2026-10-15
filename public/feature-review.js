@@ -109,7 +109,8 @@ function installOptionalLiveCheck() {
     liveChallenge.hidden = available ? !revealed : !document.querySelector('#answers button');
     button.hidden = !available || revealed;
   };
-  button.addEventListener('click', () => { revealed = true; sync(); liveQuestion.focus?.(); });
+  // The reveal button hides itself, so keyboard focus moves to the first answer instead of the page.
+  button.addEventListener('click', () => { revealed = true; sync(); liveChallenge.querySelector('#answers button')?.focus(); });
   new MutationObserver(sync).observe(liveChallenge, { childList:true, subtree:true, characterData:true });
   sync();
 }
@@ -132,7 +133,7 @@ function installOptionalFeatureCheck() {
     challenge.hidden=available && !revealed;
     button.hidden=!available || revealed;
   };
-  button.addEventListener('click',()=>{ revealed=true; sync(); });
+  button.addEventListener('click',()=>{ revealed=true; sync(); challenge.querySelector('.feature-answer')?.focus(); });
   new MutationObserver(sync).observe(challenge,{childList:true,subtree:true,characterData:true});
   sync();
 }

@@ -164,6 +164,11 @@ body[data-connection="stale"] .shell>section .panel-head,body[data-connection="s
 .decision-banner.deny strong{color:var(--bad)}
 .decision-banner span{display:block;margin-top:2px;color:var(--ink-2);font-size:13px}
 .decision-banner button{flex:none}
+/* A rule that the human let through once: informational, never the success tone. */
+.decision-banner.approved{border-color:var(--line);border-left-color:var(--ip);background:var(--surface-2)}
+.decision-banner.approved strong{color:var(--ink-2)}
+.decision-banner .approval-note{color:var(--ink);font-weight:550}
+.decision-banner .approval-note:empty{display:none}
 .metric-grid{display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--surface-2)}
 .metric{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label value" "hint value";align-items:center;column-gap:16px;flex:1;padding:12px 20px;border-top:1px solid var(--line)}
 .metric:first-child{border-top:0}
@@ -281,6 +286,7 @@ body[data-connection="stale"] .shell>section .panel-head,body[data-connection="s
 .trace-row.ask{border-left-color:var(--warn);background:var(--warn-soft)}
 .trace-row.deny{border-left-color:var(--bad);background:var(--bad-soft)}
 .trace-row.risk{border-left-color:var(--warn-line)}
+.trace-row.approved{border-left-color:var(--ip-line)}
 .trace-seq{color:var(--muted);font:11.5px var(--font-mono);font-variant-numeric:tabular-nums}
 .trace-main{min-width:0}
 .trace-main strong,.trace-main span{display:block;overflow-wrap:anywhere}
@@ -292,6 +298,7 @@ body[data-connection="stale"] .shell>section .panel-head,body[data-connection="s
 .decision.ask{color:var(--warn)}
 .decision.deny{color:var(--bad)}
 .decision.observe{color:var(--muted)}
+.decision.approved{color:var(--ip-ink)}
 
 /* ---------- Feature map ---------- */
 .feature-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:16px;align-items:start}
