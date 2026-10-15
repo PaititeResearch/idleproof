@@ -42,6 +42,8 @@ h1,h2,h3,h4{margin:0;color:var(--ink);font-weight:620;letter-spacing:-.012em}
 p{margin:0 0 10px}
 a{color:var(--ip-ink)}
 code,pre,kbd,.mono{font-family:var(--font-mono)}
+/* Long paths and identifiers in prose wrap instead of spilling out of their box; normal words never break. */
+p,li,dd,dt,blockquote{overflow-wrap:break-word}
 code{font-size:.9em;padding:.05em .35em;border-radius:4px;background:var(--sunken);color:var(--ink-2);overflow-wrap:anywhere}
 pre{margin:10px 0;padding:12px 14px;max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken);color:var(--ink-2);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
 strong,b{font-weight:620}
@@ -461,7 +463,7 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;pa
   .ledger-meter{grid-column:1/-1}
   .trace-row{grid-template-columns:30px minmax(0,1fr);padding:8px 16px 8px 13px}
   .trace-side{grid-column:2;display:flex;gap:8px;text-align:left}
-  .feature-head-meta{align-items:flex-start}
+  .feature-head-meta{align-items:flex-start;flex-wrap:wrap;flex:1 1 auto;min-width:0}
   .drift-banner{grid-template-columns:minmax(0,1fr)}
   .drift-tokens{justify-content:flex-start;max-width:none}
   .project-model-columns{grid-template-columns:minmax(0,1fr)}
@@ -476,6 +478,9 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;pa
   #scanFiles details>:not(summary),#scanIntent details>:not(summary){margin-left:8px}
 }
 @media (max-width:480px){
+  /* Fonts wider than Inter (DejaVu, Segoe UI) must not push the trace status out of the bar. */
+  .top-meta{flex:1 1 auto;justify-content:flex-end}
+  #integrityChip{min-width:0;white-space:normal;text-align:right;line-height:1.25}
   .decision-banner{flex-direction:column;align-items:flex-start}
   .metric strong{font-size:22px}
 }
