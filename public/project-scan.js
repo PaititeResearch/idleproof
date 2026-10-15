@@ -1,4 +1,4 @@
-import {renderByokPreview,renderByokResult,formatByokStatus} from './byok-view.js';
+import {renderByokPreview,renderByokResult,formatByokStatus,formatByokError} from './byok-view.js';
 const $=id=>document.getElementById(id);
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let latest=null,busy=false;
@@ -104,8 +104,8 @@ const aiOptions=()=>({source:$('scanSource').value,paths:$('aiPaths').value.spli
 const aiRequest=body=>get('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 const invalidate=()=>{previewSequence++;consent=null;lastFailure=null;$('aiRetry').hidden=true;$('aiSend').disabled=true;};
 for(const id of ['aiPaths','aiQuestion','aiIncludeSource','aiIncludeMemory','scanSource'])$(id).addEventListener('input',invalidate);
-$('aiTestConnection').onclick=async()=>{try{$('aiStatus').textContent=formatByokStatus(await aiRequest({action:'test',allowNetwork:true}));}catch(e){$('aiStatus').textContent=e.message;}};
-$('optionalAI').addEventListener('toggle',async()=>{if($('optionalAI').open)try{$('aiStatus').textContent=formatByokStatus(await get('/api/ai/status'));}catch(e){$('aiStatus').textContent=e.message;}});
+$('aiTestConnection').onclick=async()=>{try{$('aiStatus').textContent=formatByokStatus(await aiRequest({action:'test',allowNetwork:true}));}catch(e){$('aiStatus').textContent=formatByokError(e);}};
+$('optionalAI').addEventListener('toggle',async()=>{if($('optionalAI').open)try{$('aiStatus').textContent=formatByokStatus(await get('/api/ai/status'));}catch(e){$('aiStatus').textContent=formatByokError(e);}});
 async function preparePreview(retryOf=null) {
   if(aiBusy)return;
   invalidate();const sequence=previewSequence;
@@ -115,7 +115,7 @@ async function preparePreview(retryOf=null) {
     consent={...options,consentDigest:preview.digest};
     $('aiPreview').innerHTML=renderByokPreview(preview);$('aiSend').disabled=!preview.configured;
     $('aiResult').textContent='';
-  }catch(e){if(sequence===previewSequence)$('aiPreview').textContent=e.message;}
+  }catch(e){if(sequence===previewSequence)$('aiPreview').textContent=formatByokError(e);}
 }
 $('aiPreviewButton').onclick=()=>preparePreview();
 $('aiRetry').onclick=()=>preparePreview(lastFailure);
@@ -128,10 +128,11 @@ $('aiSend').onclick=async()=>{
     $('aiResult').innerHTML=renderByokResult(result);
     // Input edits during a request invalidate retry consent too.
     if(sequence===previewSequence&&result.status==='FALLBACK'&&result.retryable){lastFailure=result.digest;$('aiRetry').hidden=false;}
-  }catch(e){$('aiResult').textContent=e.message;}
+  }catch(e){$('aiResult').textContent=formatByokError(e);}
   finally{aiBusy=false;$('aiPreviewButton').disabled=false;}
 };
-$('aiCancel').onclick=async()=>{try{await aiRequest({action:'cancel'});}catch(e){$('aiResult').textContent=e.message;}};
+// Cancelling says what it can know: a call in flight may already be charged; without one, nothing was sent.
+$('aiCancel').onclick=async()=>{const inFlight=aiBusy;try{await aiRequest({action:'cancel'});$('aiResult').textContent=inFlight?'Cancellation requested. A call already sent may still be charged.':'No request in progress. Nothing was sent.';}catch(e){$('aiResult').textContent=formatByokError(e);}};
 let sourceSequence=0;
 $('aiResult').onclick=async event=>{
   const button=event.target.closest('[data-ai-source]');if(!button)return;
