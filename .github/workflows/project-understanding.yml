@@ -43,3 +43,30 @@ jobs:
           name: golden-local-contract
           path: qualification-evidence/
           if-no-files-found: error
+  local-ui-browser:
+    # MACHINE qualification of the Local page in Chromium: real server, real hook path, network
+    # faults injected at the browser layer only. Not a HUMAN acceptance.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install pinned browser driver
+        run: |
+          npm install --prefix "$RUNNER_TEMP/local-ui-browser" --no-save --package-lock=false playwright@1.63.0
+          node "$RUNNER_TEMP/local-ui-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Connection, actions, information, semantics, layout and accessibility in Chromium
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/local-ui-browser/node_modules/playwright/index.mjs
+          RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/local-ui
+        run: node scripts/local-ui-browser-recipe.mjs
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: local-ui-browser
+          path: qualification-evidence/local-ui/
+          if-no-files-found: error

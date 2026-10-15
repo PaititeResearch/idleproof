@@ -181,3 +181,77 @@ test('real zero from per-feature checks and positive scores remain visible', asy
   assert.equal(ui.get('currentFeatureFluency').textContent, '0%');
   assert.match(ui.get('projectHotspots').innerHTML, /<b>40%<\/b>/);
 });
+
+function blocked(hash) {
+  const policy = { decision: 'deny', originalDecision: 'deny', approvalFingerprint: '0123456789abcdef', risk: 69, reason: 'Catastrophic delete.' };
+  return state({ controlPlane: { provenance: { valid: true }, policy: {}, responsibility: {}, latestDecision: policy,
+    recentEvents: [{ sequence: 5, hash, event: { eventType: 'PreToolUse', policy } }] } });
+}
+
+test('a confirmed approval is not offered again when the same decision is re-rendered', async () => {
+  const ui = harness([blocked('h5'), { ok: true }, blocked('h5'), blocked('h5')]); await ui.settle();
+  const button = ui.get('approveAction');
+  await button.listeners.click({ currentTarget: button }); await ui.context.poll();
+  assert.equal(ui.get('approveAction').textContent, 'approved once');
+  assert.equal(ui.get('approveAction').disabled, true);
+  assert.match(ui.get('approvalNote').textContent, /Ask the agent to retry/);
+  assert.equal(ui.requests.filter((r) => r.url === '/api/approve').length, 1);
+});
+
+test('a new block of the same action starts with a fresh approve button', async () => {
+  const ui = harness([blocked('h5'), { ok: true }, blocked('h5'), blocked('h7')]); await ui.settle();
+  const button = ui.get('approveAction');
+  await button.listeners.click({ currentTarget: button }); await ui.context.poll();
+  assert.equal(ui.get('approveAction').textContent, 'approve once');
+  assert.equal(ui.get('approveAction').disabled, false);
+  assert.equal(ui.get('approvalNote').textContent, '');
+});
+
+test('an approval without an answer is uncertain, not refused, and is never resent', async () => {
+  const ui = harness([blocked('h5'), new Error('connection reset'), blocked('h5')]); await ui.settle();
+  const button = ui.get('approveAction');
+  await button.listeners.click({ currentTarget: button });
+  assert.match(ui.get('approvalNote').textContent, /may or may not have been recorded/);
+  assert.equal(ui.document.body.dataset.connection, 'live');
+  assert.equal(ui.requests.filter((r) => r.url === '/api/approve').length, 1);
+});
+
+test('an action allowed once by a local approval is not shown as blocked or approvable', async () => {
+  const policy = { decision: 'allow', originalDecision: 'deny', approvalFingerprint: '0123456789abcdef', risk: 69, reason: 'Approved locally until 2026-10-15T10:00:00.000Z.' };
+  const ui = harness([state({ controlPlane: { provenance: { valid: true }, policy: {}, responsibility: {}, latestDecision: policy, recentEvents: [{ sequence: 6, hash: 'h6', event: { policy } }] } })]); await ui.settle();
+  assert.equal(ui.get('decisionBanner').className, 'decision-banner approved');
+  assert.match(ui.get('decisionBanner').innerHTML, /ALLOWED ONCE BY YOUR APPROVAL · DENY RULE/);
+  assert.equal(ui.document.getElementById('approveAction'), null);
+  assert.match(ui.get('timeline').innerHTML, />APPROVED</);
+});
+
+test('an HTTP error or unreadable state is named, not reported as Local not responding', async () => {
+  const ui = harness([state(), { ok: false, status: 500, json: async () => ({ error: 'internal' }) }, {}]); await ui.settle();
+  await ui.context.poll();
+  assert.match(ui.get('connectionBanner').textContent, /returned an error \(HTTP 500\)/);
+  assert.equal(ui.get('integrityChip').textContent, 'state unavailable');
+  await ui.context.poll();
+  assert.match(ui.get('connectionBanner').textContent, /returned a state this page could not read/);
+});
+
+test('a refused action leaves the connection state to the next read', async () => {
+  const ui = harness([state(), { ok: false, status: 500, json: async () => ({ error: 'No completed diff proof is available to accept.' }) }, state()]); await ui.settle();
+  await ui.get('acceptResponsibility').listeners.click();
+  assert.equal(ui.get('acceptResponsibility').textContent, 'acceptance refused');
+  assert.equal(ui.document.body.dataset.connection, 'live');
+});
+
+test('an accepted change says so after the refresh instead of offering a first acceptance again', async () => {
+  const accepted = state(); accepted.controlPlane.responsibility = { acceptances: [{ acceptedBy: 'me' }] };
+  const ui = harness([state(), { responsibility: { responsibilityCoverage: 100 } }, accepted, accepted]); await ui.settle();
+  await ui.get('acceptResponsibility').listeners.click(); await ui.advance(1801);
+  assert.equal(ui.get('acceptResponsibility').textContent, 'accepted · accept again');
+});
+
+test('no recorded agent activity leaves runtime risk not assessed; a recorded zero stays zero', async () => {
+  let ui = harness([state()]); await ui.settle();
+  assert.equal(ui.get('runtimeRisk').textContent, 'Not assessed');
+  const quiet = state(); quiet.controlPlane.recentEvents = [{ sequence: 1, hash: 'h1', event: { eventType: 'UserPromptSubmit' } }]; quiet.controlPlane.runtimeRisk = 0;
+  ui = harness([quiet]); await ui.settle();
+  assert.equal(ui.get('runtimeRisk').textContent, '0');
+});
