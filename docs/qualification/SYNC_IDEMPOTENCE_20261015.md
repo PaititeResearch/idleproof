@@ -99,7 +99,16 @@ list already existed). Files: `src/portal-client.mjs`, `src/portal-snapshot.mjs`
 - CI on Portal `11b9313` (PaititeResearch/idleproof-portal#52, candidate IdleProof `e9f57f7`): all 14
   jobs green, including longitudinal memory (PM-013/PM-014, first-project P1–P9 with P5, Portal UI),
   auto debt AD0–AD7 (AD5), alpha local launcher L1–L6 (L4: restore then resynchronization) and the
-  integrated golden contracts G1–G12.
+  integrated golden contracts G1–G12. Same 14 jobs green on the docs-only Portal head `12d0af0`
+  (same pins): longitudinal 73/73 with P5, auto debt 10/10 with AD5 after one re-run of a launcher
+  start that exited 152 before any check (cause not established; launcher log in the run's artifact).
+- CI on Portal `dfa3d70` (candidate IdleProof `e6b7a54`): besides the L4 failure described under
+  Change, longitudinal memory returned 72/73. `after-restart [4]` got `NETWORK_ERROR` on the first
+  memory page sent after the full stack restart, the capability request having succeeded; the page
+  stayed pending, as the client should. This lot does not change the memory-page path, and over 14
+  sampled CI runs (2026-10-01 to 10-15) the check failed only there; it passed on `11b9313` and
+  `12d0af0`. Cause not established (the Edge Function log is in a CI artifact not downloadable
+  here); recorded in Portal `docs/UI_CANDIDATE_20261015.md` §5.
 - The human recipe update (`scripts/update-human-recipe.sh`) was rehearsed on a copy of its layout,
   from runtime `5949b76` with a session, an acceptance and a Core decision: history files
   byte-identical after the update, served files equal to `e9f57f7`, rollback serves `5949b76` again
