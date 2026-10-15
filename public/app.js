@@ -22,6 +22,12 @@ let checkingTimer = null;
 // Label of the acceptance button derived from the loaded state; a transient result message wins briefly.
 let acceptLabel = 'accept current change';
 let acceptMessage = null;
+// A feedback or failure message belongs to the card it was written for. Refreshes keep it until that
+// card changes, so a reader always sees the outcome of their answer.
+let feedbackFor = null;
+let featureFeedbackFor = null;
+const setFeedback = (conceptId, text) => { feedbackFor = conceptId; $('feedback').textContent = text; };
+const setFeatureFeedback = (fingerprint, text) => { featureFeedbackFor = fingerprint; $('featureFeedback').textContent = text; };
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[ch]));
@@ -130,7 +136,7 @@ function renderLearning(state) {
     $('cardLesson').textContent = '';
     $('question').textContent = '';
     patchHtml($('answers'), '');
-    $('feedback').textContent = '';
+    setFeedback(null, '');
     renderJourney(state);
     return;
   }
@@ -147,7 +153,8 @@ function renderLearning(state) {
     if (patchHtml($('answers'), first ? `<button class="text-button" id="resumeLesson" type="button" data-concept="${escapeHtml(first)}">resume learning now</button>` : '')) {
       $('resumeLesson')?.addEventListener('click', () => snoozeLesson(first, 0));
     }
-    $('feedback').textContent = '';
+    // A failed "resume" keeps its message while the lesson stays paused.
+    if (feedbackFor !== first) setFeedback(null, '');
     renderJourney(state);
     return;
   }
@@ -162,7 +169,7 @@ function renderLearning(state) {
   $('cardWhy').textContent = card.why || 'IdleProof will connect a useful concept to the task as soon as the agent starts working.';
   $('cardLesson').textContent = card.lesson || '';
   $('question').textContent = card.id ? card.question || 'What should you understand about this task?' : '';
-  if (!feedbackLock || feedbackLock !== card.id) $('feedback').textContent = '';
+  if ((!feedbackLock || feedbackLock !== card.id) && feedbackFor !== card.id) setFeedback(null, '');
   const concept = escapeHtml(card.id || '');
   const choices = (card.options || []).map((option, index) => `<button class="answer" type="button" data-concept="${concept}" data-choice="${index}">${escapeHtml(option)}</button>`).join('');
   const snooze = card.id ? `<button class="text-button" id="snoozeLesson" type="button" data-concept="${concept}">not now · 10 min</button>` : '';
@@ -251,7 +258,7 @@ function renderFeatureModel(state) {
   if (model.challenge) {
     $('featureChallenge').className = 'challenge feature-challenge';
     $('featureQuestion').textContent = model.challenge.question;
-    if (!featureFeedbackLock || featureFeedbackLock !== model.fingerprint) $('featureFeedback').textContent = '';
+    if ((!featureFeedbackLock || featureFeedbackLock !== model.fingerprint) && featureFeedbackFor !== model.fingerprint) setFeatureFeedback(null, '');
     const fingerprint = escapeHtml(model.fingerprint || '');
     if (patchHtml($('featureAnswers'), (model.challenge.options || []).map((option, index) => `<button class="answer feature-answer" type="button" data-fingerprint="${fingerprint}" data-choice="${index}">${escapeHtml(option)}</button>`).join(''))) {
       document.querySelectorAll('.feature-answer').forEach((button) => button.addEventListener('click', () => submitFeatureAnswer(model.fingerprint, Number(button.dataset.choice))));
@@ -434,9 +441,9 @@ async function submitAnswer(conceptId, choice) {
     feedbackLock = conceptId; syncCommitControls(); const result = await commitRequest('/api/answer', { conceptId, choice });
     forgetHtml($('answers'));
     [...document.querySelectorAll('#answers .answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
-    $('feedback').textContent = result.correct ? `Correct. ${result.review}` : `Not quite. ${result.review}`;
+    setFeedback(conceptId, result.correct ? `Correct. ${result.review}` : `Not quite. ${result.review}`);
     setTimeout(() => { feedbackLock = null; void refreshAfterAction(); }, 1700);
-  } catch (error) { feedbackLock = null; $('feedback').textContent = actionFailure('answer', error); void refreshAfterAction(); }
+  } catch (error) { feedbackLock = null; setFeedback(conceptId, actionFailure('answer', error)); void refreshAfterAction(); }
 }
 
 async function submitFeatureAnswer(fingerprint, choice) {
@@ -445,15 +452,15 @@ async function submitFeatureAnswer(fingerprint, choice) {
     featureFeedbackLock = fingerprint; syncCommitControls(); const result = await commitRequest('/api/feature-answer', { fingerprint, choice });
     forgetHtml($('featureAnswers'));
     [...document.querySelectorAll('.feature-answer')].forEach((button, index) => { button.disabled = true; if (index === result.answer) button.classList.add('correct'); else if (index === choice) button.classList.add('wrong'); });
-    $('featureFeedback').textContent = `${result.correct ? 'Correct.' : 'Not quite.'} ${result.explanation}`;
+    setFeatureFeedback(fingerprint, `${result.correct ? 'Correct.' : 'Not quite.'} ${result.explanation}`);
     setTimeout(() => { featureFeedbackLock = null; void refreshAfterAction(); }, 2200);
-  } catch (error) { featureFeedbackLock = null; $('featureFeedback').textContent = actionFailure('feature check', error); void refreshAfterAction(); }
+  } catch (error) { featureFeedbackLock = null; setFeatureFeedback(fingerprint, actionFailure('feature check', error)); void refreshAfterAction(); }
 }
 
 async function snoozeLesson(conceptId, minutes = 10) {
   if (!conceptId || !requireFreshState() || feedbackLock) return;
   try { feedbackLock = conceptId; syncCommitControls(); await commitRequest('/api/snooze', { conceptId, minutes }); feedbackLock = null; await refreshAfterAction(); }
-  catch (error) { feedbackLock = null; $('feedback').textContent = actionFailure(minutes ? 'pause' : 'resume', error); void refreshAfterAction(); }
+  catch (error) { feedbackLock = null; setFeedback(conceptId, actionFailure(minutes ? 'pause' : 'resume', error)); void refreshAfterAction(); }
 }
 
 function markConnected() {
