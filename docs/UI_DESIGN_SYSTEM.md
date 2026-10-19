@@ -1,20 +1,52 @@
-# DiffWitness ecosystem UI design system
+# DiffWitness ecosystem UI design system (v3)
 
 IdleProof Local (`public/styles.css`) and DiffWitness Portal (`src/styles.css`) share one
 visual identity so that both read as steps of the same process, while each tool stays
 recognizable. This file is the reference; keep both stylesheets' tokens identical.
 
+v3 (2026-10-19) replaces the generic grey-card look of v2 with the brand already used by the
+public DiffWitness site (black, warm ink, Instrument Serif, JetBrains Mono, witness violet).
+It changes presentation only: every rule from "Evidence semantics" to "Absent data" below is
+unchanged from v2 and still enforced by the same tests.
+
+## Identity
+
+- **Black chrome, in both themes.** The brand's black (`--chrome`) frames each tool: Local's
+  app bar and Portal's sidebar (and the signed-out brand panel). Content sits on a neutral
+  porcelain canvas in the light theme and on black in the dark theme. Chrome text uses
+  `--chrome-ink` / `--chrome-muted`, and status lights in the chrome use `--chrome-ok` /
+  `--chrome-bad` so they keep 4.5:1 on black.
+- **Three voices of type, mapped to what the words are:**
+
+| Face | Token | Used for |
+| --- | --- | --- |
+| Instrument Serif | `--font-display` | what is happening or what a page is about: the Local state headline, page titles, readout numerals, the Portal handover card |
+| System sans | `--font-sans` | the interface: labels, prose, controls |
+| JetBrains Mono | `--font-mono` | real identifiers and codes: paths, hashes, commands, decisions, lane and status codes; epistemic stamps in Portal's Technical view |
+
+  Both brand faces are self-hosted (SIL Open Font License, licence files next to the font
+  files), so Local still makes no network request and Portal keeps `font-src 'self'`.
+- **One mark geometry.** A black tile, a warm-ink circle, an orbit ellipse and a focal dot.
+  DiffWitness (Portal) draws the orbit horizontally with a violet dot, as on the public site;
+  IdleProof (Local) draws it vertically, like a lens, with an azure dot. Favicons use the same
+  marks.
+- **The process rail** is the recurring signature: Local's "Under the hood" rail
+  (Understand → Prove & owe → Remember), Portal's signal-source rail in the sidebar, the
+  Protect → Understand → Prove → Owe rail on signed-out pages, and the receipt lanes.
+
 ## Two tools, one process
 
 | Tool | Job in the process | Accent token | Mark |
 | --- | --- | --- | --- |
-| IdleProof | **Understand**: explain what the agent changes and where it lives | `--ip` lens blue | tile with a lens ring |
-| DiffWitness | **Protect · Prove · Owe**: runtime guard, proof of the exact change, Debt Ledger | `--dw` violet | tile with two offset diff lines |
+| IdleProof | **Understand**: explain what the agent changes and where it lives | `--ip` lens azure | vertical orbit, azure focal dot |
+| DiffWitness | **Protect · Prove · Owe**: runtime guard, proof of the exact change, Debt Ledger | `--dw` witness violet | horizontal orbit, violet focal dot |
 
 Each surface sets `--accent` to its own tool (Local: `--ip`, Portal: `--dw`). Anywhere a
 signal comes from the *other* tool, use that tool's token, for example the Portal receipt
-lanes (`.lane-understand` blue, `.lane-prove` / `.lane-owe` violet, `.lane-protect` neutral)
-or the Local "DiffWitness Core" product tag (`.product-dw`).
+lanes (`.lane-understand` azure, `.lane-prove` / `.lane-owe` violet, `.lane-protect` ink),
+the Portal receipt explanation (IdleProof's reading, azure rule) or the Local "DiffWitness
+Core" product tag and Portal handover card (`.product-dw`, `#portalBoundary`, violet).
+Primary buttons are ink, not accent: an accent is identity, never "go".
 
 ## Evidence semantics come before brand
 
@@ -111,41 +143,62 @@ details and a click in progress survive the 1.5 s poll.
 
 ## Structure and navigation
 
-- **App chrome.** Local has an app bar (mark, edition tag, project breadcrumb, privacy
-  and trace status) and section tabs that mark the section in view. Portal has a
-  sidebar grouped as Projects, Workspace and Help, with the Guided/Technical switch
-  under the navigation.
-- **Panels.** A panel has a header bar and a body. Never nest cards inside cards. Use
-  hairline grids for related cells: summary strips, the Under the hood strip, receipt
-  lanes.
-- **Receipt ledger** (Portal). Each receipt shows its signals in process order:
-  Protect first (while the agent worked), then Understand (IdleProof), then Prove and
-  Owe (DiffWitness). Each lane is marked with its tool colour.
+- **App chrome.** Local has a black app bar (mark, edition tag, project name in mono,
+  privacy line and trace status light) and section tabs on the canvas that mark the section
+  in view. Portal has a black sidebar grouped as Projects, Workspace and Help, with the
+  Guided/Technical switch and the signal-source rail under the navigation, and a light top
+  bar that names the current view.
+- **Page headers.** A serif title, one lead paragraph of at most ~72 characters per line,
+  and the page's actions on the right (status light first, then secondary, then the single
+  primary action).
+- **The Local "Now" header** is not a card: the state headline, the task prompt (azure
+  gutter), the agent's current tool with the live pulse, the decision banner, and a readout
+  column on a hairline scale.
+- **Panels.** A panel has a header and a body. Never nest cards inside cards: inside a
+  panel, use hairline-separated sub-sections (Portal understanding categories, next actions)
+  or hairline grids for related cells (summary strips, the Under the hood strip, receipt
+  lanes, explanation columns).
+- **Summary strips** are one instrument row: a 2 px ink rule on top, labelled cells with
+  serif readouts, hairlines between cells.
+- **Receipt ledger** (Portal). Each receipt is a node on a hairline timeline and shows its
+  signals in process order: Protect first (while the agent worked), then Understand
+  (IdleProof), then Prove and Owe (DiffWitness). Each lane is marked with its tool colour.
+  Guided lane labels are sentence-case questions; Technical lane labels are lane codes.
 - **Readouts.** Metrics are label/value rows with tabular numbers. Activity reads as a
-  log. Identifiers use monospace.
+  log with a sequence gutter. Identifiers use monospace.
 - **View switches.** Local's "Scan view" (Guided or Technical) changes only the project
   scan panel. Portal's "Experience" switch changes the whole workspace. The labels say
   which one the reader is using.
+- **Irreversible actions** (Portal settings) are grouped under their own heading with a
+  danger rule; each still asks for its typed confirmation.
 - **Icons.** One 16 px stroke set. Icons are decorative only: `aria-hidden`, always next
   to a text label, and never inside a button whose text the script rewrites.
 
 ## Foundations
 
-- Themes: light and dark follow `prefers-color-scheme`; every colour is a token.
-- Contrast: every text token reaches 4.5:1 on every surface, in both themes. `--faint`
-  is for decorative strokes, dots and icons only, never for text. Tests read the
-  shipped stylesheets and enforce both rules.
-- Type: system sans (`--font-sans`, Inter when installed) for reading; `--font-mono` only
-  for real identifiers (paths, hashes, commands, status codes).
+- Themes: light and dark follow `prefers-color-scheme`; every colour is a token. Neutrals
+  are warm-grey ("porcelain" in light, the site's black and warm ink in dark).
+- Contrast: every text token reaches 4.5:1 on every surface, in both themes, including
+  chrome tokens on black. `--faint` is for decorative strokes, dots and icons only, never
+  for text. Tests read the shipped stylesheets and enforce both rules.
 - Labels are sentence case. Upper case is reserved for status codes and lane codes.
-- Radii by hierarchy: `--r-lg` panels, `--r-md` nested cards and drawers, `--r-sm`
-  controls; pills for chips and badges.
+- Radii by hierarchy: `--r-lg` (10 px) panels, `--r-md` (7 px) drawers and nested blocks,
+  `--r-sm` (5 px) controls and chips, `--r-xs` (3 px) stamps and source tags. Stamps are
+  rectangles, not pills, so evidence never reads like a decorative chip.
 - No external fonts or assets: Local runs under `style-src 'self'` and refuses inline
   style attributes, so bars use native `<progress>` elements.
-- Motion is limited to the live-agent pulse (stopped when no agent is active) and respects
-  `prefers-reduced-motion`.
-- Responsive: no horizontal page scroll at any width from 360 px up.
-  - Local: below 1100 px the section tabs drop their icons so all seven fit. Below
-    760 px they wrap as chips under the app bar.
-  - Portal: on small screens the navigation wraps as pills.
+- Motion is limited to the live-agent pulse (stopped when no agent is active) and the
+  drawer chevron, and respects `prefers-reduced-motion`.
+- Responsive: no horizontal page scroll at any width from 320 px up.
+  - Local: below 1100 px the section tabs drop their icons so all seven fit and the
+    readouts become a row. Below 760 px the tabs wrap as chips under the app bar.
+  - Portal: below 1100 px summary strips use two columns and the signed-out brand panel
+    folds away; below 900 px the sidebar becomes a black header whose navigation wraps.
   - Stacked tables (Portal) repeat each column name before its cell (`data-label`).
+
+## DiffWitness Core
+
+Core has no graphical surface: its human surfaces are the terminal and Markdown reports,
+whose wording is consumed by tests, scripts and IdleProof matchers (class B in
+`diffwitness/docs/HUMAN_OUTPUT_READABILITY_PROPOSAL.md`). v3 changes none of that output. Any
+readability change there follows that proposal as its own reviewed lot.
