@@ -252,7 +252,7 @@ function renderFeatureModel(state) {
 
   if (model.explainBack) {
     $('featureExplainBack').className = 'explain-back';
-    patchHtml($('featureExplainBack'), `<span>60-SECOND EXPLAIN-BACK</span><p>${escapeHtml(model.explainBack)}</p>`);
+    patchHtml($('featureExplainBack'), `<span>60-second explain-back</span><p>${escapeHtml(model.explainBack)}</p>`);
   } else $('featureExplainBack').className = 'explain-back hidden';
 
   if (model.challenge) {
