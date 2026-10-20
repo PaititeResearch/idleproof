@@ -1,0 +1,44 @@
+name: OpenRouter source qualification
+
+on:
+  push:
+    branches: [qualify/openrouter-source-20261020]
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 1d5be9affe7080d6b3acd6c99c4561411907b1cc
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Archive only tracked baseline source and original Git objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 1d5be9affe7080d6b3acd6c99c4561411907b1cc
+          mkdir -p "$RUNNER_TEMP/openrouter-source"
+          git archive --format=tar HEAD | gzip -n > "$RUNNER_TEMP/openrouter-source/baseline.tar.gz"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/openrouter-source/git-blobs.txt"
+          git cat-file commit HEAD > "$RUNNER_TEMP/openrouter-source/commit.raw"
+          git rev-parse HEAD > "$RUNNER_TEMP/openrouter-source/revision.txt"
+          sha256sum "$RUNNER_TEMP/openrouter-source/baseline.tar.gz"
+      - name: Baseline regression tests (no provider credential)
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee "$RUNNER_TEMP/openrouter-source/baseline-tests.log"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: idleproof-openrouter-baseline-1d5be9a
+          path: ${{ runner.temp }}/openrouter-source
+          if-no-files-found: error
+          retention-days: 7
