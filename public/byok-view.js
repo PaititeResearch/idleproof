@@ -43,6 +43,17 @@ export function formatByokError(error) {
   return /^BYOK_[A-Z0-9_]+$/.test(text)?`The request could not be completed (${text}).`:text;
 }
 const reasons={ROOT_FIELDS:'Invalid top-level fields.',ITEM_LIMIT:'Missing or oversized list.',ITEM_FIELDS:'Invalid claim fields.',TEXT_LIMIT:'Empty or oversized text.',CITATIONS_REQUIRED:'Missing or too many citations.',UNKNOWN_CITATION:'A citation is outside the approved context.',UNKNOWNS_FORMAT:'Invalid unknowns format.'};
+const unknownDetails={
+  UNKNOWNS_NOT_ARRAY:'The model returned the limitations section in the wrong format: it must be a list of plain text entries.',
+  UNKNOWNS_ITEM_LIMIT:'The model returned more than 8 limitations.',
+  UNKNOWN_NOT_STRING:'A limitation was not plain text (for example, an object or null).',
+  UNKNOWN_EMPTY:'The model returned an empty limitation.',
+  UNKNOWN_TEXT_LIMIT:'A limitation exceeded the 500-character limit.'
+};
+function validationMessage(diagnostics) {
+  if(diagnostics?.validationReason==='UNKNOWNS_FORMAT'&&typeof diagnostics.validationDetail==='string'&&Object.hasOwn(unknownDetails,diagnostics.validationDetail))return unknownDetails[diagnostics.validationDetail];
+  return reasons[diagnostics?.validationReason]||'Invalid format.';
+}
 export function renderByokPreview(preview) {
   const p=preview.packet,s=p.selection;
   return `<h3>Context to send</h3><p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
@@ -56,7 +67,7 @@ export function renderByokResult(result) {
     const limits=result.limitations.filter(value=>typeof value==='string'&&value.trim()&&value.length<=500).slice(0,8);
     if(limits.length)return `<h3>More context is needed</h3><p>The model did not provide a sourced answer from this selection.</p><h4>Model-reported limits</h4><ul>${limits.map(value=>`<li>${escape(value)}</li>`).join('')}</ul><p>Review the selected files and source-description option, then prepare a new preview. Nothing will be added or sent automatically.</p>${meta}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
   }
-  if(result.status!=='INTERPRETATION')return `<h3>Explanation unavailable</h3><p>${escape(messages[result.code]||'The request did not complete. Local observations remain available.')}</p>${result.diagnostics?.validationReason?`<p>${escape(reasons[result.diagnostics.validationReason]||'Invalid format.')}</p>`:''}${meta}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
+  if(result.status!=='INTERPRETATION')return `<h3>Explanation unavailable</h3><p>${escape(messages[result.code]||'The request did not complete. Local observations remain available.')}</p>${result.diagnostics?.validationReason?`<p>${escape(validationMessage(result.diagnostics))}</p>`:''}${meta}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
   const sourceMap=new Map(result.evidence.map(e=>[e.citation,e]));
   const section=(title,items)=>items.length?`<h3>${title}</h3><ul>${items.map(i=>`<li><p>${escape(i.text)}</p>${i.citations.map(c=>{const e=sourceMap.get(c);return e?.path?`<button type="button" data-ai-source="${escape(e.path)}" data-ai-snapshot="${escape(e.snapshotId)}">${escape(c)} · ${escape(e.path)}</button>`:`<span>${escape(c)} · ${escape(e?.id||'recorded source')}</span>`;}).join(' ')}</li>`).join('')}</ul>`:'';
   return `<h3>Explanation for review</h3><p>Interpretation of the selected context. This response does not validate tests, Proof or your understanding.</p>${section('What the sources show',result.answer.claims)}${section('Proposed checks — not executed',result.answer.nextTests)}${result.answer.unknowns.length?`<h3>Limitations and unknowns</h3><ul>${result.answer.unknowns.map(t=>`<li>${escape(t)}</li>`).join('')}</ul>`:''}${meta}<pre id="aiSourceDetail" hidden></pre>${details('Technical details and provenance',result)}`;

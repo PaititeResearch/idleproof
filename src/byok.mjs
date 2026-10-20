@@ -8,10 +8,11 @@ import {loadContinuityContext} from './continuity.mjs';
 import {redactPortalText} from './portal-snapshot.mjs';
 import {byokDirectory,readByok,writeByok,byokLock,saveCredential,loadCredential} from './byok-storage.mjs';
 
-import {REQUEST_VERSION,selectEvidence,validateAnswer,completionDiagnostics,reasoningOptions} from './byok-contract.mjs';
+import {REQUEST_VERSION,selectEvidence,validateAnswer,unknownsFormatDetail,completionDiagnostics,reasoningOptions} from './byok-contract.mjs';
 import {buildByokMessages} from './byok-prompt.mjs';
 
 const ENDPOINT='https://openrouter.ai/api/v1';
+const UNKNOWN_DETAILS=new Set(['UNKNOWNS_NOT_ARRAY','UNKNOWNS_ITEM_LIMIT','UNKNOWN_NOT_STRING','UNKNOWN_EMPTY','UNKNOWN_TEXT_LIMIT']);
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const modelName=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:/-]{2,160}$/.test(v);
 const nonnegative=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
@@ -84,12 +85,16 @@ export function previewByok(cwd,{source='HEAD',paths=[],includeSource=false,incl
 const answerSchema={type:'object',additionalProperties:false,required:['claims','nextTests','unknowns'],properties:{
   claims:{type:'array',maxItems:8,items:{type:'object',additionalProperties:false,required:['text','citations'],properties:{text:{type:'string',maxLength:1000},citations:{type:'array',minItems:1,maxItems:8,items:{type:'string'}}}}},
   nextTests:{type:'array',maxItems:8,items:{type:'object',additionalProperties:false,required:['text','citations'],properties:{text:{type:'string',maxLength:1000},citations:{type:'array',minItems:1,maxItems:8,items:{type:'string'}}}}},
-  unknowns:{type:'array',maxItems:8,items:{type:'string',maxLength:500}}
+  unknowns:{type:'array',description:'Required array of plain strings describing missing evidence; use [] when there are none. Never objects or null. At most 8 non-empty strings, each at most 500 characters.',maxItems:8,items:{type:'string',maxLength:500}}
 }};
 function admitAnswer(value,packet) {
   const known=new Set([...packet.evidence,...packet.recordedMemory].map(e=>e.citation));
   const reason=validateAnswer(value,known);
-  if(reason){const error=new Error('BYOK_ANSWER_REJECTED');error.validationReason=reason;throw error;}
+  if(reason){
+    const error=new Error('BYOK_ANSWER_REJECTED');error.validationReason=reason;
+    if(reason==='UNKNOWNS_FORMAT')error.validationDetail=unknownsFormatDetail(value.unknowns);
+    throw error;
+  }
   if(!value.claims.length) {
     // An abstention is not a successful interpretation. Preserve only schema-validated,
     // redacted limits so the user can fix the selection rather than pay for a blind retry.
@@ -180,7 +185,8 @@ export async function interpretByok(cwd,options,{fetchImpl=fetch,signal=null,rea
     const fallback={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'FALLBACK',code:safeCode(error),latencyMs:Date.now()-started,
       retryable:paidStarted&&!error.limitations?.length,
       ...(error.message==='BYOK_EMPTY_INTERPRETATION'&&error.limitations?.length?{limitations:error.limitations}:{}),
-      diagnostics:{...diagnostics,...(error.validationReason?{validationReason:error.validationReason}:{})},
+      diagnostics:{...diagnostics,...(error.validationReason?{validationReason:error.validationReason}:{}),
+        ...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
       reportedCostUsd:reportedCost,reservedUsd:paidStarted?(reportedCost??reserved):0,answer:null,deterministicAvailable:true};
     if(paidStarted)writeByok(cacheFile,fallback);
     return fallback;

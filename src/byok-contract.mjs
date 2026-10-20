@@ -1,6 +1,6 @@
 // Pure, bounded policies shared by the network path and offline regression tests.
-// Content policy v5 requires fresh consent/cache; retained v4 answers are not rewritten.
-export const REQUEST_VERSION = 5;
+// Content/format policy v6 requires fresh consent/cache; historical results are not rewritten.
+export const REQUEST_VERSION = 6;
 export function selectEvidence(model, paths = []) {
   const files = model.files.filter(f => f.extraction);
   if (paths.length) return files.filter(f => paths.includes(f.path));
@@ -18,6 +18,19 @@ export function selectEvidence(model, paths = []) {
   add(production.filter(f => !chosen.includes(f)), 12);
   add(sorted.filter(f => !chosen.includes(f)), 12);
   return chosen;
+}
+
+// Fixed shape diagnostics only: never return text, object keys or raw model output.
+// Keep the admission predicate and UNKNOWNS_FORMAT compatibility code unchanged.
+export function unknownsFormatDetail(value) {
+  if (!Array.isArray(value)) return 'UNKNOWNS_NOT_ARRAY';
+  if (value.length > 8) return 'UNKNOWNS_ITEM_LIMIT';
+  for (const item of value) {
+    if (typeof item !== 'string') return 'UNKNOWN_NOT_STRING';
+    if (!item.trim()) return 'UNKNOWN_EMPTY';
+    if (item.length > 500) return 'UNKNOWN_TEXT_LIMIT';
+  }
+  return null;
 }
 
 export function validateAnswer(value, known) {
