@@ -50,6 +50,12 @@ export function renderByokPreview(preview) {
 export function renderByokResult(result) {
   const cost=result.reportedCostUsd==null?'Actual cost unknown; reservation retained.':`Reported cost: ${result.reportedCostUsd.toFixed(8)} USD.`;
   const meta=`<p>${escape(cost)} Duration: ${((result.latencyMs||0)/1000).toFixed(1)} s.${result.cached?' Previously recorded result; no new call.':''}</p>`;
+  // Valid model-reported gaps remain a FALLBACK, never a successful interpretation.
+  // Old cached failures without this optional field keep their original rendering.
+  if(result.status==='FALLBACK'&&result.code==='BYOK_EMPTY_INTERPRETATION'&&Array.isArray(result.limitations)&&result.limitations.length) {
+    const limits=result.limitations.filter(value=>typeof value==='string'&&value.trim()&&value.length<=500).slice(0,8);
+    if(limits.length)return `<h3>More context is needed</h3><p>The model did not provide a sourced answer from this selection.</p><h4>Model-reported limits</h4><ul>${limits.map(value=>`<li>${escape(value)}</li>`).join('')}</ul><p>Review the selected files and source-description option, then prepare a new preview. Nothing will be added or sent automatically.</p>${meta}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
+  }
   if(result.status!=='INTERPRETATION')return `<h3>Explanation unavailable</h3><p>${escape(messages[result.code]||'The request did not complete. Local observations remain available.')}</p>${result.diagnostics?.validationReason?`<p>${escape(reasons[result.diagnostics.validationReason]||'Invalid format.')}</p>`:''}${meta}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
   const sourceMap=new Map(result.evidence.map(e=>[e.citation,e]));
   const section=(title,items)=>items.length?`<h3>${title}</h3><ul>${items.map(i=>`<li><p>${escape(i.text)}</p>${i.citations.map(c=>{const e=sourceMap.get(c);return e?.path?`<button type="button" data-ai-source="${escape(e.path)}" data-ai-snapshot="${escape(e.snapshotId)}">${escape(c)} · ${escape(e.path)}</button>`:`<span>${escape(c)} · ${escape(e?.id||'recorded source')}</span>`;}).join(' ')}</li>`).join('')}</ul>`:'';

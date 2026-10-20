@@ -1,5 +1,10 @@
 # Optional Local OpenRouter interpretation
 
+Current content-policy candidate: v5 (2026-10-20), documented below and in
+[the qualification record](qualification/OPENROUTER_QUALITY_20261020.md). The dated
+recovery notes remain historical; v5 supersedes their English-only generation
+policy and generic display of schema-valid model abstentions.
+
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
 Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The transport has a 30-second deadline, input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
@@ -90,3 +95,42 @@ descriptions explicitly checked, memory unchecked, a newly reviewed preview,
 then one Send. Check useful English prose, rules/service/access/view and declared
 plans, clickable citations, no invented execution, visible omissions and cost.
 Success on that step does not qualify task/memory/Portal or the entire recipe.
+
+## Content policy v5 (2026-10-20)
+
+Generated prose follows an explicit user language request; otherwise it remains
+English. Maintained UI labels, CLI messages, JSON keys and source identifiers are
+unchanged. The default UI question asks for supported explanations/examples, not
+for a roadmap inferred from filenames.
+
+The single generation request now asks for direct answers and predicted examples
+in `claims`, with optional actionable checks in `nextTests` and specific missing
+evidence in `unknowns`. Its policy distinguishes actual supplied expressions from
+structure-only context, including when source descriptions were selected but no
+clauses were captured. No additional file is read or included in the request.
+Predictions remain inferences, not executed tests or Proof.
+
+A schema-valid response with no claims still returns
+`status: FALLBACK`, `code: BYOK_EMPTY_INTERPRETATION`, `answer: null`. When it
+contains non-empty `unknowns`, an **optional** `limitations` array retains only
+the validated, redacted strings. The UI labels these as model-reported limits,
+asks the user to review the selection and prepare a new preview, and does not
+offer a blind retry (`retryable: false`). It does not mark the abstention as a
+successful explanation or independently verify the model's assessment. Empty,
+malformed, truncated and invalidly cited responses retain their failure handling.
+Old cached failures without `limitations` retain their old display. A deliberate
+CLI retry is still subject to the existing new-preview/new-consent path; no
+automatic retry or hidden context expansion is added.
+
+Request version **5** changes the consent/cache digest, so a v4 consent cannot
+authorize a new-policy request and a v4 result cannot be mistaken for a v5 model
+response. Historical files and consumed/reserved spend are not rewritten or
+reset. All source/memory opt-ins, response schemas, source navigation, model
+choice, provider cap/price checks, request limits and 30-second deadline remain.
+
+The new policy is a quality intervention, **not** a semantic verifier. The
+validator still enforces structure and citation membership, not entailment.
+Neither a passing offline mock nor the policy text proves model accuracy,
+resistance to prompt injection, improved latency, or HUMAN acceptance. Retest the
+frozen human questions and the qualification corpus with real responses before
+calling the new quality level accepted.

@@ -1,5 +1,6 @@
 // Pure, bounded policies shared by the network path and offline regression tests.
-export const REQUEST_VERSION = 4;
+// Content policy v5 requires fresh consent/cache; retained v4 answers are not rewritten.
+export const REQUEST_VERSION = 5;
 export function selectEvidence(model, paths = []) {
   const files = model.files.filter(f => f.extraction);
   if (paths.length) return files.filter(f => paths.includes(f.path));

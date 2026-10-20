@@ -21,6 +21,7 @@ Principles:
 ## Product language
 
 Use English for all maintained interface labels, CLI messages, default prompts,
-code comments and documentation. Generated project explanations are requested in
-English. Preserve original source excerpts, identifiers, user input and historical
+code comments and documentation. Generated project explanations default to
+English, but follow an explicit language request from the user. This exception
+changes generated prose only, not interface labels, JSON keys or identifiers. Preserve original source excerpts, identifiers, user input and historical
 machine evidence verbatim; they are evidence, not interface translations.
