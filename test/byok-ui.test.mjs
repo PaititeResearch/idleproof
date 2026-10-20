@@ -91,7 +91,7 @@ test('an older source response cannot overwrite the last clicked citation',async
 
 // Retain the HUMAN-observed consent cycle for every scope-changing input, not just text.
 test('editing any preview input disables Send until a fresh preview; no preview generates',async()=>{
-  for(const id of ['aiQuestion','aiPaths','aiIncludeSource','aiIncludeMemory','scanSource']) {
+  for(const id of ['aiQuestion','aiPaths','aiIncludeSource','aiIncludeMemory','aiQuality','scanSource']) {
     const u=ui();
     await u.get('aiPreviewButton').onclick();assert.equal(u.get('aiSend').disabled,false,id);
     u.get(id).listeners.input();assert.equal(u.get('aiSend').disabled,true,id);

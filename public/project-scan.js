@@ -100,10 +100,10 @@ $('scanHandoff').onclick=async()=>{try{const data=await get('/api/project-handof
 refresh();setInterval(()=>{if(!document.hidden)refresh();},5000);
 
 let consent=null,lastFailure=null,aiBusy=false,previewSequence=0;
-const aiOptions=()=>({source:$('scanSource').value,paths:$('aiPaths').value.split(/\r?\n/).map(p=>p.trim()).filter(Boolean),includeSource:$('aiIncludeSource').checked,includeMemory:$('aiIncludeMemory').checked,question:$('aiQuestion').value});
+const aiOptions=()=>({source:$('scanSource').value,paths:$('aiPaths').value.split(/\r?\n/).map(p=>p.trim()).filter(Boolean),includeSource:$('aiIncludeSource').checked,includeMemory:$('aiIncludeMemory').checked,quality:$('aiQuality').checked,question:$('aiQuestion').value});
 const aiRequest=body=>get('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 const invalidate=()=>{previewSequence++;consent=null;lastFailure=null;$('aiRetry').hidden=true;$('aiSend').disabled=true;};
-for(const id of ['aiPaths','aiQuestion','aiIncludeSource','aiIncludeMemory','scanSource'])$(id).addEventListener('input',invalidate);
+for(const id of ['aiPaths','aiQuestion','aiIncludeSource','aiIncludeMemory','aiQuality','scanSource'])$(id).addEventListener('input',invalidate);
 $('aiTestConnection').onclick=async()=>{try{$('aiStatus').textContent=formatByokStatus(await aiRequest({action:'test',allowNetwork:true}));}catch(e){$('aiStatus').textContent=formatByokError(e);}};
 $('optionalAI').addEventListener('toggle',async()=>{if($('optionalAI').open)try{$('aiStatus').textContent=formatByokStatus(await get('/api/ai/status'));}catch(e){$('aiStatus').textContent=formatByokError(e);}});
 async function preparePreview(retryOf=null) {

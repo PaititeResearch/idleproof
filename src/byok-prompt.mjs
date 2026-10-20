@@ -12,7 +12,8 @@ export function buildByokMessages(packet) {
   // Source opt-in does not imply that every selected file has a body. Inspect only
   // the already consented packet, without loading more files or changing its scope.
   const hasExpressions = packet.includeSource === true && (packet.evidence || []).some(file =>
-    (file.descriptions || []).some(description => (description.clauses || []).length > 0));
+    (file.descriptions || []).some(description => (description.clauses || []).length > 0) ||
+    (file.sourceExcerpt?.status === 'captured-window' && typeof file.sourceExcerpt.code === 'string' && file.sourceExcerpt.code.trim().length > 0));
   const scope = hasExpressions
     ? 'Some behavior expressions are supplied, but descriptions are partial. Use only what each cited expression supports. A supported prediction does not require an executed test.'
     : 'No behavior expressions are supplied: do not assert access enforcement, calculation rules or exact outcomes as current behavior. Explain which requested examples cannot be derived. Any selected intentions or memory remain declared or historical.';

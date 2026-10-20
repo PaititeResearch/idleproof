@@ -1,6 +1,9 @@
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const details=(label,value)=>`<details><summary>${escape(label)}</summary><pre>${escape(JSON.stringify(value,null,2))}</pre></details>`;
 const messages={
+  BYOK_SOURCE_MISMATCH:'A captured source does not match the approved snapshot. Prepare a new preview; no generation was requested.',
+  BYOK_REVIEW_CONTEXT_BUDGET:'The draft is too large for the approved review budget. No review was sent; the draft is not presented as a reviewed answer.',
+  BYOK_REVIEW_COST_UNKNOWN:'The draft cost is unknown. Its reservation is retained and no review was sent.',
   BYOK_OUTPUT_TRUNCATED:'Generation reached its output limit before completing the response. Partial output is not presented as an explanation.',
   BYOK_EMPTY_RESPONSE:'The provider returned a response without usable text.',
   BYOK_EMPTY_INTERPRETATION:'The response contains no sourced explanation. This workflow still needs verification.',
@@ -56,11 +59,14 @@ function validationMessage(diagnostics) {
 }
 export function renderByokPreview(preview) {
   const p=preview.packet,s=p.selection;
-  return `<h3>Context to send</h3><p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
+  const quality=preview.requestPolicy?.mode==='grounded-review';
+  const plan=quality?`<p>Grounded review: up to 2 paid calls, sharing a planned total budget of ${escape(preview.requestPolicy.maxCostUsd)} USD for this explanation (not per call). At most ${escape(preview.requestPolicy.maxTokens)} output tokens per call; 60-second generation deadline. The draft will be sent back to the same configured model for one corrective review. The whole plan must fit this budget before payment; provider-reported costs are reconciled. No automatic retries or hidden file selection.</p><p>Captured source windows: ${p.evidence.filter(e=>e.sourceExcerpt?.status==='captured-window').length}; inspect the exact content below. Windows are bounded, may omit code, and are not execution evidence.</p>`:'';
+  return `<h3>Context to send</h3>${plan}<p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
 }
 export function renderByokResult(result) {
   const cost=result.reportedCostUsd==null?'Actual cost unknown; reservation retained.':`Reported cost: ${result.reportedCostUsd.toFixed(8)} USD.`;
-  const meta=`<p>${escape(cost)} Duration: ${((result.latencyMs||0)/1000).toFixed(1)} s.${result.cached?' Previously recorded result; no new call.':''}</p>`;
+  const review=result.review?`<p>Model review: ${escape(result.review.callsMade)}/2 calls; ${result.review.completed?'corrective pass completed, not independently verified':'incomplete; no reviewed explanation accepted'}. Costs below cover all attempted calls.</p>`:'';
+  const meta=review+`<p>${escape(cost)} Duration: ${((result.latencyMs||0)/1000).toFixed(1)} s.${result.cached?' Previously recorded result; no new call.':''}</p>`;
   // Valid model-reported gaps remain a FALLBACK, never a successful interpretation.
   // Old cached failures without this optional field keep their original rendering.
   if(result.status==='FALLBACK'&&result.code==='BYOK_EMPTY_INTERPRETATION'&&Array.isArray(result.limitations)&&result.limitations.length) {

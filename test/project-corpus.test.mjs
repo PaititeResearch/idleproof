@@ -29,3 +29,20 @@ test('generic multi-layer corpus keeps actual rules, links, intent and limitatio
   assert.doesNotMatch(JSON.stringify(model),/PRIVATE_CORPUS_SENTINEL/);
   assert.ok(row('package.json').extraction.description.dependencies.some(d=>d.scope==='devDependencies'));
 });
+
+// Existing real-Core CI lane executes this test. No network provider or user data.
+test('quality preview reads immutable real Core windows without executing corpus code',{skip:!process.env.IDLEPROOF_TEST_CORE},async t=>{
+  const {prepareByokPreview}=await import('../src/byok.mjs');
+  const p=createProjectCorpus();t.after(()=>fs.rmSync(p.cwd,{recursive:true,force:true}));
+  await scanProject(p.cwd,{documents:p.documents,ci:true});
+  fs.writeFileSync(path.join(p.cwd,'service.py'),'raise RuntimeError("WORKTREE_NOT_APPROVED")\n');
+  const preview=await prepareByokPreview(p.cwd,{quality:true,includeSource:true,paths:['service.py','rules.py','access_policy.py','access_variant.py'],question:'Explain the caller and access policy.'});
+  const byPath=new Map(preview.packet.evidence.map(e=>[e.path,e]));
+  for(const file of ['service.py','rules.py','access_policy.py','access_variant.py']) {
+    const e=byPath.get(file);assert.equal(e.sourceExcerpt.status,'captured-window',file);
+    assert.equal(e.sourceExcerpt.code.trimEnd(),p.files[file].trimEnd(),file);
+  }
+  assert.doesNotMatch(JSON.stringify(preview),/WORKTREE_NOT_APPROVED|PRIVATE_CORPUS_SENTINEL/);
+  assert.equal(fs.existsSync(path.join(p.cwd,'SCAN_MUST_NOT_EXECUTE')),false);
+  assert.equal(preview.configured,false,'no API key needed to inspect the local preview');
+});

@@ -1,9 +1,10 @@
 # Optional Local OpenRouter interpretation
 
-Current content-policy candidate: v5 (2026-10-20), documented below and in
-[the qualification record](qualification/OPENROUTER_QUALITY_20261020.md). The dated
-recovery notes remain historical; v5 supersedes their English-only generation
-policy and generic display of schema-valid model abstentions.
+Current request-policy candidate: v7 (2026-10-21), with an explicit bounded
+source/review mode documented in
+[the grounded-review qualification record](qualification/OPENROUTER_GROUNDED_REVIEW_20261021.md).
+The dated v3/v5/v6 notes below remain historical. This candidate is not yet
+HUMAN-qualified for semantic quality; the observed v6 content failure is retained.
 
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
@@ -134,3 +135,37 @@ Neither a passing offline mock nor the policy text proves model accuracy,
 resistance to prompt injection, improved latency, or HUMAN acceptance. Retest the
 frozen human questions and the qualification corpus with real responses before
 calling the new quality level accepted.
+
+
+## Optional captured-code and corrective-review mode (v7)
+
+The unchecked **Add captured code and one corrective review** option adds up to
+two paid calls using the same configured model, sharing the existing per-request
+budget for the entire explanation. CLI: add `--quality` to both `ai preview` and
+`ai explain`, keeping all other options and the new consent digest identical.
+Source bodies still require `--include-source`; memory still requires its own
+opt-in. The preview shows the new windows and call/cost plan before Send.
+
+Code windows come only from the immutable scan and already-selected paths: at
+most the first 40 lines and 4 KiB per file, within the existing 24 KiB packet.
+They preserve indentation and imports; missing/redacted/omitted portions remain
+explicitly unknown. A window is not a runtime trace. No project code executes.
+
+The second call corrects the first draft against the same evidence. It is a model
+review, not independent truth verification. Both passes must fit the configured
+maxRequestUsd and remaining project/key budgets before the first paid request.
+An existing $0.02 ceiling is **shared**, not doubled. Actual costs are reconciled
+per pass; the provider-side capped key remains the independent billing limit.
+Cancellation, uncertain costs and malformed results do not cause a retry loop.
+
+Existing token settings are unchanged. An explicitly configured maximum may now
+be up to 4096 output tokens per call; increasing it also increases the reserved
+cost. The quality plan has a 60-second generation deadline, versus the ordinary
+30-second single-call path. Final results display total cost/duration and the
+number of attempted passes. Historical answers and spend remain intact.
+
+Use a fresh preview after selecting the option. Do not reuse v6 consent or reset
+the cost meter. The first human comparison should retain the same model, question
+and 2000-token limit so that the new evidence/review intervention can be assessed
+before changing additional parameters. The qualification record lists acceptance
+criteria and known limitations. No workflow or mock result proves live quality.
