@@ -1,0 +1,57 @@
+name: qualification-atlas-section-transfer
+on:
+  push:
+    branches: ['qualification/atlas-section-transfer-20261021']
+    paths: ['.github/workflows/qualification-atlas-section-transfer.yml']
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 45bfd4b3f467ab46436b0aa8187b35bf289c8ca1
+          path: candidate
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: qualification/atlas-section-transfer-20261021
+          path: transfer
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Verify payload and exact candidate tree
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 45bfd4b3f467ab46436b0aa8187b35bf289c8ca1
+          cat ../transfer/payload/part-* > "$RUNNER_TEMP/section.b64"
+          test "$(wc -c < "$RUNNER_TEMP/section.b64")" = 17840
+          printf '876ab4f7cd1dc439844d75fc1d270d5ea091bece8b5505b0fd1b2c056cdd9175  %s\n' "$RUNNER_TEMP/section.b64" | sha256sum -c -
+          node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync(process.argv[2],z.brotliDecompressSync(Buffer.from(fs.readFileSync(process.argv[1],"utf8"),"base64")))' "$RUNNER_TEMP/section.b64" "$RUNNER_TEMP/section.patch"
+          printf '851241b34b4cacb3e466ef5801c923c7415e7661683959a3d4144ee278e50bd4  %s\n' "$RUNNER_TEMP/section.patch" | sha256sum -c -
+          git apply --check "$RUNNER_TEMP/section.patch"
+          git apply "$RUNNER_TEMP/section.patch"
+          git add -A
+          test "$(git write-tree)" = 2e3ae56be2f1b6aa2c25b4bb0cfa5e35c3b97427
+          test "$(git diff --cached --name-only | wc -l)" -eq 12
+          git diff --cached --check
+      - name: All unit and product tests without paid providers
+        working-directory: candidate
+        run: |
+          npm test
+          npm pack --dry-run > /dev/null
+      - name: Publish only the candidate with the original Atlas as parent
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(local): add lazy opt-in Repository Atlas section without replacing cockpit'
+          test "$(git rev-parse HEAD^)" = 45bfd4b3f467ab46436b0aa8187b35bf289c8ca1
+          test "$(git rev-parse HEAD^{tree})" = 2e3ae56be2f1b6aa2c25b4bb0cfa5e35c3b97427
+          git push origin HEAD:refs/heads/candidate/atlas-local-section-20261021
