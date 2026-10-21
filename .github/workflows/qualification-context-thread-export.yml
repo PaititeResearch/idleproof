@@ -1,0 +1,31 @@
+name: qualification-context-thread-export
+on:
+  push:
+    branches: ['qualification/context-thread-export-20261021']
+    paths: ['.github/workflows/qualification-context-thread-export.yml']
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: deece3e24d7d0422571d8fe2f04c4b3c4e11aa7b
+          persist-credentials: false
+      - name: Export pinned source after tree verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = deece3e24d7d0422571d8fe2f04c4b3c4e11aa7b
+          test "$(git rev-parse HEAD^{tree})" = b667f774e75c93e51dc07e3f1dbbf31f32514ea0
+          mkdir -p "$RUNNER_TEMP/context-thread-export"
+          git archive --format=tar HEAD > "$RUNNER_TEMP/context-thread-export/idleproof-v12.tar"
+          sha256sum "$RUNNER_TEMP/context-thread-export/idleproof-v12.tar" > "$RUNNER_TEMP/context-thread-export/SHA256SUMS"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: idleproof-v12-source-context-thread
+          path: ${{ runner.temp }}/context-thread-export/
+          if-no-files-found: error
+          retention-days: 3
