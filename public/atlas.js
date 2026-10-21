@@ -3,6 +3,20 @@ const $=id=>document.getElementById(id),copy=x=>structuredClone(x);
 const element=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);return e;};
 let data=null,overlay=null,cy=null,selected=null,dirty=false,loading=false,sequence=0,sourceSeq=0,offset=0,focus='',editMode='node',editId=null;
 let controller=null,monitoring=false,monitorTimer=null,monitorSeq=0;
+const embedded=window.parent!==window&&new URLSearchParams(location.search).get('embedded')==='1';
+let hostVisible=!embedded;
+function notifyHost(type,fields={}){if(embedded)window.parent.postMessage({type,...fields},location.origin);}
+if(embedded){
+  document.documentElement.dataset.embedded='true';
+  // Explicit local control links leave the frame, rather than nesting a second cockpit.
+  for(const link of document.querySelectorAll('a[href="/"]'))link.target='_top';
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='idleproof:atlas-host-visibility'||typeof event.data.visible!=='boolean')return;
+    hostVisible=event.data.visible;
+    if(!hostVisible)stopMonitor();else requestAnimationFrame(()=>cy?.resize());
+  });
+  window.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.querySelector('dialog[open]'))notifyHost('idleproof:atlas-close');});
+}
 const status=(text,error=false)=>{$('notice').textContent=text;$('notice').classList.toggle('error',error);};
 const uid=()=> 'user_'+crypto.randomUUID().replaceAll('-','');
 function params(extra={}) {return new URLSearchParams({source:$('source').value,view:$('view').value,query:$('query').value.trim(),offset:String(offset),focus,...extra});}
@@ -10,7 +24,7 @@ async function request(q,body,signal) {
   const r=await fetch('/api/atlas?'+q,{...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal});
   const v=await r.json();if(!r.ok)throw new Error(v.error||`HTTP ${r.status}`);return v;
 }
-function setDirty(value=true){dirty=value;$('save').disabled=!dirty||loading;$('discard').disabled=!dirty||loading;}
+function setDirty(value=true){dirty=value;notifyHost('idleproof:atlas-dirty',{dirty});$('save').disabled=!dirty||loading;$('discard').disabled=!dirty||loading;}
 function busy(value){loading=value;for(const id of ['addNode','addEdge','layout','alias','note'])$(id).disabled=value;for(const b of $('annotation').querySelectorAll('button'))b.disabled=value;if(cy){if(value)cy.nodes().lock();else cy.nodes().unlock();}setDirty(dirty);}
 function mayNavigate(){if(loading){status('A local operation is in progress. No additional change was sent.');return false;}if(dirty){status('Save or discard the current view edits before changing the capture or filter.',true);return false;}return true;}
 function css(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
@@ -138,15 +152,15 @@ $('jsonExport').onclick=async()=>{if(!data)return;try{const r=await request(para
 $('umlExport').onclick=async()=>{if(!mayNavigate())return;try{const r=await request(params({action:'export',format:'mermaid'}));download('idleproof-atlas.mmd',r.text,'text/plain');}catch(e){status(e.message,true);}};
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';if(cy)cy.style(style());};
 async function observe(){
-  if(!monitoring||document.hidden||!$('monitorPanel').open)return;const my=monitorSeq;
-  try{const r=await fetch('/api/state'),state=await r.json();if(my!==monitorSeq||!monitoring)return;const control=state.controlPlane||{},events=control.recentEvents||[];
+  if(!monitoring||!hostVisible||document.hidden||!$('monitorPanel').open)return;const my=monitorSeq;
+  try{const r=await fetch('/api/state'),state=await r.json();if(my!==monitorSeq||!monitoring||!hostVisible)return;const control=state.controlPlane||{},events=control.recentEvents||[];
     $('activity').replaceChildren(element('p',`Latest task: ${state.session?.task?.anchor||state.session?.task?.title||'No observed task'} · trace ${control.provenance?.valid?'valid':'unavailable / invalid'}`));
     for(const v of events.slice(-6).reverse()){const p=v.event?.policy,decision={allow:'ALLOW',ask:'REVIEW',deny:'BLOCK'}[p?.decision]||'OBSERVED';$('activity').append(element('p',`${decision} · ${v.event?.eventType||v.event?.hook_event_name||v.event?.type||'event'} · ${v.event?.tool_name||v.event?.tool||''} · ${p?.reason||'No policy decision on this event.'}`));}
   }catch(e){if(my===monitorSeq)$('activity').textContent='Local activity unavailable.';}
-  finally{if(my===monitorSeq&&monitoring&&!document.hidden&&$('monitorPanel').open)monitorTimer=setTimeout(observe,2500);}
+  finally{if(my===monitorSeq&&monitoring&&hostVisible&&!document.hidden&&$('monitorPanel').open)monitorTimer=setTimeout(observe,2500);}
 }
 function stopMonitor(){monitoring=false;monitorSeq++;clearTimeout(monitorTimer);$('monitor').textContent='Start observing';}
-$('monitor').onclick=()=>{if(monitoring)return stopMonitor();monitoring=true;monitorSeq++;$('monitor').textContent='Stop observing';observe();};
+$('monitor').onclick=()=>{if(!hostVisible)return;if(monitoring)return stopMonitor();monitoring=true;monitorSeq++;$('monitor').textContent='Stop observing';observe();};
 $('monitorPanel').ontoggle=()=>{if(!$('monitorPanel').open)stopMonitor();};document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMonitor();});
 $('assurance').onclick=async()=>{const button=$('assurance');button.disabled=true;$('obligations').textContent='Reading existing Core context…';try{const r=await request(params({action:'assurance'}));$('obligations').textContent=JSON.stringify(r,null,2);}catch(e){$('obligations').textContent='Core context unavailable: '+e.message;}finally{button.disabled=false;}};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
@@ -154,3 +168,5 @@ window.addEventListener('pagehide',()=>{stopMonitor();controller?.abort();cy?.de
 if(matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.dataset.theme='dark';
 // Script defer/module ordering does not imply provider or model initialization.
 if(typeof window.cytoscape!=='function')status('Local graph runtime unavailable. The existing Local cockpit is unaffected.',true);else load();
+
+notifyHost('idleproof:atlas-ready');

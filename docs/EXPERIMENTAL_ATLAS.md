@@ -54,3 +54,22 @@ npm test
 ```
 
 Browser and real-Core tests use synthetic repositories, not customer data. No model generation is required. Existing regression gates and performance thresholds must remain intact.
+
+## Candidate: Atlas inside the existing Local cockpit
+
+On the Local-section candidate, starting Local with the same explicit
+`IDLEPROOF_EXPERIMENTAL_ATLAS=1` flag adds **Repository Atlas** to the section
+navigation. Opening that section loads the existing editor for this project's
+capture, without rescanning or invoking BYOK. With the flag absent, the cockpit
+is unchanged. The standalone page stays available.
+
+**Hide map** retains unsaved edits in this tab and stops activity observation.
+**Save view** persists only the diagram overlay. After a page reload, the section
+starts closed; reopening restores saved overlay data without a paid call. Use
+an existing captured source (`HEAD` or `WORKTREE`) or the existing Project scan
+controls explicitly if none exists. The Atlas never creates a scan implicitly.
+
+The embedded document is same-origin only. All normal cockpit/API framing and
+request protections remain. See `docs/qualification/ATLAS_LOCAL_SECTION_20261021.md`
+and the separate, not-implemented REA proposal in
+`docs/architecture/REA_STATIC_ADAPTER_PROPOSAL_20261021.md`.

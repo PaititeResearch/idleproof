@@ -159,10 +159,23 @@ function mime(file) {
   if (file.endsWith('.html')) return 'text/html; charset=utf-8'; if (file.endsWith('.js')) return 'text/javascript; charset=utf-8'; if (file.endsWith('.css')) return 'text/css; charset=utf-8'; if (file.endsWith('.svg')) return 'image/svg+xml'; return 'application/octet-stream';
 }
 
-function serveStatic(req, res) {
+async function serveStatic(req, res, experimentalAtlas = false) {
   const url = new URL(req.url, 'http://localhost'); const relative = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\//, ''); const publicRoot = path.join(PACKAGE_ROOT, 'public'); const file = path.resolve(publicRoot, relative);
   if (!(file === publicRoot || file.startsWith(`${publicRoot}${path.sep}`))) { res.writeHead(403, SECURITY_HEADERS); res.end('Forbidden'); return; }
-  try { const data = fs.readFileSync(file); res.writeHead(200, { ...SECURITY_HEADERS, 'content-type':mime(file), 'cache-control':'no-cache' }); res.end(data); }
+  try {
+    let data = fs.readFileSync(file); let headers = SECURITY_HEADERS;
+    if (experimentalAtlas && file === path.join(publicRoot, 'index.html')) {
+      const {injectAtlasSection} = await import('./atlas-section.mjs');
+      data = injectAtlasSection(data.toString('utf8'));
+    }
+    // Only this opt-in Atlas document may be framed by this same Local origin.
+    // The cockpit, standalone Atlas and all APIs retain DENY / frame-ancestors none.
+    if (experimentalAtlas && url.pathname === '/atlas.html' && url.searchParams.get('embedded') === '1') {
+      headers = {...SECURITY_HEADERS, 'x-frame-options':'SAMEORIGIN',
+        'content-security-policy':SECURITY_HEADERS['content-security-policy'].replace("frame-ancestors 'none'", "frame-ancestors 'self'")};
+    }
+    res.writeHead(200, { ...headers, 'content-type':mime(file), 'cache-control':'no-cache' }); res.end(data);
+  }
   catch { res.writeHead(404, SECURITY_HEADERS); res.end('Not found'); }
 }
 
@@ -294,7 +307,7 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experim
       if (url.pathname === '/api/preferences' && req.method === 'POST') { const body=await readBody(req); mutateState(cwd,(state) => { if (['learn','review'].includes(body.mode)) state.preferences.mode=body.mode; if (['adaptive','beginner','experienced'].includes(body.level)) state.preferences.level=body.level; return state; }); return json(res,200,presentState(cwd)); }
       if (url.pathname === '/api/approve' && req.method === 'POST') { const body=await readBody(req); const grant=grantApproval(cwd,body.fingerprint,{ minutes:Number(body.minutes || 10), uses:Number(body.uses || 1), note:body.note || 'Approved from local control plane' }); return json(res,200,{ ok:true, fingerprint:body.fingerprint, grant }); }
       if (url.pathname === '/api/responsibility/accept' && req.method === 'POST') { const body=await readBody(req); const acceptance=acceptResponsibility(cwd,{ principal:body.principal || '', note:body.note || 'Accepted from local control plane' }); createAttestation(cwd); return json(res,200,{ ok:true, acceptance, responsibility:responsibilityReport(cwd) }); }
-      return serveStatic(req,res);
+      return await serveStatic(req,res,experimentalAtlas);
     } catch (error) { return json(res,500,{ error:error.message }); }
   });
   return new Promise((resolve,reject) => {
