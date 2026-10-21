@@ -637,6 +637,43 @@ for (const width of [390, 1440]) {
   });
 }
 
+// Timeout recovery keeps a separate unreviewed disclosure, never a success.
+// Synthetic admitted data and local source routing only; no model request.
+for (const width of [390, 1440]) {
+  await section(`F3 ${width} px: review timeout draft remains labelled, collapsed and locally citable`, async () => {
+    const ui = await open(completeUrl, { width, height: 900 }); await waitConnection(ui.page, 'live');
+    await ui.page.route('**/api/project-source?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      path: 'calculator.py', snapshotId: 'synthetic-timeout-snapshot', sourceSha256: 'synthetic-hash', lines: [{ line: 1, text: 'return amount + 12', truncated: false }]
+    }) }));
+    await ui.page.evaluate(async () => {
+      const { renderByokResult } = await import('/byok-view.js');
+      document.getElementById('optionalAI').open = true;
+      document.getElementById('aiResult').innerHTML = renderByokResult({
+        status: 'FALLBACK', code: 'BYOK_CANCELLED_OR_TIMEOUT', answer: null, reportedCostUsd: null, latencyMs: 60000, retryable: false,
+        diagnostics: { failureStage: 'review', abortCause: 'deadline' }, review: { callsMade: 2, completed: false, semanticVerified: false },
+        accounting: { knownReportedCostUsd: 0.0001, unresolvedReservedUsd: 0.001 },
+        unreviewedDraft: { schema: 'idleproof.byok-draft.v1', status: 'UNREVIEWED', semanticVerified: false,
+          answer: { claims: [{ text: 'This synthetic draft predicts an increase of twelve. Its review has not completed.', citations: ['S1'] }], nextTests: [], unknowns: [], authority: 'INFERRED', proof: 'UNKNOWN', requiresReview: true },
+          presentation: { headings: ['The draft calculation'] },
+          evidence: [{ citation: 'S1', path: 'calculator.py', snapshotId: 'synthetic-timeout-snapshot' }] }
+      });
+    });
+    const disclosure=ui.page.locator('#aiResult details').filter({ has: ui.page.locator('summary', { hasText: 'View the saved draft' }) }).first();
+    const closed=await disclosure.evaluate(e=>!e.open);
+    await disclosure.locator('summary').click();
+    await ui.page.locator('#aiResult button[data-ai-source="calculator.py"]').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiSourceDetail')?.textContent.includes('return amount + 12'));
+    const observed=await ui.page.evaluate(()=>({text:document.getElementById('aiResult').innerText,
+      source:document.getElementById('aiSourceDetail')?.textContent,
+      width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F3 ${width} px: review timeout draft remains labelled, collapsed and locally citable`,
+      closed && /Review timed out/.test(observed.text) && /Unreviewed draft/.test(observed.text) && /not a confirmed charge/.test(observed.text)
+      && !/Explanation for review|corrective pass completed/.test(observed.text) && observed.source.includes('return amount + 12')
+      && observed.scroll<=observed.width && count(ui.posts,'/api/ai')===0, {closed,...observed});
+    await shot(ui.page,`f3-timeout-draft-${width}`);await ui.close();
+  });
+}
+
 check('E5 the page raised no script error in any scenario above', pageErrors.length === 0, { errors: pageErrors.slice(0, 20) });
 
 for (const step of cleanup) await step()?.catch?.(() => {});

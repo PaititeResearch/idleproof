@@ -212,7 +212,7 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
   const packet=answerFirstPacket(await groundedPacket(cwd,base.packet,dependencies));
   const selected=config(cwd);
   if(JSON.stringify(selected)!==configuration)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
-  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT};
+  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only'};
   const contextDigest=hash({packet,model:base.model,requestPolicy,version:REQUEST_VERSION});
   const retryOf=options.retryOf??null;
   if(retryOf!==null) {
@@ -221,19 +221,22 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
     if(!prior||prior.contextDigest!==contextDigest||prior.status!=='FALLBACK')throw new Error('BYOK_RETRY_INVALID');
   }
   return {...base,packet,requestPolicy,contextDigest,retryOf,digest:retryOf?hash({contextDigest,retryOf}):contextDigest,
-    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. No automatic retries.'};
+    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. If review times out, the admitted draft is saved locally as unreviewed, never accepted as the reviewed answer. No automatic retries.'};
 }
 
 async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readCredential}) {
   if(options?.consentDigest!==preview.digest)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
   const release=byokLock(cwd),controller=new AbortController();
-  const cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
-  const started=Date.now(),timer=setTimeout(cancel,60000),cacheFile=path.join(files(cwd).dir,`answer-${preview.digest}.json`);
-  let meter=null,funded=false,steps=[],diagnostics=null,finalResult=null;
+  let abortCause=null;
+  const abort=cause=>{if(!controller.signal.aborted){abortCause=cause;controller.abort();}};
+  const cancel=()=>abort('cancelled');signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
+  const started=Date.now(),timer=setTimeout(()=>abort('deadline'),60000),cacheFile=path.join(files(cwd).dir,`answer-${preview.digest}.json`);
+  let meter=null,funded=false,steps=[],diagnostics=null,finalResult=null,currentStage='preflight',admittedDraft=null;
   const calls=()=>steps.filter(s=>s.attempted).length;
   const retained=()=>steps.reduce((total,s)=>total+s.held,0);
   const cost=()=>steps.filter(s=>s.attempted).every(s=>s.cost!==null)?steps.filter(s=>s.attempted).reduce((total,s)=>total+s.cost,0):null;
-  const passes=()=>steps.filter(s=>s.attempted).map(({stage,cost,held,diagnostics,reportedModel,provider})=>({stage,reportedCostUsd:cost,reservedUsd:held,diagnostics,reportedModel,provider}));
+  const passes=()=>steps.filter(s=>s.attempted).map(({stage,cost,held,diagnostics,reportedModel,provider,startedAfterMs,deadlineRemainingMs,latencyMs})=>({stage,reportedCostUsd:cost,reservedUsd:held,diagnostics,reportedModel,provider,startedAfterMs,deadlineRemainingMs,latencyMs}));
+  const evidence=()=>[...preview.packet.evidence.map(({citation,snapshotId,path,sourceSha256})=>({citation,snapshotId,path,sourceSha256})),...preview.packet.recordedMemory.map(({citation,id,authority,source})=>({citation,id,authority,source}))];
   const review=completed=>({mode:'grounded-review',maxCalls:2,callsMade:calls(),completed,semanticVerified:false,maxCostUsd:preview.requestPolicy.maxCostUsd});
   const pending=()=>({schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'UNKNOWN',code:'BYOK_INTERRUPTED',reservedUsd:retained(),reportedCostUsd:cost(),review:review(false),passes:passes(),answer:null,deterministicAvailable:true});
   function releaseUnused() {
@@ -265,12 +268,18 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     writeByok(cacheFile,pending()); // Reserve the complete plan before any payment.
     let answer=null,presentation=null;
     for(const step of steps) {
+      // A failed review must not inherit the successful draft's diagnostics.
+      currentStage=step.stage;diagnostics=null;
       controller.signal.throwIfAborted();
       const messages=step.stage==='draft'?groundedMessages(preview.packet):boundedReviewMessages(preview.packet,answer,presentation);
+      step.startedAfterMs=Math.max(0,Date.now()-started);
+      step.deadlineRemainingMs=Math.max(0,60000-step.startedAfterMs);step.latencyMs=null;
       step.attempted=true;writeByok(cacheFile,pending());
-      const result=await request('/chat/completions',{model:selected.model,messages,max_tokens:selected.maxTokens,temperature:0,stream:false,...reasoning,
+      let result;
+      try{result=await request('/chat/completions',{model:selected.model,messages,max_tokens:selected.maxTokens,temperature:0,stream:false,...reasoning,
         provider:{require_parameters:true,data_collection:'deny',max_price:{prompt:price.prompt*1e6,completion:price.completion*1e6,request:price.request}},
-        response_format:{type:'json_schema',json_schema:{name:'grounded_project_interpretation',strict:true,schema:structuredSchema}}},128*1024);
+        response_format:{type:'json_schema',json_schema:{name:'grounded_project_interpretation',strict:true,schema:structuredSchema}}},128*1024);}
+      finally{step.latencyMs=Math.max(0,Date.now()-started-step.startedAfterMs);}
       finalResult=result;
       step.diagnostics=diagnostics=completionDiagnostics(result);
       step.reportedModel=typeof result.model==='string'?redactPortalText(result.model,160):null;
@@ -285,24 +294,37 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
       if(diagnostics.finishReason==='length')throw new Error('BYOK_OUTPUT_TRUNCATED');
       if(diagnostics.finishReason==='content_filter')throw new Error('BYOK_CONTENT_FILTERED');
       if(!diagnostics.contentPresent)throw new Error('BYOK_EMPTY_RESPONSE');
+      // Reconcile any received cost, but never accept a response after cancellation/deadline.
+      controller.signal.throwIfAborted();
       let parsed;try{parsed=JSON.parse(result.choices?.[0]?.message?.content);}catch{throw new Error('BYOK_INVALID_JSON');}
       const unpacked=unpackHumanAnswer(parsed,preview.packet);
       answer=admitAnswer(unpacked.base,preview.packet);presentation=unpacked.presentation;
       // No second paid request while the first one's cost remains uncertain.
       if(step.stage==='draft'&&step.cost===null)throw new Error('BYOK_REVIEW_COST_UNKNOWN');
+      if(step.stage==='draft')admittedDraft={schema:'idleproof.byok-draft.v1',status:'UNREVIEWED',semanticVerified:false,
+        answer:structuredClone(answer),presentation:structuredClone(presentation),evidence:evidence()};
     }
     const sumTokens=key=>steps.every(s=>Number.isInteger(s.diagnostics?.[key]))?steps.reduce((sum,s)=>sum+s.diagnostics[key],0):null;
     const safe={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,diagnostics,status:'INTERPRETATION',model:selected.model,
       reportedModel:typeof finalResult?.model==='string'?redactPortalText(finalResult.model,160):null,generatedAt:new Date().toISOString(),latencyMs:Date.now()-started,
       reportedCostUsd:cost(),reservedUsd:retained(),review:review(true),passes:passes(),tokens:{input:sumTokens('inputTokens'),output:sumTokens('outputTokens')},
-      answer,presentation,evidence:[...preview.packet.evidence.map(({citation,snapshotId,path,sourceSha256})=>({citation,snapshotId,path,sourceSha256})),...preview.packet.recordedMemory.map(({citation,id,authority,source})=>({citation,id,authority,source}))],deterministicAvailable:true};
+      answer,presentation,evidence:evidence(),deterministicAvailable:true};
     writeByok(cacheFile,safe);return safe;
   }catch(error) {
     releaseUnused();
-    const fallback={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'FALLBACK',code:safeCode(error),latencyMs:Date.now()-started,retryable:false,
+    const code=safeCode(error);
+    const interrupted=abortCause||(error?.name==='AbortError'?'unknown':null);
+    // Retain only an admitted, redacted draft after our own review deadline.
+    // Explicit cancellation, invalid reviews, content filtering and other errors
+    // never use this recovery path. FALLBACK/answer:null are kept in every case.
+    const recover=code==='BYOK_CANCELLED_OR_TIMEOUT'&&abortCause==='deadline'&&currentStage==='review'&&admittedDraft&&!meter?.blocked;
+    const accounting={knownReportedCostUsd:steps.filter(s=>s.attempted&&s.cost!==null).reduce((n,s)=>n+s.cost,0),
+      unresolvedReservedUsd:steps.filter(s=>s.attempted&&s.cost===null).reduce((n,s)=>n+s.held,0)};
+    const fallback={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'FALLBACK',code,latencyMs:Date.now()-started,retryable:false,
       ...(error.message==='BYOK_EMPTY_INTERPRETATION'&&error.limitations?.length?{limitations:error.limitations}:{}),
-      diagnostics:{...diagnostics,...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
-      reportedCostUsd:calls()?cost():null,reservedUsd:funded?retained():0,review:review(false),passes:passes(),answer:null,deterministicAvailable:true};
+      diagnostics:{...diagnostics,failureStage:currentStage,...(interrupted?{abortCause:interrupted}:{}),...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
+      reportedCostUsd:calls()?cost():null,reservedUsd:funded?retained():0,accounting,review:review(false),passes:passes(),
+      ...(recover?{unreviewedDraft:admittedDraft}:{}),answer:null,deterministicAvailable:true};
     if(calls())writeByok(cacheFile,fallback);
     return fallback;
   }finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);release();}

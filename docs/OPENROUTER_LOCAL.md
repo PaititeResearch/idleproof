@@ -1,10 +1,12 @@
 # Optional Local OpenRouter interpretation
 
-Current request-policy candidate: v8 (2026-10-21), with an answer-first
-presentation and explicit question coverage in the opt-in reviewed path. See
-[the answer-first qualification record](qualification/OPENROUTER_ANSWER_FIRST_20261021.md).
-The earlier v3/v5/v6/v7 notes below remain historical. The observed v7 result
-improved but stayed HUMAN PARTIAL; no automated result upgrades that finding.
+Current request-policy candidate: v9 (2026-10-21), retaining the v8 answer-first
+explanation and adding stage-specific deadline diagnostics and explicitly
+unreviewed draft recovery after a review deadline. See
+[the deadline qualification record](qualification/OPENROUTER_REVIEW_TIMEOUT_20261021.md).
+The earlier v3-v8 notes remain historical. A prior v8 answer remained HUMAN
+PARTIAL and the next natural-question trial timed out. Neither a recovered
+draft nor an automated test upgrades those observations.
 
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 

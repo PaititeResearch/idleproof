@@ -61,12 +61,44 @@ export function renderByokPreview(preview) {
   const p=preview.packet,s=p.selection;
   const quality=preview.requestPolicy?.mode==='grounded-review';
   const plan=quality?`<p>Grounded review: up to 2 paid calls, sharing a planned total budget of ${escape(preview.requestPolicy.maxCostUsd)} USD for this explanation (not per call). At most ${escape(preview.requestPolicy.maxTokens)} output tokens per call; 60-second generation deadline. The draft will be sent back to the same configured model for one corrective review. The whole plan must fit this budget before payment; provider-reported costs are reconciled. No automatic retries or hidden file selection.</p><p>Captured source windows: ${p.evidence.filter(e=>e.sourceExcerpt?.status==='captured-window').length}; inspect the exact content below. Windows are bounded, may omit code, and are not execution evidence.</p>`:'';
-  return `<h3>Context to send</h3>${plan}${p.answerPlan?details('Question checklist for the explanation',p.answerPlan):''}<p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
+  const recovery=quality&&preview.requestPolicy?.draftRecovery==='review-deadline-only'?'<p>If the corrective review times out, the completed initial draft is saved locally as an unreviewed draft. You may open it separately; it is not a completed or verified explanation. Cancellation does not save this draft.</p>':'';
+  return `<h3>Context to send</h3>${plan}${recovery}${p.answerPlan?details('Question checklist for the explanation',p.answerPlan):''}<p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
+}
+// This disclosure is only reached for a locally identified review deadline.
+// No model-supplied HTML, completion badge or automatic continuation is used.
+function renderUnreviewedDraft(draft) {
+  const a=draft?.answer;
+  if(draft?.schema!=='idleproof.byok-draft.v1'||draft.status!=='UNREVIEWED'||draft.semanticVerified!==false||
+    a?.authority!=='INFERRED'||a.proof!=='UNKNOWN'||a.requiresReview!==true||
+    !Array.isArray(a.claims)||!a.claims.length||a.claims.length>8||
+    !Array.isArray(a.unknowns)||a.unknowns.length>8||!Array.isArray(draft.evidence)||draft.evidence.length>20||
+    a.claims.some(c=>typeof c?.text!=='string'||c.text.length>1000||!Array.isArray(c.citations)||!c.citations.length||c.citations.length>8)||
+    a.unknowns.some(t=>typeof t!=='string'||t.length>500))return '';
+  const sources=new Map(draft.evidence.filter(e=>e&&typeof e.citation==='string').map(e=>[e.citation,e]));
+  if(a.claims.some(c=>c.citations.some(id=>!sources.has(id))))return '';
+  const titles=Array.isArray(draft.presentation?.headings)?draft.presentation.headings:[];
+  const parts=a.claims.map((item,i)=>`<section><h4>${escape(typeof titles[i]==='string'?titles[i]:'Draft section')}</h4><p>${escape(item.text).replace(/\n/g,'<br>')}</p>${item.citations.map(c=>{
+    const e=sources.get(c);return e?.path?`<button type="button" data-ai-source="${escape(e.path)}" data-ai-snapshot="${escape(e.snapshotId)}">${escape(c)} · ${escape(e.path)}</button>`:`<span>${escape(c)} · ${escape(e?.id||'recorded source')}</span>`;
+  }).join(' ')}</section>`).join('');
+  const gaps=a.unknowns.length?`<h4>Draft limitations</h4><ul>${a.unknowns.map(t=>`<li>${escape(t)}</li>`).join('')}</ul>`:'';
+  return `<details><summary>View the saved draft — corrective review not completed</summary><p><strong>Unreviewed draft.</strong> Its format and citation identifiers were checked, not the accuracy of its claims. It may contain errors or omissions. This is not a completed review, an executed test, or Proof.</p>${parts}${gaps}<pre id="aiSourceDetail" hidden></pre></details>`;
 }
 export function renderByokResult(result) {
   const cost=result.reportedCostUsd==null?'Actual cost unknown; reservation retained.':`Reported cost: ${result.reportedCostUsd.toFixed(8)} USD.`;
   const review=result.review?`<p>Model review: ${escape(result.review.callsMade)}/2 calls; ${result.review.completed?'corrective pass completed, not independently verified':'incomplete; no reviewed explanation accepted'}. Costs below cover all attempted calls.</p>`:'';
   const meta=review+`<p>${escape(cost)} Duration: ${((result.latencyMs||0)/1000).toFixed(1)} s.${result.cached?' Previously recorded result; no new call.':''}</p>`;
+  // New stage-aware failures keep legacy errors/rendering unchanged. A saved
+  // first draft is never rendered as an INTERPRETATION or a completed review.
+  const cause=result.diagnostics?.abortCause,stage=result.diagnostics?.failureStage;
+  if(result.status==='FALLBACK'&&result.code==='BYOK_CANCELLED_OR_TIMEOUT'&&['deadline','cancelled'].includes(cause)&&['preflight','draft','review'].includes(stage)) {
+    const title=cause==='cancelled'?'Request cancelled':stage==='review'?'Review timed out':stage==='draft'?'Draft timed out':'Connection checks timed out';
+    const notice=cause==='cancelled'?'You cancelled this request. No completed review is available.':stage==='review'?'The shared 60-second deadline was reached during corrective review. No reviewed explanation was accepted.':'The shared 60-second deadline was reached before a complete draft was accepted.';
+    const a=result.accounting;
+    const money=a&&Number.isFinite(a.knownReportedCostUsd)&&a.knownReportedCostUsd>=0&&Number.isFinite(a.unresolvedReservedUsd)&&a.unresolvedReservedUsd>=0
+      ?`<p>Reported so far: ${escape(a.knownReportedCostUsd.toFixed(8))} USD. Unresolved reservation: ${escape(a.unresolvedReservedUsd.toFixed(8))} USD (not a confirmed charge). The total charge may still be unknown.</p>`:'';
+    const draft=cause==='deadline'&&stage==='review'?renderUnreviewedDraft(result.unreviewedDraft):'';
+    return `<h3>${title}</h3><p>${notice}</p>${meta}${money}${draft}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
+  }
   // Valid model-reported gaps remain a FALLBACK, never a successful interpretation.
   // Old cached failures without this optional field keep their original rendering.
   if(result.status==='FALLBACK'&&result.code==='BYOK_EMPTY_INTERPRETATION'&&Array.isArray(result.limitations)&&result.limitations.length) {
