@@ -6,7 +6,7 @@ import {renderByokPreview,renderByokResult,formatByokStatus} from '../public/byo
 
 // Execute the shipped controller with a small DOM/fetch harness. No paid provider,
 // real browser or HUMAN qualification is implied by this test.
-function ui() {
+function ui({explanation=null}={}) {
   const elements=new Map(),requests=[];
   const get=id=>{if(!elements.has(id))elements.set(id,{id,value:'',checked:false,hidden:false,disabled:false,textContent:'',innerHTML:'',listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},setAttribute(name,value){this[name]=value;},focus(){this.focused=true;},scrollIntoView(){this.scrolled=true;}});return elements.get(id);};
   get('scanSource').value='HEAD';get('aiQuestion').value='Explain the project';get('aiIncludeSource').checked=true;
@@ -18,7 +18,7 @@ function ui() {
     if(url.startsWith('/api/project-scan'))data={model:null,task:null,job:{state:'idle'}};
     else if(url.startsWith('/api/project-source'))data=deferSource?await deferSource(url):{snapshotId:'snap',path:new URLSearchParams(url.split('?')[1]).get('path'),sourceSha256:'abc',lines:[{line:1,text:'return value < 100',truncated:false}]};
     else if(body?.action==='preview')data=deferPreview?await deferPreview(body):preview(body);
-    else if(body?.action==='explain')data={digest:body.consentDigest,status:'FALLBACK',code:'BYOK_OUTPUT_TRUNCATED',retryable:true,reportedCostUsd:.001,latencyMs:12};
+    else if(body?.action==='explain')data=explanation||{digest:body.consentDigest,status:'FALLBACK',code:'BYOK_OUTPUT_TRUNCATED',retryable:true,reportedCostUsd:.001,latencyMs:12};
     else data={};
     return {ok:true,json:async()=>data};
   }};
@@ -87,4 +87,31 @@ test('an older source response cannot overwrite the last clicked citation',async
   await u.get('aiResult').onclick(second.event);
   resolve({snapshotId:'snap',path:'rules.py',sourceSha256:'abc',lines:[]});await pending;
   assert.match(u.get('aiSourceDetail').textContent,/Captured source: service.py/);
+});
+
+// Retain the HUMAN-observed consent cycle for every scope-changing input, not just text.
+test('editing any preview input disables Send until a fresh preview; no preview generates',async()=>{
+  for(const id of ['aiQuestion','aiPaths','aiIncludeSource','aiIncludeMemory','aiQuality','scanSource']) {
+    const u=ui();
+    await u.get('aiPreviewButton').onclick();assert.equal(u.get('aiSend').disabled,false,id);
+    u.get(id).listeners.input();assert.equal(u.get('aiSend').disabled,true,id);
+    await u.get('aiSend').onclick();
+    assert.equal(u.requests.filter(r=>r.body?.action==='explain').length,0,id);
+    await u.get('aiPreviewButton').onclick();assert.equal(u.get('aiSend').disabled,false,id);
+    assert.equal(u.requests.filter(r=>r.body?.action==='explain').length,0,id);
+  }
+});
+
+test('a model abstention shows its limits without offering a blind retry or adding context',async()=>{
+  const u=ui({explanation:{status:'FALLBACK',code:'BYOK_EMPTY_INTERPRETATION',retryable:false,
+    limitations:['The selected packet omits the access conditions.'],reportedCostUsd:.001,latencyMs:50}});
+  await u.get('aiPreviewButton').onclick();
+  await u.get('aiSend').onclick();
+  assert.match(u.get('aiResult').innerHTML,/More context is needed/);
+  assert.match(u.get('aiResult').innerHTML,/omits the access conditions/);
+  assert.equal(u.get('aiRetry').hidden,true);assert.equal(u.get('aiSend').disabled,true);
+  assert.equal(u.get('aiIncludeMemory').checked,false);assert.equal(u.get('aiPaths').value,'');
+  assert.equal(u.requests.filter(r=>r.body?.action==='explain').length,1);
+  await u.get('aiPreviewButton').onclick();
+  assert.equal(u.requests.filter(r=>r.body?.action==='explain').length,1);
 });

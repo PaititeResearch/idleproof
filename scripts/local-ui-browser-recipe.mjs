@@ -598,6 +598,159 @@ for (const scheme of ['light', 'dark']) {
   });
 }
 
+// New answer renderer in the real page/CSS; synthetic data only, no model call.
+for (const width of [390, 1440]) {
+  await section(`F2 ${width} px: answer-first sections, source links and collapsed follow-up checks remain readable`, async () => {
+    const ui = await open(completeUrl, { width, height: 900 }); await waitConnection(ui.page, 'live');
+    await ui.page.evaluate(async () => {
+      const { renderByokResult } = await import('/byok-view.js');
+      document.getElementById('optionalAI').open = true;
+      const result = {
+        status: 'INTERPRETATION', reportedCostUsd: 0.001, latencyMs: 1200,
+        answer: { claims: [
+          { text: 'This synthetic billing example checks an admission rule before applying the selected rate.', citations: ['S1'] },
+          { text: 'A permitted input of 240 is predicted to become 180. This is a code-derived prediction, not an executed test.', citations: ['S1'] }
+        ], nextTests: [{ text: 'Additional boundary checks can be run separately.', citations: ['S1'] }], unknowns: ['The external business objective is not part of this example.'] },
+        evidence: [{ citation: 'S1', path: 'tariff.py', snapshotId: 'synthetic-browser-snapshot' }],
+        review: { callsMade: 2, completed: true, semanticVerified: false },
+        presentation: { schema: 'idleproof.byok-presentation.v1', format: 'answer-first-v1', headings: ['What this code does', 'A concrete example'],
+          questionCoverage: { basis: 'model-reported-links', semanticVerified: false, points: [], links: [], missing: [] } }
+      };
+      document.getElementById('aiResult').innerHTML = renderByokResult(result);
+    });
+    await ui.page.locator('#aiResult').scrollIntoViewIfNeeded();
+    const measured = await ui.page.evaluate(() => {
+      const result = document.getElementById('aiResult');
+      const sections = [...result.querySelectorAll('section')];
+      const checks = [...result.querySelectorAll('details')].find(d => d.querySelector('summary')?.textContent === 'Suggested checks — not executed');
+      return { titles: sections.map(s => s.querySelector('h4')?.textContent),
+        links: result.querySelectorAll('button[data-ai-source="tariff.py"]').length,
+        checksClosed: !!checks && !checks.open, detailPresent: !!document.getElementById('aiSourceDetail'),
+        width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
+        afterAnswer: !!checks && sections.every(s => !!(s.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING)) };
+    });
+    check(`F2 ${width} px: answer-first sections, source links and collapsed follow-up checks remain readable`,
+      measured.titles.join('|') === 'What this code does|A concrete example' && measured.links === 3 && measured.checksClosed && measured.detailPresent && measured.afterAnswer && measured.scroll <= measured.width,
+      measured);
+    await shot(ui.page, `f1-answer-first-${width}`);
+    await ui.close();
+  });
+}
+
+// Timeout recovery keeps a separate unreviewed disclosure, never a success.
+// Synthetic admitted data and local source routing only; no model request.
+for (const width of [390, 1440]) {
+  await section(`F3 ${width} px: review timeout draft remains labelled, collapsed and locally citable`, async () => {
+    const ui = await open(completeUrl, { width, height: 900 }); await waitConnection(ui.page, 'live');
+    await ui.page.route('**/api/project-source?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      path: 'calculator.py', snapshotId: 'synthetic-timeout-snapshot', sourceSha256: 'synthetic-hash', lines: [{ line: 1, text: 'return amount + 12', truncated: false }]
+    }) }));
+    await ui.page.evaluate(async () => {
+      const { renderByokResult } = await import('/byok-view.js');
+      document.getElementById('optionalAI').open = true;
+      document.getElementById('aiResult').innerHTML = renderByokResult({
+        status: 'FALLBACK', code: 'BYOK_CANCELLED_OR_TIMEOUT', answer: null, reportedCostUsd: null, latencyMs: 60000, retryable: false,
+        diagnostics: { failureStage: 'review', abortCause: 'deadline' }, review: { callsMade: 2, completed: false, semanticVerified: false },
+        accounting: { knownReportedCostUsd: 0.0001, unresolvedReservedUsd: 0.001 },
+        unreviewedDraft: { schema: 'idleproof.byok-draft.v1', status: 'UNREVIEWED', semanticVerified: false,
+          answer: { claims: [{ text: 'This synthetic draft predicts an increase of twelve. Its review has not completed.', citations: ['S1'] }], nextTests: [], unknowns: [], authority: 'INFERRED', proof: 'UNKNOWN', requiresReview: true },
+          presentation: { headings: ['The draft calculation'] },
+          evidence: [{ citation: 'S1', path: 'calculator.py', snapshotId: 'synthetic-timeout-snapshot' }] }
+      });
+    });
+    const disclosure=ui.page.locator('#aiResult details').filter({ has: ui.page.locator('summary', { hasText: 'View the saved draft' }) }).first();
+    const closed=await disclosure.evaluate(e=>!e.open);
+    await disclosure.locator('summary').click();
+    await ui.page.locator('#aiResult button[data-ai-source="calculator.py"]').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiSourceDetail')?.textContent.includes('return amount + 12'));
+    const observed=await ui.page.evaluate(()=>({text:document.getElementById('aiResult').innerText,
+      source:document.getElementById('aiSourceDetail')?.textContent,
+      width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F3 ${width} px: review timeout draft remains labelled, collapsed and locally citable`,
+      closed && /Review timed out/.test(observed.text) && /Unreviewed draft/.test(observed.text) && /not a confirmed charge/.test(observed.text)
+      && !/Explanation for review|corrective pass completed/.test(observed.text) && observed.source.includes('return amount + 12')
+      && observed.scroll<=observed.width && count(ui.posts,'/api/ai')===0, {closed,...observed});
+    await shot(ui.page,`f3-timeout-draft-${width}`);await ui.close();
+  });
+}
+
+// Explicit no-endpoints recovery preserves the same honest draft disclosure.
+// Synthetic admitted data and local source routing only; no model request.
+for (const width of [390, 1440]) {
+  await section(`F4 ${width} px: review endpoint rejection draft remains labelled, collapsed and locally citable`, async () => {
+    const ui = await open(completeUrl, { width, height: 900 }); await waitConnection(ui.page, 'live');
+    await ui.page.route('**/api/project-source?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      path: 'calculator.py', snapshotId: 'synthetic-routing-snapshot', sourceSha256: 'synthetic-hash', lines: [{ line: 1, text: 'return amount + 12', truncated: false }]
+    }) }));
+    await ui.page.evaluate(async () => {
+      const { renderByokResult } = await import('/byok-view.js');
+      document.getElementById('optionalAI').open = true;
+      document.getElementById('aiResult').innerHTML = renderByokResult({
+        status: 'FALLBACK', code: 'BYOK_HTTP_404', answer: null, reportedCostUsd: null, latencyMs: 8800, retryable: false,
+        diagnostics: { failureStage: 'review', httpStatus: 404, errorBody: 'json', routingIssue: 'NO_ENDPOINTS_FOUND' }, review: { callsMade: 2, completed: false, semanticVerified: false },
+        accounting: { knownReportedCostUsd: 0.0001, unresolvedReservedUsd: 0.001 },
+        unreviewedDraft: { schema: 'idleproof.byok-draft.v1', status: 'UNREVIEWED', semanticVerified: false,
+          answer: { claims: [{ text: 'This synthetic draft predicts an increase of twelve. Its review has not completed.', citations: ['S1'] }], nextTests: [], unknowns: [], authority: 'INFERRED', proof: 'UNKNOWN', requiresReview: true },
+          presentation: { headings: ['The draft calculation'] },
+          evidence: [{ citation: 'S1', path: 'calculator.py', snapshotId: 'synthetic-routing-snapshot' }] }
+      });
+    });
+    const disclosure=ui.page.locator('#aiResult details').filter({ has: ui.page.locator('summary', { hasText: 'View the saved draft' }) }).first();
+    const closed=await disclosure.evaluate(e=>!e.open);
+    await disclosure.locator('summary').click();
+    await ui.page.locator('#aiResult button[data-ai-source="calculator.py"]').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiSourceDetail')?.textContent.includes('return amount + 12'));
+    const observed=await ui.page.evaluate(()=>({text:document.getElementById('aiResult').innerText,
+      source:document.getElementById('aiSourceDetail')?.textContent,
+      width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F4 ${width} px: review endpoint rejection draft remains labelled, collapsed and locally citable`,
+      closed && /Corrective review unavailable/.test(observed.text) && /Unreviewed draft/.test(observed.text) && /not a confirmed charge/.test(observed.text)
+      && !/Explanation for review|corrective pass completed/.test(observed.text) && observed.source.includes('return amount + 12')
+      && observed.scroll<=observed.width && count(ui.posts,'/api/ai')===0, {closed,...observed});
+    await shot(ui.page,`f4-no-endpoints-draft-${width}`);await ui.close();
+  });
+}
+
+// Reviewed deadline v12: skip review if insufficient time remains, preserve cited
+// draft and previous budget accounting without presenting a completed result.
+for (const width of [390, 1440]) {
+  await section(`F5 ${width} px: late draft skips review and stays clearly unreviewed`, async () => {
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    await ui.page.route('**/api/project-source?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      path:'calculator.py',snapshotId:'synthetic-review-skip',sourceSha256:'synthetic-hash',lines:[{line:1,text:'return amount + 12',truncated:false}]
+    })}));
+    await ui.page.evaluate(async()=>{
+      const {renderByokResult}=await import('/byok-view.js');
+      document.getElementById('optionalAI').open=true;
+      document.getElementById('aiResult').innerHTML=renderByokResult({
+        status:'FALLBACK',code:'BYOK_REVIEW_TIME_INSUFFICIENT',answer:null,reportedCostUsd:.0001,latencyMs:110000,retryable:false,
+        diagnostics:{failureStage:'review',reviewRemainingMs:10000},
+        review:{callsMade:1,completed:false,semanticVerified:false,deadlineMs:120000},
+        accounting:{knownReportedCostUsd:.0001,unresolvedReservedUsd:0},
+        unreviewedDraft:{schema:'idleproof.byok-draft.v1',status:'UNREVIEWED',semanticVerified:false,
+          answer:{claims:[{text:'The synthetic late draft is still unreviewed and must not be marked as verified.',citations:['S1']}],nextTests:[],unknowns:[],authority:'INFERRED',proof:'UNKNOWN',requiresReview:true},
+          presentation:{headings:['Late draft']},
+          evidence:[{citation:'S1',path:'calculator.py',snapshotId:'synthetic-review-skip'}]}
+      });
+    });
+    const disclosure=ui.page.locator('#aiResult details').filter({has:ui.page.locator('summary',{hasText:'View the saved draft'})}).first();
+    const closed=await disclosure.evaluate(e=>!e.open);
+    await disclosure.locator('summary').click();
+    await ui.page.locator('#aiResult button[data-ai-source="calculator.py"]').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiSourceDetail')?.textContent.includes('return amount + 12'));
+    const observed=await ui.page.evaluate(()=>({text:document.getElementById('aiResult').innerText,
+      source:document.getElementById('aiSourceDetail')?.textContent,
+      width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F5 ${width} px: late draft skips review and stays clearly unreviewed`,
+      closed&&/Corrective review not started/.test(observed.text)&&/120-second window/.test(observed.text)
+      &&/No second paid call/.test(observed.text)&&/Unreviewed draft/.test(observed.text)
+      &&!/Explanation for review|corrective pass completed/.test(observed.text)
+      &&observed.source.includes('return amount + 12')&&observed.scroll<=observed.width
+      &&count(ui.posts,'/api/ai')===0,{closed,...observed});
+    await shot(ui.page,`f5-review-not-started-${width}`);await ui.close();
+  });
+}
+
 check('E5 the page raised no script error in any scenario above', pageErrors.length === 0, { errors: pageErrors.slice(0, 20) });
 
 for (const step of cleanup) await step()?.catch?.(() => {});

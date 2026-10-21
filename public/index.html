@@ -78,9 +78,10 @@
           <p id="aiStatus">Configuration is local. No credential is entered or displayed in this page.</p>
           <button type="button" id="aiTestConnection">Test OpenRouter connection without sending project context</button>
           <p>Interpretations remain INFERRED and need review. They never change Proof, debt, declared memory or human mastery. Configure a dedicated capped key from the CLI, as described in docs/OPENROUTER_LOCAL.md.</p>
-          <label>Question <input id="aiQuestion" value="Explain this project in plain English: its purpose, main rules, component relationships and planned features. Cite your sources and state the limits of the supplied context."></label>
+          <label>Question <input id="aiQuestion" value="Explain this project in plain English: what the selected sources show, its main rules and component relationships. Give simple predicted examples when supported. Mention business objectives or future features only if explicitly declared; otherwise identify what is missing. Cite the sources for each statement."></label>
           <label>Exact paths (one per line; empty selects up to 12 files balancing intentions, linked components and tests)<textarea id="aiPaths" rows="2"></textarea></label>
           <label class="ai-check"><input type="checkbox" id="aiIncludeSource"> Include bounded source descriptions and selected-document excerpts in the preview</label>
+          <label class="ai-check"><input type="checkbox" id="aiQuality"> Add captured code and one corrective review (up to 2 calls sharing the existing request budget; code included only when source descriptions are selected)</label>
           <label class="ai-check"><input type="checkbox" id="aiIncludeMemory"> Include bounded recorded Core objectives, decisions and task context in the preview</label>
           <button type="button" id="aiPreviewButton">Preview remote context locally</button>
           <div id="aiPreview">No preview prepared. No network request authorized.</div>

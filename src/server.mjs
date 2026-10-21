@@ -193,11 +193,12 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT } = {}) 
       if (url.pathname === '/api/ai' && req.method === 'POST') {
         const body=await readBody(req);
         if(body.action==='cancel'){optionalInterpretation?.abort();return json(res,200,{cancelRequested:true});}
-        const {previewByok,interpretByok,testByokConnection}=await import('./byok.mjs');
+        const {prepareByokPreview,interpretByok,testByokConnection}=await import('./byok.mjs');
         if(body.action==='test')return json(res,200,await testByokConnection(cwd,{allowNetwork:body.allowNetwork===true}));
         const options={source:body.source||'HEAD',paths:body.paths||[],includeSource:body.includeSource===true,includeMemory:body.includeMemory===true,question:body.question||'Explain known behavior, unknowns and next discriminating tests.'};
         if(body.retryOf!==undefined)options.retryOf=body.retryOf;
-        if(body.action==='preview')return json(res,200,previewByok(cwd,options));
+        if(body.quality!==undefined)options.quality=body.quality;
+        if(body.action==='preview')return json(res,200,await prepareByokPreview(cwd,options));
         if(body.action!=='explain')return json(res,400,{error:'Unknown optional interpretation action'});
         if(optionalInterpretation)return json(res,409,{error:'An optional interpretation is already running'});
         const controller=new AbortController();optionalInterpretation=controller;

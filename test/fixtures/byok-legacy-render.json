@@ -1,0 +1,110 @@
+{
+  "baseline": "b9a52738749232cc5d5c62975fd41d42d65c58fb",
+  "examples": [
+    {
+      "result": {
+        "status": "INTERPRETATION",
+        "answer": {
+          "claims": [
+            {
+              "text": "A cited legacy explanation.",
+              "citations": [
+                "S1"
+              ]
+            }
+          ],
+          "nextTests": [],
+          "unknowns": []
+        },
+        "evidence": [
+          {
+            "citation": "S1",
+            "path": "example.py",
+            "snapshotId": "snap"
+          }
+        ],
+        "reportedCostUsd": 0.0001,
+        "latencyMs": 120
+      },
+      "expectedSha256": "bb9be99bae2f6b541487a184853ad1bcf478e5c6164657bfb8c9ab7e04608324"
+    },
+    {
+      "result": {
+        "status": "INTERPRETATION",
+        "answer": {
+          "claims": [
+            {
+              "text": "A cited legacy explanation.",
+              "citations": [
+                "S1"
+              ]
+            }
+          ],
+          "nextTests": [
+            {
+              "text": "A useful check.",
+              "citations": [
+                "S1"
+              ]
+            }
+          ],
+          "unknowns": [
+            "A genuine gap."
+          ]
+        },
+        "evidence": [
+          {
+            "citation": "S1",
+            "path": "example.py",
+            "snapshotId": "snap"
+          }
+        ],
+        "reportedCostUsd": 0.0001,
+        "latencyMs": 120,
+        "review": {
+          "callsMade": 2,
+          "completed": true
+        }
+      },
+      "expectedSha256": "af248e23347e112b30667d886acaab35bfaf2ffe9539767611e00c5bc52bf6f2"
+    },
+    {
+      "result": {
+        "status": "FALLBACK",
+        "code": "BYOK_EMPTY_INTERPRETATION",
+        "limitations": [
+          "Missing expression."
+        ],
+        "reportedCostUsd": 0.0001,
+        "latencyMs": 120
+      },
+      "expectedSha256": "d8603bce07d10340cd2298d6bf17b4d3f262728fbf1255cfa9ea61fbc4277f7f"
+    },
+    {
+      "result": {
+        "status": "FALLBACK",
+        "code": "BYOK_ANSWER_REJECTED",
+        "diagnostics": {
+          "validationReason": "UNKNOWNS_FORMAT",
+          "validationDetail": "UNKNOWN_NOT_STRING"
+        },
+        "reportedCostUsd": 0.0001,
+        "latencyMs": 120
+      },
+      "expectedSha256": "6e740fca89a8ce5d2622eaf89b09be75a9e6114e088238bc216b73536c760e9c"
+    },
+    {
+      "result": {
+        "status": "FALLBACK",
+        "code": "BYOK_INTERRUPTED",
+        "reportedCostUsd": null,
+        "latencyMs": 0,
+        "review": {
+          "callsMade": 1,
+          "completed": false
+        }
+      },
+      "expectedSha256": "faa3165a01f8a350374af88111402fd92585443124f26d9cdf52e0fccb426a0d"
+    }
+  ]
+}
