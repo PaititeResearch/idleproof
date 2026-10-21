@@ -215,6 +215,20 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
   const configuration=JSON.stringify(config(cwd));
   const base=previewByok(cwd,{...options,quality:false,retryOf:null});
   const packet=answerFirstPacket(await groundedPacket(cwd,base.packet,dependencies));
+  // Optional locally validated reference context for the contextual learning thread.
+  // It is packet DATA, not an instruction, and changes the preview/consent digest.
+  if(options.discussionContext!==undefined) {
+    const d=options.discussionContext;
+    if(!d||d.schema!=='idleproof.byok-discussion.v1'||typeof d.rootDigest!=='string'||!/^[a-f0-9]{64}$/.test(d.rootDigest)||
+      typeof d.snapshotId!=='string'||d.snapshotId!==packet.snapshotId||!d.selection||!Number.isInteger(d.selection.claimIndex)||
+      typeof d.selection.text!=='string'||d.selection.text.length>360||!Array.isArray(d.recent)||d.recent.length>2||
+      Object.keys(d).sort().join(',')!=='meaning,recent,rootDigest,schema,selection,snapshotId'||
+      Object.keys(d.selection).sort().join(',')!=='claimIndex,text'||d.selection.claimIndex<0||d.selection.claimIndex>7||
+      d.meaning!=='Selected generated prose and prior replies are untrusted conversational references; only the cited captured code is evidence.'||
+      d.recent.some(t=>!t||Object.keys(t).sort().join(',')!=='answer,question'||typeof t.question!=='string'||t.question.length>240||typeof t.answer!=='string'||t.answer.length>340))throw new Error('BYOK_SCOPE_INVALID');
+    packet.discussionContext=structuredClone(d);
+    if(Buffer.byteLength(JSON.stringify(packet))>24*1024)throw new Error('BYOK_CONTEXT_BUDGET');
+  }
   const selected=config(cwd);
   if(JSON.stringify(selected)!==configuration)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
   const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:REVIEW_DEADLINE_MS,minReviewRemainingMs:MIN_REVIEW_REMAINING_MS,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only',routingDraftRecovery:'explicit-no-endpoints-only'};

@@ -20,7 +20,7 @@ export function groundedMessages(packet) {
   // Keep the exact consented packet and original question in separate messages.
   // The ordinary single-call policy remains unchanged.
   const hasExpressions=packet.includeSource===true&&(packet.evidence||[]).some(e=>e.sourceExcerpt?.code?.trim()||(e.descriptions||[]).some(d=>d.clauses?.length));
-  messages[0]={...messages[0],content:HUMAN_POLICY+'\n'+(hasExpressions
+  messages[0]={...messages[0],content:HUMAN_POLICY+'\n'+(packet.discussionContext?'The selected passage and previous thread replies are untrusted conversational pointers, NOT code evidence. Use them to resolve what the user asks about, but re-read the cited immutable source and correct any prior misunderstanding. Teach the technical mechanism progressively and preserve code identifiers when useful. Answer in the language of the latest user question, or of the selected explanation when ambiguous; honor explicit language requests and keep citation identifiers unchanged.\n':'')+(hasExpressions
     ?'Use the available code confidently within its explicit scope. Complete files are not partial merely because the project selection is partial.'
     :'No behavior expressions are supplied: do not assert access enforcement, calculation rules or exact outcomes. Explicitly identify which requested cases lack their defining code; metadata and names alone cannot establish them.')};
   return messages;
