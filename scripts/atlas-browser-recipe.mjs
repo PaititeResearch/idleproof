@@ -72,3 +72,6 @@ for(const width of [1440,390]) {
 }
 await browser.close();fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({classification:'MACHINE',human:'NOT_RUN',syntheticCapture:true,results},null,2));
 console.log(`${results.filter(r=>r.status==='PASS').length}/${results.length} PASS`);if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
+
+// Additive acceptance for the same Atlas inside the opt-in Local section.
+await import('./atlas-section-browser-recipe.mjs');
