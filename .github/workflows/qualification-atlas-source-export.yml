@@ -1,0 +1,38 @@
+name: qualification-atlas-source-export
+on:
+  push:
+    branches: [qualification/atlas-source-export-20261021]
+    paths: [.github/workflows/qualification-atlas-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - name: Archive exact source and obtain pinned MIT graph runtime without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^{tree})" = 5c1e45bb194cc03ab4e8e961bcde200a1ac1979e
+          mkdir -p "$RUNNER_TEMP/atlas-export/vendor"
+          git archive --format=tar HEAD > "$RUNNER_TEMP/atlas-export/idleproof-base.tar"
+          cd "$RUNNER_TEMP/atlas-export/vendor"
+          npm view cytoscape@3.34.4 dist --json > registry-dist.json
+          npm pack cytoscape@3.34.4 --ignore-scripts --json > npm-pack.json
+          node -e 'const fs=require("fs"),crypto=require("crypto"); const meta=JSON.parse(fs.readFileSync("registry-dist.json"));const bytes=fs.readFileSync("cytoscape-3.34.4.tgz"); if("sha512-"+crypto.createHash("sha512").update(bytes).digest("base64")!==meta.integrity)throw Error("Registry integrity mismatch");'
+          tar -xzf cytoscape-3.34.4.tgz package/dist/cytoscape.min.js package/LICENSE package/package.json
+          sha256sum package/dist/cytoscape.min.js package/LICENSE > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: atlas-pinned-development-source
+          path: ${{ runner.temp }}/atlas-export/
+          if-no-files-found: error
+          retention-days: 3
