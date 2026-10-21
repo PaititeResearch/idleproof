@@ -12,6 +12,7 @@ const messages={
   BYOK_HTTP_429:'The provider is currently rate-limiting requests. You can try again later.',
   BYOK_HTTP_401:'The API key was rejected. Check its local configuration.',
   BYOK_HTTP_403:'The provider denied access.',
+  BYOK_HTTP_404:'OpenRouter returned HTTP 404. The model route or requested resource was not found; this status alone does not identify the cause.',
   BYOK_HTTP_400:'The provider rejected the requested parameters. Check model compatibility.',
   BYOK_REASONING_REQUIRED:'This model requires reasoning. Select a model that supports explanations without extended reasoning.',
   BYOK_CANCELLED_OR_TIMEOUT:'The request was cancelled or timed out. Its cost may remain unknown.',
@@ -62,9 +63,11 @@ export function renderByokPreview(preview) {
   const quality=preview.requestPolicy?.mode==='grounded-review';
   const plan=quality?`<p>Grounded review: up to 2 paid calls, sharing a planned total budget of ${escape(preview.requestPolicy.maxCostUsd)} USD for this explanation (not per call). At most ${escape(preview.requestPolicy.maxTokens)} output tokens per call; 60-second generation deadline. The draft will be sent back to the same configured model for one corrective review. The whole plan must fit this budget before payment; provider-reported costs are reconciled. No automatic retries or hidden file selection.</p><p>Captured source windows: ${p.evidence.filter(e=>e.sourceExcerpt?.status==='captured-window').length}; inspect the exact content below. Windows are bounded, may omit code, and are not execution evidence.</p>`:'';
   const recovery=quality&&preview.requestPolicy?.draftRecovery==='review-deadline-only'?'<p>If the corrective review times out, the completed initial draft is saved locally as an unreviewed draft. You may open it separately; it is not a completed or verified explanation. Cancellation does not save this draft.</p>':'';
-  return `<h3>Context to send</h3>${plan}${recovery}${p.answerPlan?details('Question checklist for the explanation',p.answerPlan):''}<p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
+  const routingRecovery=quality&&preview.requestPolicy?.routingDraftRecovery==='explicit-no-endpoints-only'?'<p>If OpenRouter explicitly reports that no eligible endpoint is available for the review, the admitted draft is also saved locally as unreviewed. No model, privacy requirement or price ceiling is changed, and no additional call is made.</p>':'';
+  return `<h3>Context to send</h3>${plan}${recovery}${routingRecovery}${p.answerPlan?details('Question checklist for the explanation',p.answerPlan):''}<p>${escape(preview.model)} · ${p.evidence.length} files selected${s?` of ${s.eligible}; ${s.omitted} not sent`:''}.</p><p>${p.includeSource?'Code descriptions and selected document excerpts included.':'Code descriptions excluded: only structure is provided.'} ${p.includeMemory?'Bounded Core context included when available.':'Core memory excluded.'}</p><p>Output limit: ${escape(preview.requestPolicy?.maxTokens)} tokens. Reasoning disabled when supported. No automatic retries.</p><ul>${p.evidence.map(e=>`<li>${escape(e.citation)} — ${escape(e.path)}</li>`).join('')}</ul><p>This selection is partial. A static relationship does not prove execution.</p>${preview.retryOf?'<p>Explicit retry: a new call may incur a charge. Review the context before sending.</p>':''}${details('View the exact outgoing content',p)}`;
 }
-// This disclosure is only reached for a locally identified review deadline.
+// This disclosure is only reached for a local review deadline or an explicit
+// no-endpoints review rejection, never for an arbitrary HTTP error.
 // No model-supplied HTML, completion badge or automatic continuation is used.
 function renderUnreviewedDraft(draft) {
   const a=draft?.answer;
@@ -98,6 +101,20 @@ export function renderByokResult(result) {
       ?`<p>Reported so far: ${escape(a.knownReportedCostUsd.toFixed(8))} USD. Unresolved reservation: ${escape(a.unresolvedReservedUsd.toFixed(8))} USD (not a confirmed charge). The total charge may still be unknown.</p>`:'';
     const draft=cause==='deadline'&&stage==='review'?renderUnreviewedDraft(result.unreviewedDraft):'';
     return `<h3>${title}</h3><p>${notice}</p>${meta}${money}${draft}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
+  }
+  // Preserve an HTTP rejection as a failure, even when its admitted draft can
+  // be inspected. Never echo the provider's free-form error text.
+  const http=result.diagnostics?.httpStatus;
+  if(result.status==='FALLBACK'&&(/^BYOK_HTTP_[45][0-9]{2}$/.test(result.code))&&
+    (http===Number(result.code.slice(10))||result.code==='BYOK_HTTP_404')) {
+    const routing=http===404&&result.diagnostics?.routingIssue==='NO_ENDPOINTS_FOUND';
+    const title=stage==='review'?'Corrective review unavailable':'OpenRouter request rejected';
+    const notice=routing?'OpenRouter reported that no eligible endpoint matched the request. Your model, privacy requirements and price ceilings were not relaxed.':messages[result.code]||`OpenRouter rejected the request (${result.code.replace('BYOK_HTTP_','HTTP ')}). The exact cause is not established.`;
+    const a=result.accounting;
+    const money=a&&Number.isFinite(a.knownReportedCostUsd)&&a.knownReportedCostUsd>=0&&Number.isFinite(a.unresolvedReservedUsd)&&a.unresolvedReservedUsd>=0
+      ?`<p>Reported so far: ${escape(a.knownReportedCostUsd.toFixed(8))} USD. Unresolved reservation: ${escape(a.unresolvedReservedUsd.toFixed(8))} USD (not a confirmed charge). The total charge may still be unknown.</p>`:'';
+    const draft=routing&&stage==='review'&&!result.diagnostics?.abortCause?renderUnreviewedDraft(result.unreviewedDraft):'';
+    return `<h3>${title}</h3><p>${escape(notice)}</p>${meta}${money}${draft}<p>No new call will be made automatically.</p>${details('Technical diagnostics (no key or raw response)',result)}`;
   }
   // Valid model-reported gaps remain a FALLBACK, never a successful interpretation.
   // Old cached failures without this optional field keep their original rendering.

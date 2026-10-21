@@ -13,6 +13,8 @@ import {buildByokMessages} from './byok-prompt.mjs';
 import {groundedPacket} from './byok-grounding.mjs';
 import {ANSWER_FORMAT,answerFirstPacket,humanAnswerSchema,unpackHumanAnswer} from './byok-answer-plan.mjs';
 import {groundedMessages,reviewReservations,boundedReviewMessages} from './byok-review.mjs';
+import {readByokHttpError,byokHttpDiagnostics} from './byok-http.mjs';
+import {reviewProviderPrice} from './byok-price.mjs';
 
 const ENDPOINT='https://openrouter.ai/api/v1';
 const UNKNOWN_DETAILS=new Set(['UNKNOWNS_NOT_ARRAY','UNKNOWNS_ITEM_LIMIT','UNKNOWN_NOT_STRING','UNKNOWN_EMPTY','UNKNOWN_TEXT_LIMIT']);
@@ -212,7 +214,7 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
   const packet=answerFirstPacket(await groundedPacket(cwd,base.packet,dependencies));
   const selected=config(cwd);
   if(JSON.stringify(selected)!==configuration)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
-  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only'};
+  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only',routingDraftRecovery:'explicit-no-endpoints-only'};
   const contextDigest=hash({packet,model:base.model,requestPolicy,version:REQUEST_VERSION});
   const retryOf=options.retryOf??null;
   if(retryOf!==null) {
@@ -221,7 +223,7 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
     if(!prior||prior.contextDigest!==contextDigest||prior.status!=='FALLBACK')throw new Error('BYOK_RETRY_INVALID');
   }
   return {...base,packet,requestPolicy,contextDigest,retryOf,digest:retryOf?hash({contextDigest,retryOf}):contextDigest,
-    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. If review times out, the admitted draft is saved locally as unreviewed, never accepted as the reviewed answer. No automatic retries.'};
+    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. If review times out or OpenRouter explicitly reports no eligible endpoints, the admitted draft is saved locally as unreviewed, never accepted as the reviewed answer. No automatic retries.'};
 }
 
 async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readCredential}) {
@@ -252,12 +254,22 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     const cached=readByok(cacheFile,{optional:true});if(cached)return {...cached,cached:true};
     const structuredSchema=humanAnswerSchema(answerSchema,preview.packet);
     const credential=readCredential(cwd);
-    const request=async(route,body,limit)=>{controller.signal.throwIfAborted();return boundedJson(await fetchImpl(ENDPOINT+route,{method:body?'POST':'GET',redirect:'error',signal:controller.signal,headers:{Authorization:`Bearer ${credential}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}),limit);};
+    const request=async(route,body,limit)=>{
+      controller.signal.throwIfAborted();
+      const response=await fetchImpl(ENDPOINT+route,{method:body?'POST':'GET',redirect:'error',signal:controller.signal,
+        headers:{Authorization:`Bearer ${credential}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+      if(!response.ok){
+        const failure=await readByokHttpError(response,{signal:controller.signal});
+        controller.signal.throwIfAborted();throw failure;
+      }
+      return boundedJson(response,limit);
+    };
     const catalogue=await request('/models',null,8*1024*1024),model=catalogue.data?.find(m=>m.id===selected.model);
     if(!model||!model.supported_parameters?.some(p=>['structured_outputs','response_format'].includes(p)))throw new Error('BYOK_MODEL_UNAVAILABLE');
     const reasoning=reasoningOptions(model),pricing=model.pricing;
     const price={prompt:Number(pricing?.prompt),completion:Number(pricing?.completion),request:Number(pricing?.request??0)};
     if(Object.values(price).some(v=>!nonnegative(v)))throw new Error('BYOK_PRICE_UNKNOWN');
+    const maxPrice=reviewProviderPrice(pricing);
     steps=reviewReservations(preview.packet,selected.maxTokens,price).map((reserved,i)=>({stage:i?'review':'draft',reserved,held:reserved,cost:null,attempted:false,diagnostics:null,reportedModel:null,provider:null}));
     const total=retained(),key=(await request('/key',null,16384)).data;
     if(!nonnegative(key?.limit)||!nonnegative(key?.limit_remaining)||key.limit>selected.budgetUsd||key.limit_remaining<total)throw new Error('BYOK_PROVIDER_CAP_REQUIRED');
@@ -277,8 +289,9 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
       step.attempted=true;writeByok(cacheFile,pending());
       let result;
       try{result=await request('/chat/completions',{model:selected.model,messages,max_tokens:selected.maxTokens,temperature:0,stream:false,...reasoning,
-        provider:{require_parameters:true,data_collection:'deny',max_price:{prompt:price.prompt*1e6,completion:price.completion*1e6,request:price.request}},
+        provider:{require_parameters:true,data_collection:'deny',max_price:maxPrice},
         response_format:{type:'json_schema',json_schema:{name:'grounded_project_interpretation',strict:true,schema:structuredSchema}}},128*1024);}
+      catch(error){const http=byokHttpDiagnostics(error);if(http)step.diagnostics=diagnostics=http;throw error;}
       finally{step.latencyMs=Math.max(0,Date.now()-started-step.startedAfterMs);}
       finalResult=result;
       step.diagnostics=diagnostics=completionDiagnostics(result);
@@ -314,15 +327,18 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     releaseUnused();
     const code=safeCode(error);
     const interrupted=abortCause||(error?.name==='AbortError'?'unknown':null);
-    // Retain only an admitted, redacted draft after our own review deadline.
-    // Explicit cancellation, invalid reviews, content filtering and other errors
-    // never use this recovery path. FALLBACK/answer:null are kept in every case.
-    const recover=code==='BYOK_CANCELLED_OR_TIMEOUT'&&abortCause==='deadline'&&currentStage==='review'&&admittedDraft&&!meter?.blocked;
+    const http=byokHttpDiagnostics(error);
+    const routingUnavailable=code==='BYOK_HTTP_404'&&http?.routingIssue==='NO_ENDPOINTS_FOUND'&&!interrupted;
+    // Retain only the previously admitted/redacted draft for a local deadline
+    // or an explicit no-endpoints HTTP rejection during review. Bare 404s,
+    // cancellations, policy/format/cost failures never authorize recovery.
+    const recover=currentStage==='review'&&admittedDraft&&!meter?.blocked&&
+      ((code==='BYOK_CANCELLED_OR_TIMEOUT'&&abortCause==='deadline')||routingUnavailable);
     const accounting={knownReportedCostUsd:steps.filter(s=>s.attempted&&s.cost!==null).reduce((n,s)=>n+s.cost,0),
       unresolvedReservedUsd:steps.filter(s=>s.attempted&&s.cost===null).reduce((n,s)=>n+s.held,0)};
     const fallback={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'FALLBACK',code,latencyMs:Date.now()-started,retryable:false,
       ...(error.message==='BYOK_EMPTY_INTERPRETATION'&&error.limitations?.length?{limitations:error.limitations}:{}),
-      diagnostics:{...diagnostics,failureStage:currentStage,...(interrupted?{abortCause:interrupted}:{}),...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
+      diagnostics:{...diagnostics,...http,failureStage:currentStage,...(interrupted?{abortCause:interrupted}:{}),...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
       reportedCostUsd:calls()?cost():null,reservedUsd:funded?retained():0,accounting,review:review(false),passes:passes(),
       ...(recover?{unreviewedDraft:admittedDraft}:{}),answer:null,deterministicAvailable:true};
     if(calls())writeByok(cacheFile,fallback);

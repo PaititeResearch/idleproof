@@ -1,16 +1,18 @@
 # Optional Local OpenRouter interpretation
 
-Current request-policy candidate: v9 (2026-10-21), retaining the v8 answer-first
-explanation and adding stage-specific deadline diagnostics and explicitly
-unreviewed draft recovery after a review deadline. See
-[the deadline qualification record](qualification/OPENROUTER_REVIEW_TIMEOUT_20261021.md).
-The earlier v3-v8 notes remain historical. A prior v8 answer remained HUMAN
-PARTIAL and the next natural-question trial timed out. Neither a recovered
-draft nor an automated test upgrades those observations.
+Current request-policy candidate: v11 (2026-10-21). It retains the v10
+plain-language instructions, v8 answer-first sections and v9 deadline recovery.
+It adds bounded HTTP rejection diagnostics, an explicitly unreviewed draft after
+a positively identified no-endpoints review rejection, and an exact decimal
+conversion of reviewed-mode routing price ceilings. See
+[the HTTP qualification record](qualification/OPENROUTER_HTTP_20261021.md).
+Earlier version notes below remain historical. The latest 404 trial delivered
+no reviewed answer; neither a retained draft nor passing offline tests qualifies
+live delivery or semantic quality.
 
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
-Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The transport has a 30-second deadline, input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
+Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The ordinary transport has a 30-second deadline (60 seconds shared by the optional two-pass mode), input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
 
 The preview lists the exact captured snapshot, paths, source hashes and redacted evidence packet. Metadata-only is the default; adding source descriptions/selected-document excerpts requires an explicit preview option and acceptance of that preview's digest. Changed context invalidates consent. Project text is untrusted data. Returned claims require citations and remain INFERRED; no output is admitted into Proof, Debt Ledger, canonical declarations or human mastery. A citation establishes where supplied context came from, not that an interpretation is correct. The deterministic result remains available on every failure.
 
@@ -207,3 +209,52 @@ explicit bounded allowance for the larger response schema. Existing 2000-token
 and $0.02 settings are unchanged. Ordinary single-call mode keeps its previous
 message/three-array output policy. No execution or hidden evidence retrieval is
 added, and no live semantic improvement is claimed from fixture responses.
+
+
+## Plain-language instructions (v10, retained)
+
+Reviewed mode defaults to an explanation for a non-programmer: concrete effect,
+complete access conditions and predicted examples first. Exact implementation
+detail remains appropriate when the original user question explicitly requests
+it. The existing second pass also edits unnecessary jargon, repeated facts and
+misclassified unknowns. This does not alter source selection, response admission,
+model choice, token settings, or the two-call ceiling. Prompt instructions and
+synthetic fixtures do not prove model compliance. See
+[the v10 record](qualification/OPENROUTER_PLAIN_LANGUAGE_20261021.md).
+
+## Bounded HTTP diagnostics and routing rejection (v11)
+
+A reviewed-mode HTTP failure keeps its actual status. The error body is read only
+transiently, up to 8 KiB / 256 chunks / 500 ms and within the existing request
+cancellation signal. Only fixed local diagnostic codes and recognized canonical
+error types may be retained. Error messages, headers, provider metadata, request
+IDs and raw bodies are not copied into results, logs or model context.
+
+A bare HTTP 404 does not identify a routing cause. Only a complete bounded JSON
+error with code 404, a message beginning `No endpoints found`, and no conflicting
+canonical error type is classified `NO_ENDPOINTS_FOUND`. During review only,
+this can preserve the previously admitted, redacted draft in `unreviewedDraft`.
+The result remains `FALLBACK`, `answer:null`, `review.completed:false`,
+`semanticVerified:false` and `retryable:false`. The draft stays behind an
+explicitly unreviewed disclosure with local citations. Generic 404/503 responses,
+malformed/error-policy responses, explicit cancellation, budget failures and
+unfinished/invalid initial drafts do not gain this recovery. Existing owned
+review-deadline recovery is retained. Nothing is rescued retrospectively.
+
+`routingDraftRecovery: explicit-no-endpoints-only` is disclosed in the preview
+and bound to fresh v11 consent. Known reported costs remain distinct from
+unresolved reservations; HTTP status alone does not establish a refund or a
+zero-cost failed call. Historical uncertain reservations are not released.
+
+Reviewed routing limits now convert advertised dollars/token to dollars/million
+through decimal exponent shifting instead of binary multiplication. For example,
+a catalogue decimal of 0.0000001 now serializes as 0.1 per million, not
+0.09999999999999999. No epsilon or availability markup is added. Prices that
+cannot be represented faithfully on the JSON wire fail closed before payment.
+The actual catalogue tariff, request fees, provider privacy/parameter requirements,
+model and configured budgets are unchanged. This numerical bug was reproduced;
+it is not established as the cause of the reported 404.
+
+No additional paid call, retry, automatic model switch, dropped privacy setting
+or increased commercial ceiling is introduced. A new live human comparison is
+still required to assess delivery and the retained plain-language instructions.

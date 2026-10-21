@@ -132,14 +132,14 @@ test('simplification does not invent behavior when no code expressions were appr
   assert.equal(JSON.parse(m[1].content).evidencePacket.evidence[0].sourceExcerpt,undefined);
 });
 
-test('new policy requires fresh v10 consent without rewriting v9 results, uncertain reservations or credentials',async t=>{
+test('new policy requires fresh current consent without rewriting v9 results, uncertain reservations or credentials',async t=>{
   const f=fixture(t),p=await prepareByokPreview(f.cwd,options,{readSource:f.readSource});
   const oldDigest=sha(JSON.stringify({packet:p.packet,model:p.model,requestPolicy:p.requestPolicy,version:9}));
   const dir=byokDirectory(f.cwd),file=path.join(dir,`answer-${oldDigest}.json`);
   writeByok(file,{schema:'idleproof.byok-result.v1',digest:oldDigest,status:'FALLBACK',answer:null,reservedUsd:.0035});
   writeByok(path.join(dir,'meter.json'),{schema:'idleproof.byok-meter.v1',reservedUsd:.0135});
   const before=new Map(['config.json','credential.json','meter.json',path.basename(file)].map(n=>[n,fs.readFileSync(path.join(dir,n))]));
-  assert.equal(REQUEST_VERSION,10);assert.notEqual(p.digest,oldDigest);
+  assert.equal(REQUEST_VERSION,11);assert.notEqual(p.digest,oldDigest);
   await assert.rejects(interpretByok(f.cwd,{...options,consentDigest:oldDigest},{readSource:f.readSource,fetchImpl:()=>{throw new Error('no network before new consent');}}),/CONSENT/);
   for(const [n,bytes] of before)assert.deepEqual(fs.readFileSync(path.join(dir,n)),bytes,n);
   assert.equal(byokStatus(f.cwd).reservedUsd,.0135);
