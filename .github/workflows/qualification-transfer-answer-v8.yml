@@ -1,0 +1,58 @@
+name: qualification-transfer-answer-v8
+on:
+  push:
+    branches: [qualification/openrouter-answer-v8-transfer-20261021]
+permissions:
+  contents: write
+jobs:
+  verified-transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Verify the exact authored patch and construct the candidate tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, lzma, os
+          from pathlib import Path
+          encoded = ''.join(Path(f'.qualification/v8/part-{i}.b64').read_text() for i in range(6))
+          raw = lzma.decompress(base64.b64decode(encoded, validate=True))
+          assert len(raw) == 72762
+          assert hashlib.sha256(raw).hexdigest() == '01206637282578448917a4b2b12a1213141c810b753800152ee38d20d84876b4'
+          Path(os.environ['RUNNER_TEMP'], 'answer-v8.patch').write_bytes(raw)
+          PY
+          git -c core.hooksPath=/dev/null checkout --detach b9a52738749232cc5d5c62975fd41d42d65c58fb
+          git apply --index --check "$RUNNER_TEMP/answer-v8.patch"
+          git apply --index "$RUNNER_TEMP/answer-v8.patch"
+          test "$(git write-tree)" = 5c55bb999d9e9606b069010d3a0906a460d6cff4
+          git diff --cached --check
+          node --check src/byok-answer-plan.mjs
+          node --check src/byok-review.mjs
+          node --check src/byok.mjs
+          node --check public/byok-view.js
+      - name: Run all OpenRouter contracts on the transferred bytes
+        run: node --test --test-concurrency=1 test/byok*.test.mjs
+      - name: Publish only an isolated built candidate, never the PR branch or main
+        shell: bash
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -euo pipefail
+          tree=$(git write-tree)
+          test "$tree" = 5c55bb999d9e9606b069010d3a0906a460d6cff4
+          commit=$(git commit-tree "$tree" -p b9a52738749232cc5d5c62975fd41d42d65c58fb -m 'feat(openrouter): answer-first sections and consent-bound question coverage' -m 'Preserve immutable complete code, structure the direct explanation, carry question coverage into the existing corrective pass, and keep unknowns and proposed checks secondary. Coverage links are model-reported, never semantic verification. Same two-call budget, token settings, consent and strict legacy answer admission. Historical rendering retained. No Core, Portal, model, dependency or gate changes. Live quality remains pending human qualification.')
+          git push origin "$commit:refs/heads/qualification/openrouter-answer-v8-built-20261021"
+          echo "CANDIDATE_COMMIT=$commit"
+          echo "CANDIDATE_TREE=$tree"
+          git diff --stat b9a52738749232cc5d5c62975fd41d42d65c58fb "$commit"
