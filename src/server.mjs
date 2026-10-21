@@ -176,7 +176,7 @@ function writeServerInfoAtomic(file, info) {
   }
 }
 
-export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT } = {}) {
+export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experimentalAtlas = process.env.IDLEPROOF_EXPERIMENTAL_ATLAS === '1' } = {}) {
   const instanceId = randomUUID();
   let optionalInterpretation=null;
   const server = http.createServer(async (req, res) => {
@@ -185,6 +185,13 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT } = {}) 
       if (!boundary.ok) return json(res, boundary.status, { error:boundary.error });
       const url = new URL(req.url, 'http://127.0.0.1');
       const paths = projectPaths(cwd);
+      if (url.pathname === '/atlas.html' && !experimentalAtlas) return json(res,404,{error:'Experimental repository atlas is disabled.'});
+      if (url.pathname === '/api/atlas') {
+        if (!experimentalAtlas) return json(res,404,{error:'Experimental repository atlas is disabled.'});
+        const {atlasApi,atlasErrorStatus,readAtlasBody}=await import('./atlas-api.mjs');
+        try { return json(res,200,await atlasApi(cwd,req,url,req.method==='POST'?await readAtlasBody(req):null)); }
+        catch(error) { return json(res,atlasErrorStatus(error),{error:/^ATLAS_[A-Z_]+$/.test(error.message)?error.message:'ATLAS_UNAVAILABLE'}); }
+      }
       if (url.pathname === '/api/health') return json(res, 200, { ok:true, product:'idleproof', plane:'local', pid:process.pid, instanceId });
       if (url.pathname === '/api/state' && req.method === 'GET') return json(res, 200, presentState(cwd));
       if (url.pathname === '/api/ai/status' && req.method === 'GET') {

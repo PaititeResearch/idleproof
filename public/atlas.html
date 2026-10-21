@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Repository atlas · IdleProof experimental</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/atlas.css"></head>
+<body>
+<header class="mast"><a href="/" class="brand">◉ IdleProof <span>Repository atlas</span></a><div><span class="tag experimental">EXPERIMENTAL · LOCAL ONLY</span><button id="theme" type="button">Switch theme</button><a href="/">Open Local ↗</a></div></header>
+<main>
+<div class="intro"><div><p class="eyebrow">STRUCTURE → SOURCES → UNDERSTANDING</p><h1>A map you can question.</h1><p>Explore captured code. Edit your interpretation. Keep the evidence intact.</p></div><div id="identity" class="identity">No snapshot loaded.</div></div>
+<div id="notice" class="notice" role="status" aria-live="polite">Loading experimental atlas…</div>
+<section class="tools" aria-label="Map controls">
+<label>Capture<select id="source"><option value="HEAD">Committed snapshot</option><option value="WORKTREE">Working-tree snapshot</option></select></label>
+<label>View<select id="view"><option value="modules">Module dependencies</option><option value="classes">UML classes & interfaces</option><option value="all">All definitions</option></select></label>
+<label class="search">Find in capture<input id="query" type="search" maxlength="200" placeholder="Path or symbol…"></label><button id="search" type="button">Find</button><button id="reload" type="button">Reload capture</button>
+</section>
+<div class="workspace">
+<section class="map-panel" aria-label="Interactive repository diagram">
+<div class="map-toolbar"><div><button id="fit" type="button">Fit</button><button id="layout" type="button">Arrange</button><button id="whole" type="button">Whole view</button></div><div><button id="addNode" type="button">+ Element</button><button id="addEdge" type="button">+ Relation</button><button id="save" type="button" class="primary" disabled>Save view</button><button id="discard" type="button" disabled>Discard edits</button></div></div>
+<div id="canvas" role="img" aria-label="Interactive diagram. An accessible element list and keyboard editing controls are available below." tabindex="0"></div>
+<div class="legend"><span>● Extracted definition</span><span>┄ Static dependency / unresolved</span><span>◇ User-declared model</span></div>
+<div class="map-footer"><span id="coverage">Coverage not loaded.</span><div><button id="previous" type="button">Previous</button><button id="next" type="button">Next</button></div></div>
+<details id="elements"><summary>Accessible element & relation list</summary><div id="elementList"></div></details>
+</section>
+<aside class="inspector" aria-label="Element inspector">
+<div class="inspector-head"><p class="eyebrow">INSPECT, DON’T ASSUME</p><h2 id="selectedTitle">Select an element</h2><div id="authority"></div></div>
+<div id="details"><p>Select a module, definition or relation to inspect its exact basis. Your additions stay separate from the captured code.</p></div>
+<div id="nodeActions" hidden><button id="focus" type="button">Focus neighborhood</button><button id="openSource" type="button">Open captured source</button><button id="hideNode" type="button">Hide in this view</button><button id="deleteUser" type="button" hidden>Delete user element</button></div>
+<form id="annotation" hidden><label>Display alias <small>Does not rename the source</small><input id="alias" maxlength="160"></label><label>Private note <small>User interpretation, not a verified fact</small><textarea id="note" maxlength="2000" rows="4"></textarea></label><button type="submit">Apply annotation</button></form>
+<pre id="sourceCode" tabindex="0" hidden></pre>
+</aside>
+</div>
+<section class="bottom-grid">
+<article class="surface"><h2>View & history</h2><p id="revision">No user edits saved.</p><p>Layout, notes and planned relationships are a separate, versioned user model. The captured graph stays immutable.</p><div class="actions"><button id="history" type="button">Revision history</button><button id="showHidden" type="button">Restore hidden elements</button><button id="jsonExport" type="button">Export JSON</button><button id="umlExport" type="button">Export UML · Mermaid</button></div></article>
+<article class="surface"><h2>Evidence boundaries</h2><div id="limits"></div><details><summary>Unresolved call sites</summary><div id="unresolved"></div></details><p>Missing relationships do not prove absence. No runtime tracing, automatic inheritance resolution or round-trip source editing is claimed.</p></article>
+</section>
+<section class="bottom-grid">
+<details id="monitorPanel" class="surface"><summary>Agent activity · existing policy decisions</summary><p>Observed tool events only. This map never grants approval or changes ALLOW / REVIEW / BLOCK. Use Local’s existing control panel for decisions.</p><button id="monitor" type="button">Start observing</button><a href="/">Open existing controls ↗</a><div id="activity" aria-live="polite"></div></details>
+<details class="surface"><summary>Recorded debt & evidence · DiffWitness Core</summary><p>Read the existing Core context explicitly. Structural warnings and user notes are not measured debt. Unavailable context stays unavailable.</p><button id="assurance" type="button">Read recorded obligations</button><pre id="obligations" tabindex="0">Not requested. No Core memory read or provider call.</pre></details>
+</section>
+<footer>Experimental repository atlas · no AI call is required to draw or edit this map · source stays local</footer>
+</main>
+<dialog id="editor"><form id="editorForm"><div class="dialog-head"><h2 id="editorTitle">Add user element</h2><button id="closeEditor" type="button" aria-label="Close editor">×</button></div><p class="notice">User model only. This does not change source code or create verified facts.</p><div id="nodeFields"><label>Kind<select id="newKind"><option value="component">Component</option><option value="class">Class</option><option value="interface">Interface</option><option value="module">Module</option><option value="note">Note</option></select></label><label>Label<input id="newLabel" maxlength="160"></label><label>Members <small>One per line, up to 24 · declared by you</small><textarea id="newMembers" maxlength="3800" rows="5"></textarea></label></div><div id="edgeFields" hidden><label>From<select id="edgeFrom"></select></label><label>To<select id="edgeTo"></select></label><label>Relationship<select id="edgeKind"><option value="dependency">Dependency</option><option value="association">Association</option><option value="generalization">Generalization (from derives from to)</option><option value="realization">Realization (from implements to)</option></select></label><label>Label<input id="edgeLabel" maxlength="160"></label></div><p id="editorError" role="alert"></p><button class="primary" type="submit">Apply to user model</button></form></dialog>
+<dialog id="historyDialog"><div class="dialog-head"><h2>User-model revisions</h2><button id="closeHistory" aria-label="Close revision history">×</button></div><p>Restoring a revision prepares an edit. Save explicitly to append a new revision; previous versions are retained.</p><div id="historyRows"></div></dialog>
+<script src="/vendor/cytoscape-3.34.4.min.js" defer></script><script src="/atlas.js" type="module"></script>
+</body></html>
