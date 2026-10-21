@@ -799,6 +799,41 @@ for(const width of [390,1440]) {
   });
 }
 
+// Both mouse selection and keyboard selection anchor the *actual highlighted words*,
+// rather than merely using the section shortcut tested in F6. No provider call.
+for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
+  await section(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,async()=>{
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'c'.repeat(64),
+      reportedCostUsd:.0002,latencyMs:1200,review:{callsMade:2,completed:true,semanticVerified:false},
+      answer:{claims:[{text:'For an active operator, a value of 100 becomes 90 at the inclusive threshold.',citations:['S1']}],nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-highlight-source'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['The boundary']}};
+    await ui.page.route('**/api/ai/thread*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:root.digest,root,turns:[]})}));
+    await ui.page.evaluate(({result,gesture})=>{
+      const host=document.getElementById('aiResult');document.getElementById('optionalAI').open=true;
+      // Existing BYOK renderer is attached by this script, without model traffic.
+      import('/byok-view.js').then(({renderByokResult})=>{
+        host.innerHTML=renderByokResult(result);
+        window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
+        const p=host.querySelector('section p'),text=p.firstChild,phrase='value of 100';
+        const start=p.textContent.indexOf(phrase),range=document.createRange();
+        range.setStart(text,start);range.setEnd(text,start+phrase.length);
+        window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+        p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
+      });
+    },{result:root,gesture});
+    await ui.page.waitForFunction(()=>document.getElementById('aiThreadAnchor').textContent.includes('value of 100'));
+    const observed=await ui.page.evaluate(()=>({selection:window.getSelection().toString(),anchor:document.getElementById('aiThreadAnchor').textContent,
+      visible:!document.getElementById('aiLearningThread').hidden,sendDisabled:document.getElementById('aiThreadSend').disabled,
+      original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
+    check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
+      observed.selection==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.sendDisabled
+      &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width&&count(ui.posts,'/api/ai/thread')===0,observed);
+    await ui.close();
+  });
+}
+
 check('E5 the page raised no script error in any scenario above', pageErrors.length === 0, { errors: pageErrors.slice(0, 20) });
 
 for (const step of cleanup) await step()?.catch?.(() => {});

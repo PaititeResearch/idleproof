@@ -75,6 +75,8 @@ function requestScope(cwd,body) {
   // Repeated clicks/messages must resolve to the original digest (cached, no
   // second payment), not a new digest merely because history grew afterward.
   const duplicate=record.turns.findIndex(t=>t.claimIndex===claimIndex&&t.selection===selection&&t.question===question);
+  // Never begin a paid plan if the thread has no room to store its result.
+  if(duplicate===-1&&record.turns.length>=24)fail('BYOK_THREAD_FULL');
   const history=duplicate===-1?record.turns:record.turns.slice(0,duplicate);
   const recent=history.map(t=>({t,result:readByok(rootFile(cwd,t.digest),{optional:true})})).filter(x=>x.result?.status==='INTERPRETATION').slice(-2)
     .map(({t,result})=>({question:redactPortalText(t.question,240),answer:redactPortalText(result.answer.claims.map(c=>c.text).join(' ').slice(0,340),340)}));

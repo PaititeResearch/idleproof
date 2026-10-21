@@ -179,3 +179,15 @@ test('Local HTTP thread endpoints are read-only until the explicit preview/Send;
   assert.equal(obsolete.status,500);assert.equal((await obsolete.json()).error,'BYOK_EXPLICIT_CONSENT_REQUIRED');
   assert.equal(byokStatus(f.cwd).reservedUsd,before);
 });
+
+
+test('a full local thread refuses a new question before preview/payment, retaining previous discussion',async t=>{
+  const f=fixture(t),dir=byokDirectory(f.cwd);
+  const turns=Array.from({length:24},(_,i)=>({digest:i.toString(16).padStart(64,'0'),claimIndex:1,selection:quote,question:`Previous question ${i}`,createdAt:'2026-10-21T15:00:00Z'}));
+  const record={schema:'idleproof.byok-thread.v1',rootDigest:ROOT,snapshotId:SID,source:'HEAD',turns};
+  writeByok(path.join(dir,`thread-${ROOT}.json`),record);
+  await assert.rejects(previewByokThread(f.cwd,options,{readSource:f.readSource}),/BYOK_THREAD_FULL/);
+  let calls=0;await assert.rejects(answerByokThread(f.cwd,{...options,consentDigest:'b'.repeat(64)},{readSource:f.readSource,fetchImpl:()=>{calls++;throw Error('unexpected provider call');}}),/BYOK_THREAD_FULL/);
+  assert.equal(calls,0);assert.equal(byokStatus(f.cwd).reservedUsd,0);
+  assert.equal(readByokThread(f.cwd,ROOT).turns.length,24);
+});
