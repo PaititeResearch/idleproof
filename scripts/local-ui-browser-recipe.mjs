@@ -751,6 +751,90 @@ for (const width of [390, 1440]) {
   });
 }
 
+// Progressive technical learning: a source-anchored discussion is optional, persistent
+// in Local, and sends nothing on selection, typing, or context preview.
+for(const width of [390,1440]) {
+  await section(`F6 ${width} px: selected explanation starts a distinct cited learning thread only after explicit Send`,async()=>{
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'a'.repeat(64),
+      reportedCostUsd:0.001,latencyMs:5000,review:{callsMade:2,completed:true,semanticVerified:false},
+      answer:{claims:[{text:'The rule checks access before running the adjustment.',citations:['S1']},
+        {text:'A value of 100 becomes 90 after the adjustment; smaller values stay unchanged.',citations:['S2']}],nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'service.py',snapshotId:'synthetic-thread-snapshot'},{citation:'S2',path:'rules.py',snapshotId:'synthetic-thread-snapshot'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['Admission','Adjustment']}};
+    await ui.page.route('**/api/ai/thread*',route=>{
+      const body=route.request().postDataJSON?.();
+      if(route.request().method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:root.digest,root,turns:[]})});
+      if(body.action==='preview')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:root.digest,preview:{digest:'b'.repeat(64),model:'synthetic/model',configured:true,
+        requestPolicy:{mode:'grounded-review',maxCalls:2,maxCostUsd:.02,maxTokens:2000,deadlineMs:120000,minReviewRemainingMs:20000},
+        packet:{question:body.question,includeSource:true,includeMemory:false,recordedMemory:[],selection:{selected:1,eligible:3,omitted:2},
+          evidence:[{citation:'S1',path:'rules.py',sourceExcerpt:{status:'captured-window',code:'return value * 0.9 if value >= 100 else value'}}]}}})});
+      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:root.digest,root,turns:[{digest:'c'.repeat(64),createdAt:'2026-10-21T15:00:00Z',
+        claimIndex:1,selection:body.selection,question:body.question,result:{status:'INTERPRETATION',reportedCostUsd:.0002,
+          answer:{claims:[{text:'This is a boundary comparison in the captured calculation rule.',citations:['S1']}],nextTests:[],unknowns:[]},
+          presentation:{headings:['The boundary']},evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-thread-snapshot'}]}}]})});
+    });
+    await ui.page.evaluate(async result=>{
+      const {renderByokResult}=await import('/byok-view.js');document.getElementById('optionalAI').open=true;
+      document.getElementById('aiResult').innerHTML=renderByokResult(result);
+      window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
+    },root);
+    await ui.page.waitForFunction(()=>document.querySelectorAll('#aiResult [data-ai-discuss]').length===2);
+    await ui.page.locator('#aiResult [data-ai-discuss="1"]').click();
+    const selected=await text(ui.page,'#aiThreadAnchor');
+    await ui.page.locator('#aiThreadQuestion').fill('Why does the calculation use this comparison?');
+    await ui.page.locator('#aiThreadPreviewButton').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiThreadSend').disabled===false);
+    const beforeSend=count(ui.posts,'/api/ai/thread');
+    await ui.page.locator('#aiThreadSend').click();
+    await ui.page.waitForFunction(()=>document.getElementById('aiThreadLog').textContent.includes('boundary comparison'));
+    const observed=await ui.page.evaluate(()=>({thread:document.getElementById('aiThreadLog').textContent,
+      original:document.getElementById('aiResult').textContent,visible:!document.getElementById('aiLearningThread').hidden,
+      width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F6 ${width} px: selected explanation starts a distinct cited learning thread only after explicit Send`,
+      selected.includes('A value of 100')&&beforeSend===1&&count(ui.posts,'/api/ai/thread')===2
+      &&observed.visible&&observed.thread.includes('rules.py')&&observed.original.includes('100 becomes 90')
+      &&observed.scroll<=observed.width,{selected,beforeSend,...observed});
+    await shot(ui.page,`f6-context-thread-${width}`);await ui.close();
+  });
+}
+
+// Both mouse selection and keyboard selection anchor the *actual highlighted words*,
+// rather than merely using the section shortcut tested in F6. No provider call.
+for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
+  await section(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,async()=>{
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'c'.repeat(64),
+      reportedCostUsd:.0002,latencyMs:1200,review:{callsMade:2,completed:true,semanticVerified:false},
+      answer:{claims:[{text:'For an active operator, a value of 100 becomes 90 at the inclusive threshold.',citations:['S1']}],nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-highlight-source'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['The boundary']}};
+    await ui.page.route('**/api/ai/thread*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:root.digest,root,turns:[]})}));
+    await ui.page.evaluate(({result,gesture})=>{
+      const host=document.getElementById('aiResult');document.getElementById('optionalAI').open=true;
+      // Existing BYOK renderer is attached by this script, without model traffic.
+      import('/byok-view.js').then(({renderByokResult})=>{
+        host.innerHTML=renderByokResult(result);
+        window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
+        const p=host.querySelector('section h4')?.nextElementSibling,text=p.firstChild,phrase='value of 100';
+        const start=p.textContent.indexOf(phrase),range=document.createRange();
+        range.setStart(text,start);range.setEnd(text,start+phrase.length);
+        window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+        document.documentElement.dataset.aiTestSelectionBefore=window.getSelection().toString();
+        p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
+      });
+    },{result:root,gesture});
+    await ui.page.waitForFunction(()=>document.getElementById('aiThreadAnchor').textContent.includes('value of 100'));
+    const observed=await ui.page.evaluate(()=>({selectionBefore:document.documentElement.dataset.aiTestSelectionBefore,anchor:document.getElementById('aiThreadAnchor').textContent,
+      visible:!document.getElementById('aiLearningThread').hidden,sendDisabled:document.getElementById('aiThreadSend').disabled,
+      original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
+    check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
+      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.sendDisabled
+      &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width&&count(ui.posts,'/api/ai/thread')===0,observed);
+    await ui.close();
+  });
+}
+
 check('E5 the page raised no script error in any scenario above', pageErrors.length === 0, { errors: pageErrors.slice(0, 20) });
 
 for (const step of cleanup) await step()?.catch?.(() => {});

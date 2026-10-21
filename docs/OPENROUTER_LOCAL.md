@@ -277,3 +277,21 @@ source selection and privacy policy are unchanged. Ordinary single-call mode
 retains its 30-second limit. v12 changes preview consent/cache identity, but
 does not alter earlier results or previously held uncertain reservations.
 Historic v7/v8 references above reflect the limits applicable at those versions.
+
+## Optional contextual technical-learning thread (qualification candidate)
+
+A reviewed explanation can be explored further without lowering its technical depth.
+Select a phrase inside an explanation section or use **Ask about this section**.
+The *Explore this explanation* card keeps follow-up questions/replies visible
+locally and points back to the original sourced explanation. Prepare a separate
+**Preview focused sources** to see exactly which cited captured source excerpts,
+selected phrase and bounded prior conversational pointers would be sent. Only an
+explicit **Send approved follow-up** makes a paid request.
+
+The root result, claim and source snapshot are checked locally; a changed capture
+requires a new root explanation. Only the selected claim's cited source files are
+eligible, while the previous conversation is reference context rather than
+coding evidence. The same model, two-pass review and cost/timeout limits apply;
+no automatic retry, Core-memory upload, Proof or mastery write is implied.
+Local discussions are protected under `.idleproof/byok` and are not Portal sync.
+Direct selection of code lines is planned separately and not yet implemented.

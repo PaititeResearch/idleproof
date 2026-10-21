@@ -190,6 +190,21 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT } = {}) 
       if (url.pathname === '/api/ai/status' && req.method === 'GET') {
         const {byokStatus}=await import('./byok.mjs');return json(res,200,byokStatus(cwd));
       }
+      if (url.pathname === '/api/ai/thread' && req.method === 'GET') {
+        const {readByokThread}=await import('./byok-thread.mjs');
+        return json(res,200,readByokThread(cwd,url.searchParams.get('rootDigest')||'latest'));
+      }
+      if (url.pathname === '/api/ai/thread' && req.method === 'POST') {
+        const body=await readBody(req);
+        const {previewByokThread,answerByokThread}=await import('./byok-thread.mjs');
+        if(body.action==='preview')return json(res,200,await previewByokThread(cwd,body));
+        if(body.action!=='explain')return json(res,400,{error:'Unknown contextual discussion action'});
+        if(optionalInterpretation)return json(res,409,{error:'An optional interpretation is already running'});
+        const controller=new AbortController();optionalInterpretation=controller;
+        res.once('close',()=>{if(!res.writableEnded)controller.abort();});
+        try{return json(res,200,await answerByokThread(cwd,body,{signal:controller.signal}));}
+        finally{optionalInterpretation=null;}
+      }
       if (url.pathname === '/api/ai' && req.method === 'POST') {
         const body=await readBody(req);
         if(body.action==='cancel'){optionalInterpretation?.abort();return json(res,200,{cancelRequested:true});}

@@ -126,6 +126,8 @@ $('aiSend').onclick=async()=>{
   try{
     const result=await aiRequest({action:'explain',...approved});
     $('aiResult').innerHTML=renderByokResult(result);
+    if(typeof window!=='undefined'&&typeof window.dispatchEvent==='function')
+      window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
     // Input edits during a request invalidate retry consent too.
     if(sequence===previewSequence&&result.status==='FALLBACK'&&result.retryable){lastFailure=result.digest;$('aiRetry').hidden=false;}
   }catch(e){$('aiResult').textContent=formatByokError(e);}

@@ -5,6 +5,13 @@ const messages={
   BYOK_REVIEW_CONTEXT_BUDGET:'The draft is too large for the approved review budget. No review was sent; the draft is not presented as a reviewed answer.',
   BYOK_REVIEW_TIME_INSUFFICIENT:'The first draft used most of the allowed time. No corrective review was sent; you can read the saved draft, clearly marked unreviewed.',
   BYOK_REVIEW_COST_UNKNOWN:'The draft cost is unknown. Its reservation is retained and no review was sent.',
+  BYOK_THREAD_INVALID:'Select a short passage from one explanation section and enter a question. No provider request was made.',
+  BYOK_THREAD_ROOT_UNAVAILABLE:'The original reviewed explanation is unavailable. Generate an explanation before starting a discussion.',
+  BYOK_THREAD_STALE:'The project snapshot has changed. Existing discussions remain readable; prepare a new explanation from the current capture.',
+  BYOK_THREAD_SOURCES_UNAVAILABLE:'This passage has no eligible captured source to follow. Select a passage with source citations.',
+  BYOK_THREAD_STORAGE_INVALID:'The local discussion history cannot be read safely. No provider request was made.',
+  BYOK_THREAD_FULL:'This discussion reached its local 24-question limit. Start from a new explanation.',
+
   BYOK_OUTPUT_TRUNCATED:'Generation reached its output limit before completing the response. Partial output is not presented as an explanation.',
   BYOK_EMPTY_RESPONSE:'The provider returned a response without usable text.',
   BYOK_EMPTY_INTERPRETATION:'The response contains no sourced explanation. This workflow still needs verification.',

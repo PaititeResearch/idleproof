@@ -525,3 +525,22 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;pa
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+/* Contextual exploration: a grounded, optional discussion under the existing interpretation. */
+.ai-learning-thread{margin-top:22px;border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;display:grid;gap:12px;background:var(--surface,var(--canvas))}
+.ai-learning-thread[hidden]{display:none!important}
+.ai-thread-header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ai-thread-header .mini-label{display:block}
+.ai-thread-log{display:grid;gap:10px;max-height:640px;overflow-y:auto;overscroll-behavior:contain}
+.ai-thread-turn{border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;background:var(--sunken);overflow-wrap:anywhere}
+.ai-thread-turn blockquote{margin:6px 0 10px;padding:8px 10px;border-left:2px solid var(--line);color:var(--ink-2)}
+.ai-thread-turn h4{margin-top:10px}
+.ai-thread-turn p{margin:7px 0}
+.ai-thread-anchor{border:1px dashed var(--line);border-radius:var(--r-sm);padding:10px 12px;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.ai-thread-anchor strong{color:var(--ink)}
+.ai-learning-thread textarea{display:block;width:100%;margin-top:5px;min-height:72px}
+.ai-learning-thread .ai-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ai-ask-section{margin:8px 0 3px;padding:5px 9px;font-size:12px}
+.ai-learning-thread button[data-ai-source]{font-size:12px;margin-right:7px;margin-top:5px}
+.ai-thread-log pre{max-height:250px}
+@media(max-width:650px){.ai-learning-thread{padding:12px}.ai-learning-thread .ai-actions button{flex:1 1 190px}.ai-thread-log{max-height:480px}}
