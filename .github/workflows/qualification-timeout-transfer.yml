@@ -1,0 +1,74 @@
+name: qualification-timeout-transfer
+on:
+  push:
+    branches: ['qualification/openrouter-timeout-export-20261021']
+    paths: ['.github/workflows/qualification-timeout-transfer.yml']
+permissions:
+  contents: write
+jobs:
+  verified-transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: transfer
+          persist-credentials: false
+      - name: Decode and verify the authored patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat transfer/qualification/timeout-transfer/patch.part-0{0,1,2,3,4,5,6} | tr -d '\n\r' | base64 --decode | gzip --decompress > "$RUNNER_TEMP/timeout-v9.patch"
+          printf '%s  %s\n' 647e39f9fd757d24e5f7cc1ce9dd50c9ff15d6fd43b3219c04acbcd7a0aa84f1 "$RUNNER_TEMP/timeout-v9.patch" | sha256sum --check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ad342c0905ffab3e6ba1f77828b1c3f81981bc17
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Construct and verify the exact candidate tree
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = ad342c0905ffab3e6ba1f77828b1c3f81981bc17
+          test "$(git rev-parse HEAD^{tree})" = 5c55bb999d9e9606b069010d3a0906a460d6cff4
+          git apply --check "$RUNNER_TEMP/timeout-v9.patch"
+          git apply --index "$RUNNER_TEMP/timeout-v9.patch"
+          git diff --cached --check
+          test "$(git write-tree)" = 908bb2d4644bce20b4c560df6ebd5f405779bb97
+      - name: Run all OpenRouter contracts on the exact transferred bytes
+        working-directory: candidate
+        run: node --test --test-concurrency=1 test/byok*.test.mjs
+      - name: Publish only the isolated candidate branch
+        working-directory: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +x
+          set -euo pipefail
+          command -v gh >/dev/null
+          test "$(git write-tree)" = 908bb2d4644bce20b4c560df6ebd5f405779bb97
+          cat > "$RUNNER_TEMP/timeout-v9-message" <<'MESSAGE'
+          fix(openrouter): retain an explicitly unreviewed draft on review deadline
+
+          Distinguish local deadline, user cancellation and the failed stage. Measure
+          each pass and keep reported charges separate from unresolved reservations.
+          On a local review deadline only, retain the already admitted redacted draft
+          in a collapsed unreviewed disclosure; FALLBACK, answer:null and unknown proof
+          remain. No draft recovery for cancellation, invalid review, cost failure or
+          success. Bind the disclosed retention change to request policy v9.
+
+          Preserve the shared 60-second deadline, two-call ceiling, token configuration,
+          provider limits, history, strict admission and absence of automatic retries.
+          No model, prompt, Core, Portal, hook, scan, dependency or CI gate change.
+          Local: 658 passed / 0 failed / 6 real-Core skips of 664; BYOK 141/141.
+          Live delivery and semantic quality remain unqualified. No merge or deployment.
+          MESSAGE
+          commit=$(git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit-tree 908bb2d4644bce20b4c560df6ebd5f405779bb97 -p ad342c0905ffab3e6ba1f77828b1c3f81981bc17 < "$RUNNER_TEMP/timeout-v9-message")
+          test "$(git show -s --format=%T "$commit")" = 908bb2d4644bce20b4c560df6ebd5f405779bb97
+          git -c credential.helper='!gh auth git-credential' push https://github.com/PaititeResearch/idleproof.git "$commit:refs/heads/qualification/openrouter-timeout-built-20261021"
+          printf 'Candidate commit: %s\n' "$commit"
