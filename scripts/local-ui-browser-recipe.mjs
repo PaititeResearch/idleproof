@@ -816,7 +816,7 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
       import('/byok-view.js').then(({renderByokResult})=>{
         host.innerHTML=renderByokResult(result);
         window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
-        const p=host.querySelector('section p'),text=p.firstChild,phrase='value of 100';
+        const p=host.querySelector('section h4')?.nextElementSibling,text=p.firstChild,phrase='value of 100';
         const start=p.textContent.indexOf(phrase),range=document.createRange();
         range.setStart(text,start);range.setEnd(text,start+phrase.length);
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
