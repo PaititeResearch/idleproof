@@ -12,7 +12,7 @@ live delivery or semantic quality.
 
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
-Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The ordinary transport has a 30-second deadline (60 seconds shared by the optional two-pass mode), input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
+Deterministic Core snapshots remain the input authority. The optional interpreter is invoked explicitly outside hooks. Configuration alone never starts a request. The user chooses the model and lifetime project budget; no default model or remembered tariff is used. Before a paid call, the client checks the current model listing and the dedicated key's provider-side cap. Unknown prices/caps fail closed. The ordinary transport has a 30-second deadline (120 seconds shared by the optional two-pass mode since v12), input/output limits, no redirects, a maximum output token count and no automatic retries. A reservation survives uncertain/cancelled responses. Local estimated cost is not a billing guarantee; the dedicated OpenRouter key limit remains the independent hard limit.
 
 The preview lists the exact captured snapshot, paths, source hashes and redacted evidence packet. Metadata-only is the default; adding source descriptions/selected-document excerpts requires an explicit preview option and acceptance of that preview's digest. Changed context invalidates consent. Project text is untrusted data. Returned claims require citations and remain INFERRED; no output is admitted into Proof, Debt Ledger, canonical declarations or human mastery. A citation establishes where supplied context came from, not that an interpretation is correct. The deterministic result remains available on every failure.
 
@@ -258,3 +258,22 @@ it is not established as the cause of the reported 404.
 No additional paid call, retry, automatic model switch, dropped privacy setting
 or increased commercial ceiling is introduced. A new live human comparison is
 still required to assess delivery and the retained plain-language instructions.
+
+
+## Longer reviewed deadline (v12)
+
+The optional two-call quality path now has a **120-second shared deadline**,
+previously 60 seconds. Before consent, the preview shows this bound and the
+rule that a second paid review is only started if at least **20 seconds** remain.
+If less time remains after an accepted draft, no second call is made:
+its unused reservation is released, while the sourced first draft is available
+only in a collapsed **UNREVIEWED** disclosure. The result remains FALLBACK,
+never a reviewed explanation or Proof. If the second call is started, the
+existing deadline/cancellation and unknown-cost protections remain.
+
+A longer wait does not permit additional calls or output tokens. The current
+model, 2,000-token setting (if configured), $0.02 whole-plan ceiling, key cap,
+source selection and privacy policy are unchanged. Ordinary single-call mode
+retains its 30-second limit. v12 changes preview consent/cache identity, but
+does not alter earlier results or previously held uncertain reservations.
+Historic v7/v8 references above reflect the limits applicable at those versions.

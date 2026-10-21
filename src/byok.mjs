@@ -17,6 +17,9 @@ import {readByokHttpError,byokHttpDiagnostics} from './byok-http.mjs';
 import {reviewProviderPrice} from './byok-price.mjs';
 
 const ENDPOINT='https://openrouter.ai/api/v1';
+// Reviewed generation gets two bounded calls; the ordinary single-call timeout remains unchanged.
+const REVIEW_DEADLINE_MS=120000;
+const MIN_REVIEW_REMAINING_MS=20000;
 const UNKNOWN_DETAILS=new Set(['UNKNOWNS_NOT_ARRAY','UNKNOWNS_ITEM_LIMIT','UNKNOWN_NOT_STRING','UNKNOWN_EMPTY','UNKNOWN_TEXT_LIMIT']);
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const modelName=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:/-]{2,160}$/.test(v);
@@ -214,7 +217,7 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
   const packet=answerFirstPacket(await groundedPacket(cwd,base.packet,dependencies));
   const selected=config(cwd);
   if(JSON.stringify(selected)!==configuration)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
-  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only',routingDraftRecovery:'explicit-no-endpoints-only'};
+  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:REVIEW_DEADLINE_MS,minReviewRemainingMs:MIN_REVIEW_REMAINING_MS,answerFormat:ANSWER_FORMAT,draftRecovery:'review-deadline-only',routingDraftRecovery:'explicit-no-endpoints-only'};
   const contextDigest=hash({packet,model:base.model,requestPolicy,version:REQUEST_VERSION});
   const retryOf=options.retryOf??null;
   if(retryOf!==null) {
@@ -223,7 +226,7 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
     if(!prior||prior.contextDigest!==contextDigest||prior.status!=='FALLBACK')throw new Error('BYOK_RETRY_INVALID');
   }
   return {...base,packet,requestPolicy,contextDigest,retryOf,digest:retryOf?hash({contextDigest,retryOf}):contextDigest,
-    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. If review times out or OpenRouter explicitly reports no eligible endpoints, the admitted draft is saved locally as unreviewed, never accepted as the reviewed answer. No automatic retries.'};
+    warning:'Approve the displayed source windows and up to two calls sharing one request budget. The draft is untrusted and the review is not proof. A review is not started with under 20 seconds remaining; the admitted draft is preserved separately as unreviewed. Timeouts and explicit no-endpoints rejections can also preserve a distinct unreviewed draft. No automatic retries.'};
 }
 
 async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readCredential}) {
@@ -232,14 +235,14 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
   let abortCause=null;
   const abort=cause=>{if(!controller.signal.aborted){abortCause=cause;controller.abort();}};
   const cancel=()=>abort('cancelled');signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
-  const started=Date.now(),timer=setTimeout(()=>abort('deadline'),60000),cacheFile=path.join(files(cwd).dir,`answer-${preview.digest}.json`);
-  let meter=null,funded=false,steps=[],diagnostics=null,finalResult=null,currentStage='preflight',admittedDraft=null;
+  const started=Date.now(),timer=setTimeout(()=>abort('deadline'),REVIEW_DEADLINE_MS),cacheFile=path.join(files(cwd).dir,`answer-${preview.digest}.json`);
+  let meter=null,funded=false,steps=[],diagnostics=null,finalResult=null,currentStage='preflight',admittedDraft=null,unattemptedReviewMs=null;
   const calls=()=>steps.filter(s=>s.attempted).length;
   const retained=()=>steps.reduce((total,s)=>total+s.held,0);
   const cost=()=>steps.filter(s=>s.attempted).every(s=>s.cost!==null)?steps.filter(s=>s.attempted).reduce((total,s)=>total+s.cost,0):null;
   const passes=()=>steps.filter(s=>s.attempted).map(({stage,cost,held,diagnostics,reportedModel,provider,startedAfterMs,deadlineRemainingMs,latencyMs})=>({stage,reportedCostUsd:cost,reservedUsd:held,diagnostics,reportedModel,provider,startedAfterMs,deadlineRemainingMs,latencyMs}));
   const evidence=()=>[...preview.packet.evidence.map(({citation,snapshotId,path,sourceSha256})=>({citation,snapshotId,path,sourceSha256})),...preview.packet.recordedMemory.map(({citation,id,authority,source})=>({citation,id,authority,source}))];
-  const review=completed=>({mode:'grounded-review',maxCalls:2,callsMade:calls(),completed,semanticVerified:false,maxCostUsd:preview.requestPolicy.maxCostUsd});
+  const review=completed=>({mode:'grounded-review',maxCalls:2,callsMade:calls(),completed,semanticVerified:false,maxCostUsd:preview.requestPolicy.maxCostUsd,deadlineMs:REVIEW_DEADLINE_MS});
   const pending=()=>({schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'UNKNOWN',code:'BYOK_INTERRUPTED',reservedUsd:retained(),reportedCostUsd:cost(),review:review(false),passes:passes(),answer:null,deterministicAvailable:true});
   function releaseUnused() {
     if(!funded)return;
@@ -285,7 +288,13 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
       controller.signal.throwIfAborted();
       const messages=step.stage==='draft'?groundedMessages(preview.packet):boundedReviewMessages(preview.packet,answer,presentation);
       step.startedAfterMs=Math.max(0,Date.now()-started);
-      step.deadlineRemainingMs=Math.max(0,60000-step.startedAfterMs);step.latencyMs=null;
+      step.deadlineRemainingMs=Math.max(0,REVIEW_DEADLINE_MS-step.startedAfterMs);step.latencyMs=null;
+      // Do not start a chargeable corrective call with too little time to finish.
+      // A never-attempted review is released by releaseUnused() below.
+      if(step.stage==='review'&&step.deadlineRemainingMs<MIN_REVIEW_REMAINING_MS){
+        unattemptedReviewMs=step.deadlineRemainingMs;
+        throw new Error('BYOK_REVIEW_TIME_INSUFFICIENT');
+      }
       step.attempted=true;writeByok(cacheFile,pending());
       let result;
       try{result=await request('/chat/completions',{model:selected.model,messages,max_tokens:selected.maxTokens,temperature:0,stream:false,...reasoning,
@@ -333,12 +342,12 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     // or an explicit no-endpoints HTTP rejection during review. Bare 404s,
     // cancellations, policy/format/cost failures never authorize recovery.
     const recover=currentStage==='review'&&admittedDraft&&!meter?.blocked&&
-      ((code==='BYOK_CANCELLED_OR_TIMEOUT'&&abortCause==='deadline')||routingUnavailable);
+      ((code==='BYOK_CANCELLED_OR_TIMEOUT'&&abortCause==='deadline')||routingUnavailable||code==='BYOK_REVIEW_TIME_INSUFFICIENT');
     const accounting={knownReportedCostUsd:steps.filter(s=>s.attempted&&s.cost!==null).reduce((n,s)=>n+s.cost,0),
       unresolvedReservedUsd:steps.filter(s=>s.attempted&&s.cost===null).reduce((n,s)=>n+s.held,0)};
     const fallback={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,status:'FALLBACK',code,latencyMs:Date.now()-started,retryable:false,
       ...(error.message==='BYOK_EMPTY_INTERPRETATION'&&error.limitations?.length?{limitations:error.limitations}:{}),
-      diagnostics:{...diagnostics,...http,failureStage:currentStage,...(interrupted?{abortCause:interrupted}:{}),...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
+      diagnostics:{...diagnostics,...http,failureStage:currentStage,...(code==='BYOK_REVIEW_TIME_INSUFFICIENT'&&unattemptedReviewMs!==null?{reviewRemainingMs:unattemptedReviewMs}:{}),...(interrupted?{abortCause:interrupted}:{}),...(error.validationReason?{validationReason:error.validationReason}:{}),...(error.validationReason==='UNKNOWNS_FORMAT'&&UNKNOWN_DETAILS.has(error.validationDetail)?{validationDetail:error.validationDetail}:{})},
       reportedCostUsd:calls()?cost():null,reservedUsd:funded?retained():0,accounting,review:review(false),passes:passes(),
       ...(recover?{unreviewedDraft:admittedDraft}:{}),answer:null,deterministicAvailable:true};
     if(calls())writeByok(cacheFile,fallback);

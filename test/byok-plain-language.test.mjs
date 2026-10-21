@@ -139,7 +139,7 @@ test('new policy requires fresh current consent without rewriting v9 results, un
   writeByok(file,{schema:'idleproof.byok-result.v1',digest:oldDigest,status:'FALLBACK',answer:null,reservedUsd:.0035});
   writeByok(path.join(dir,'meter.json'),{schema:'idleproof.byok-meter.v1',reservedUsd:.0135});
   const before=new Map(['config.json','credential.json','meter.json',path.basename(file)].map(n=>[n,fs.readFileSync(path.join(dir,n))]));
-  assert.equal(REQUEST_VERSION,11);assert.notEqual(p.digest,oldDigest);
+  assert.equal(REQUEST_VERSION,12);assert.notEqual(p.digest,oldDigest);
   await assert.rejects(interpretByok(f.cwd,{...options,consentDigest:oldDigest},{readSource:f.readSource,fetchImpl:()=>{throw new Error('no network before new consent');}}),/CONSENT/);
   for(const [n,bytes] of before)assert.deepEqual(fs.readFileSync(path.join(dir,n)),bytes,n);
   assert.equal(byokStatus(f.cwd).reservedUsd,.0135);
@@ -157,7 +157,7 @@ for(const [name,q,text] of [
   assert.deepEqual(result.answer.nextTests,[]);assert.equal(result.answer.proof,'UNKNOWN');
   assert.equal(result.answer.requiresReview,true);assert.equal(result.review.semanticVerified,false);
   assert.equal(result.review.completed,true);assert.equal(result.review.maxCalls,2);
-  assert.equal(result.review.maxCostUsd,.02);assert.equal(p.requestPolicy.deadlineMs,60000);
+  assert.equal(result.review.maxCostUsd,.02);assert.equal(p.requestPolicy.deadlineMs,120000);
   assert.equal(p.requestPolicy.draftRecovery,'review-deadline-only');
   assert.equal(posts[0].max_tokens,2000);assert.equal(posts[1].max_tokens,2000);
   assert.deepEqual(posts[0].reasoning,{enabled:false});assert.deepEqual(posts[1].reasoning,{enabled:false});

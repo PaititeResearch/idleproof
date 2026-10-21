@@ -1,6 +1,6 @@
 // Pure, bounded policies shared by the network path and offline regression tests.
-// Content/format policy v11 requires fresh consent/cache; historical results are not rewritten.
-export const REQUEST_VERSION = 11;
+// Reviewed timing policy v12 requires fresh consent/cache; historical results are not rewritten.
+export const REQUEST_VERSION = 12;
 export function selectEvidence(model, paths = []) {
   const files = model.files.filter(f => f.extraction);
   if (paths.length) return files.filter(f => paths.includes(f.path));

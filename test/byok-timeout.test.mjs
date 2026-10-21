@@ -35,7 +35,7 @@ function modelReply(request,text,cost=.0001,finish='stop') {
     usage:{prompt_tokens:100,completion_tokens:80,completion_tokens_details:{reasoning_tokens:0},...(cost===null?{}:{cost})}});
 }
 function clock(t){t.mock.timers.enable({apis:['Date','setTimeout'],now:Date.now()});}
-function stall(t,signal,ms=60000) {
+function stall(t,signal,ms=120000) {
   return new Promise((resolve,reject)=>{
     signal.addEventListener('abort',()=>reject(signal.reason),{once:true});
     t.mock.timers.tick(ms);
@@ -60,9 +60,9 @@ async function attempt(t,{stage='review',cancel=false,draftCost=.0001,reviewResp
     }
     if(unownedAbort)throw new DOMException('untrusted failure '+KEY,'AbortError');
     if(cancel){controller.abort();return Promise.reject(request.signal.reason);}
-    if(lateReview){t.mock.timers.tick(60000);return modelReply(request,'LATE_SYNTHETIC_REVIEW');}
+    if(lateReview){t.mock.timers.tick(120000);return modelReply(request,'LATE_SYNTHETIC_REVIEW');}
     if(reviewResponse)return reviewResponse(request);
-    return stall(t,request.signal,60000-slowDraft);
+    return stall(t,request.signal,120000-slowDraft);
   };
   const result=await interpretByok(f.cwd,{...options,consentDigest:preview.digest},{readSource:f.readSource,fetchImpl,signal:controller.signal});
   return {...f,preview,result,calls};
@@ -75,8 +75,8 @@ test('review deadline retains a separate admitted draft, never a successful or r
   assert.equal(x.result.diagnostics.failureStage,'review');assert.equal(x.result.diagnostics.abortCause,'deadline');
   assert.equal(x.result.diagnostics.finishReason,undefined,'draft diagnostics must not describe an unfinished review');
   assert.equal(x.result.passes[0].diagnostics.finishReason,'stop');assert.equal(x.result.passes[1].diagnostics,null);
-  assert.equal(x.result.passes[0].latencyMs,45000);assert.equal(x.result.passes[1].latencyMs,15000);
-  assert.equal(x.result.passes[1].startedAfterMs,45000);assert.equal(x.result.passes[1].deadlineRemainingMs,15000);
+  assert.equal(x.result.passes[0].latencyMs,45000);assert.equal(x.result.passes[1].latencyMs,75000);
+  assert.equal(x.result.passes[1].startedAfterMs,45000);assert.equal(x.result.passes[1].deadlineRemainingMs,75000);
   assert.equal(x.result.unreviewedDraft.status,'UNREVIEWED');assert.equal(x.result.unreviewedDraft.semanticVerified,false);
   assert.equal(x.result.unreviewedDraft.answer.claims[0].text,'UNREVIEWED_SYNTHETIC_DRAFT');
   assert.equal(x.result.unreviewedDraft.answer.requiresReview,true);assert.equal(x.result.unreviewedDraft.answer.proof,'UNKNOWN');
@@ -90,7 +90,7 @@ test('review deadline retains a separate admitted draft, never a successful or r
 
 test('deadline recovery is disclosed in preview and bound to fresh consent',async t=>{
   const f=fixture(t),p=await prepareByokPreview(f.cwd,options,{readSource:f.readSource});
-  assert.equal(p.requestPolicy.draftRecovery,'review-deadline-only');assert.equal(p.requestPolicy.deadlineMs,60000);
+  assert.equal(p.requestPolicy.draftRecovery,'review-deadline-only');assert.equal(p.requestPolicy.deadlineMs,120000);
   assert.match(renderByokPreview(p),/saved locally.*unreviewed draft/i);
   const oldPolicy={...p.requestPolicy};delete oldPolicy.draftRecovery;
   const old=sha(JSON.stringify({packet:p.packet,model:p.model,requestPolicy:oldPolicy,version:8}));
@@ -177,4 +177,95 @@ for(const [name,respond,expected] of [
 ])test(`${name} is not silently rescued by presenting the draft`,async t=>{
   clock(t);const x=await attempt(t,{reviewResponse:respond});
   assert.equal(x.result.code,expected);assert.equal(x.result.answer,null);assert.equal(x.result.unreviewedDraft,undefined);
+});
+
+// The human trial took 56.6s for the draft and had only 2.8s for review under v11.
+// A longer shared clock must deliver a review when that second response is healthy.
+test('v12: a 56.6-second draft plus 10-second review completes within 120 seconds',async t=>{
+  clock(t);
+  const x=await attempt(t,{slowDraft:56611,reviewResponse:request=>{
+    t.mock.timers.tick(10000);
+    return modelReply(request,'REVIEWED_WITH_LATE_DRAFT');
+  }});
+  assert.equal(x.result.status,'INTERPRETATION');
+  assert.equal(x.result.review.callsMade,2);
+  assert.equal(x.result.review.completed,true);
+  assert.equal(x.result.review.deadlineMs,120000);
+  assert.equal(x.result.passes[0].latencyMs,56611);
+  assert.equal(x.result.passes[1].startedAfterMs,56611);
+  assert.equal(x.result.passes[1].deadlineRemainingMs,63389);
+  assert.equal(x.result.passes[1].latencyMs,10000);
+  assert.equal(x.result.answer.claims[0].text,'REVIEWED_WITH_LATE_DRAFT');
+  assert.equal(x.result.reportedCostUsd,.0002);
+  assert.equal(x.result.unreviewedDraft,undefined);
+  assert.equal(x.calls.filter(c=>c.method==='POST').length,2);
+});
+
+test('v12: a late draft with less than 20 seconds left skips the paid review and releases its reservation',async t=>{
+  clock(t);
+  const x=await attempt(t,{slowDraft:110000,draftText:'A_LATE_UNREVIEWED_DRAFT'});
+  assert.equal(x.result.status,'FALLBACK');
+  assert.equal(x.result.code,'BYOK_REVIEW_TIME_INSUFFICIENT');
+  assert.equal(x.result.review.deadlineMs,120000);
+  assert.equal(x.result.diagnostics.reviewRemainingMs,10000);
+  assert.equal(x.result.diagnostics.failureStage,'review');
+  assert.equal(x.result.review.callsMade,1);
+  assert.equal(x.calls.filter(c=>c.method==='POST').length,1,'no review POST');
+  assert.equal(x.result.reportedCostUsd,.0001);
+  assert.equal(x.result.accounting.knownReportedCostUsd,.0001);
+  assert.equal(x.result.accounting.unresolvedReservedUsd,0);
+  assert.equal(x.result.reservedUsd,.0001,'unused review reservation released');
+  assert.ok(Math.abs(byokStatus(x.cwd).reservedUsd-.0001)<1e-12);
+  assert.equal(x.result.answer,null);
+  assert.equal(x.result.unreviewedDraft.status,'UNREVIEWED');
+  assert.equal(x.result.unreviewedDraft.answer.claims[0].text,'A_LATE_UNREVIEWED_DRAFT');
+  assert.equal(x.result.review.completed,false);
+  assert.equal(x.result.review.semanticVerified,false);
+  const html=renderByokResult(x.result);
+  assert.match(html,/Corrective review not started/);
+  assert.match(html,/shared 120-second window/);
+  assert.match(html,/No second paid call was sent/);
+  assert.match(html,/No corrective call was attempted; its reservation was released/);
+  assert.match(html,/View the saved draft/);
+  assert.doesNotMatch(html,/<h3>Explanation for review<\/h3>/);
+});
+
+test('v12: with exactly 20 seconds left, a fast valid second call is permitted',async t=>{
+  clock(t);
+  const x=await attempt(t,{slowDraft:100000,reviewResponse:request=>{
+    t.mock.timers.tick(18000);
+    return modelReply(request,'REVIEWED_AT_BOUNDARY');
+  }});
+  assert.equal(x.result.status,'INTERPRETATION');
+  assert.equal(x.result.review.callsMade,2);
+  assert.equal(x.result.passes[1].deadlineRemainingMs,20000);
+  assert.equal(x.result.answer.claims[0].text,'REVIEWED_AT_BOUNDARY');
+  assert.equal(x.result.reportedCostUsd,.0002);
+});
+
+test('v12: new preview communicates the deadline and review minimum while v11 consent is invalid',async t=>{
+  const f=fixture(t),p=await prepareByokPreview(f.cwd,options,{readSource:f.readSource});
+  assert.equal(p.requestPolicy.deadlineMs,120000);
+  assert.equal(p.requestPolicy.minReviewRemainingMs,20000);
+  const text=renderByokPreview(p);
+  assert.match(text,/120-second shared generation deadline/);
+  assert.match(text,/at least 20 seconds remain/);
+  const oldPolicy={...p.requestPolicy,deadlineMs:60000};
+  delete oldPolicy.minReviewRemainingMs;
+  const oldConsent=sha(JSON.stringify({packet:p.packet,model:p.model,requestPolicy:oldPolicy,version:11}));
+  assert.notEqual(oldConsent,p.digest);
+  let calls=0;
+  await assert.rejects(interpretByok(f.cwd,{...options,consentDigest:oldConsent},
+    {readSource:f.readSource,fetchImpl:()=>{calls++;throw Error('no network');}}),/BYOK_EXPLICIT_CONSENT_REQUIRED/);
+  assert.equal(calls,0);
+  assert.equal(byokStatus(f.cwd).reservedUsd,0);
+});
+
+test('v12: historical v11 failures still state the original 60-second deadline',()=>{
+  const old={status:'FALLBACK',code:'BYOK_CANCELLED_OR_TIMEOUT',latencyMs:60062,
+    diagnostics:{abortCause:'deadline',failureStage:'review'},
+    review:{callsMade:2,completed:false,semanticVerified:false},reportedCostUsd:null};
+  const html=renderByokResult(old);
+  assert.match(html,/shared 60-second deadline/);
+  assert.doesNotMatch(html,/shared 120-second deadline/);
 });

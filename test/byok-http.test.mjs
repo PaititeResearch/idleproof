@@ -148,8 +148,8 @@ test('a successful corrective answer is unchanged and retains no draft or HTTP d
 
 test('preview discloses routing-draft retention and refuses v10 consent without rewriting state or spending',async t=>{
   const f=fixture(t),p=await prepareByokPreview(f.cwd,options,{readSource:f.readSource});
-  assert.equal(REQUEST_VERSION,11);assert.equal(p.requestPolicy.routingDraftRecovery,'explicit-no-endpoints-only');
-  assert.equal(p.requestPolicy.draftRecovery,'review-deadline-only');assert.equal(p.requestPolicy.deadlineMs,60000);
+  assert.equal(REQUEST_VERSION,12);assert.equal(p.requestPolicy.routingDraftRecovery,'explicit-no-endpoints-only');
+  assert.equal(p.requestPolicy.draftRecovery,'review-deadline-only');assert.equal(p.requestPolicy.deadlineMs,120000);
   assert.match(renderByokPreview(p),/no eligible endpoint.*saved locally as unreviewed/);
   const oldPolicy={...p.requestPolicy};delete oldPolicy.routingDraftRecovery;
   const old=sha(JSON.stringify({packet:p.packet,model:p.model,requestPolicy:oldPolicy,version:10}));
