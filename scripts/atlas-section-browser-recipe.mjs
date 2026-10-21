@@ -38,7 +38,12 @@ for(const width of [1440,390]){
   await check(`${width}: reload keeps persisted annotations but does not force a graph load`,async()=>{
    await page.reload();assert.equal(await page.locator('#atlasSectionFrame').getAttribute('src'),null);await page.locator('#repositoryAtlasTab').click();
    const frame=page.frameLocator('#atlasSectionFrame');await frame.locator('#notice').filter({hasText:/Static capture loaded/}).waitFor();
-   await frame.locator('#elements summary').click();assert.ok(await frame.locator('#elementList').getByText(/DraftLearningBoundary/).count()>0);
+   const saved=await page.evaluate(async()=>await(await fetch('/api/atlas')).json());
+   assert.equal(saved.overlay.nodes[0].label,'DraftLearningBoundary');assert.equal(saved.nodes.some(n=>n.label==='DraftLearningBoundary'),false);
+   // Classes are intentionally not displayed in the default module view. Inspect their own view.
+   await frame.locator('#view').selectOption('classes');
+   await frame.locator('#notice').filter({hasText:/Static capture loaded/}).waitFor();
+   await frame.locator('#elements summary').click();await frame.locator('#elementList').getByText(/DraftLearningBoundary/).waitFor();
   });
   await check(`${width}: live activity is stopped when the host hides the map`,async()=>{
    const frame=page.frameLocator('#atlasSectionFrame');await frame.locator('#monitorPanel summary').click();await frame.locator('#monitor').click();
