@@ -820,15 +820,16 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         const start=p.textContent.indexOf(phrase),range=document.createRange();
         range.setStart(text,start);range.setEnd(text,start+phrase.length);
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+        document.documentElement.dataset.aiTestSelectionBefore=window.getSelection().toString();
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadAnchor').textContent.includes('value of 100'));
-    const observed=await ui.page.evaluate(()=>({selection:window.getSelection().toString(),anchor:document.getElementById('aiThreadAnchor').textContent,
+    const observed=await ui.page.evaluate(()=>({selectionBefore:document.documentElement.dataset.aiTestSelectionBefore,anchor:document.getElementById('aiThreadAnchor').textContent,
       visible:!document.getElementById('aiLearningThread').hidden,sendDisabled:document.getElementById('aiThreadSend').disabled,
       original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
     check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
-      observed.selection==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.sendDisabled
+      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.sendDisabled
       &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width&&count(ui.posts,'/api/ai/thread')===0,observed);
     await ui.close();
   });
