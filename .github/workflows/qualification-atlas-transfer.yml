@@ -1,0 +1,74 @@
+name: qualification-atlas-transfer
+on:
+  push:
+    branches: [qualification/atlas-transfer-20261021]
+    paths: [.github/workflows/qualification-atlas-transfer.yml]
+permissions:
+  contents: write
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          path: candidate
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: transfer
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Verify exact base and payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          test "$(git rev-parse HEAD)" = 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          test "$(git rev-parse HEAD^{tree})" = 5c1e45bb194cc03ab4e8e961bcde200a1ac1979e
+          cat ../transfer/payload/chunk-* > "$RUNNER_TEMP/atlas.b64"
+          test "$(wc -c < "$RUNNER_TEMP/atlas.b64")" = 45668
+          printf '775e02580076ffbd1e1861f1dbd3b7089aceddfb284a44aa7f4d077d0437468f  %s\n' "$RUNNER_TEMP/atlas.b64" | sha256sum -c -
+          node -e 'const fs=require("fs"),z=require("zlib");fs.writeFileSync(process.argv[2],z.brotliDecompressSync(Buffer.from(fs.readFileSync(process.argv[1],"utf8"),"base64")))' "$RUNNER_TEMP/atlas.b64" "$RUNNER_TEMP/atlas.patch"
+          printf '263ed8f6efd49e1a4613e52a246f91fe82ae229749a9d3a902de6b1d71816e4b  %s\n' "$RUNNER_TEMP/atlas.patch" | sha256sum -c -
+          git apply --check "$RUNNER_TEMP/atlas.patch"
+          git apply "$RUNNER_TEMP/atlas.patch"
+      - name: Reproduce pinned local-only graph runtime without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/atlas-vendor"
+          cd "$RUNNER_TEMP/atlas-vendor"
+          npm pack cytoscape@3.34.4 --ignore-scripts --json > pack.json
+          node -e 'const fs=require("fs"),c=require("crypto"); const actual="sha512-"+c.createHash("sha512").update(fs.readFileSync("cytoscape-3.34.4.tgz")).digest("base64"); if(actual!=="sha512-msY99tMY8iWTg+sIPGfSqDcPNOt4xcj+v/K/7qUFaCUxxlqnMkUYLBjRUzn9W5CU/R2hrmtJa5+UtovrEM2ctg==")throw Error("Pinned package integrity mismatch");'
+          tar -xzf cytoscape-3.34.4.tgz package/dist/cytoscape.min.js package/LICENSE
+          printf '081591ab735b2b6a3b31a3c60f8f3a3e2fee8c92939e0c7820ad1208571b6cd8  package/dist/cytoscape.min.js\neb319c6e6f233607f71e8e2f450391751883cfc0eeb3ca7ef574c13d1d9c2203  package/LICENSE\n' | sha256sum -c -
+          cp package/dist/cytoscape.min.js "$GITHUB_WORKSPACE/candidate/public/vendor/cytoscape-3.34.4.min.js"
+          cp package/LICENSE "$GITHUB_WORKSPACE/candidate/public/vendor/cytoscape-LICENSE.txt"
+      - name: Verify exact source tree, unchanged gates and package
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          git add -A
+          test "$(git diff --cached --name-only | wc -l)" -eq 20
+          test "$(git write-tree)" = 157fe51ef291c02521cbde54b4a90422d35040b8
+          git diff --cached --check
+          for file in src/atlas-*.mjs src/server.mjs public/atlas.js scripts/atlas-*.mjs test/atlas*.test.mjs; do node --check "$file"; done
+          node --test --test-concurrency=1 test/atlas*.test.mjs
+          npm test
+          npm pack --dry-run --ignore-scripts >/dev/null
+      - name: Publish one experimental commit without helper ancestry
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/experiment/repository-atlas-20261021 | cut -f1)" = 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(experiment): evidence-bound editable repository atlas and UML views'
+          test "$(git rev-parse HEAD^)" = 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          test "$(git rev-parse HEAD^{tree})" = 157fe51ef291c02521cbde54b4a90422d35040b8
+          git push origin HEAD:refs/heads/experiment/repository-atlas-20261021
