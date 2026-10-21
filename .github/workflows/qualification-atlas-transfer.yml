@@ -60,15 +60,18 @@ jobs:
           node --test --test-concurrency=1 test/atlas*.test.mjs
           npm test
           npm pack --dry-run --ignore-scripts >/dev/null
-      - name: Publish one experimental commit without helper ancestry
+      - name: Publish content-only qualification branch within token permissions
         shell: bash
         working-directory: candidate
         run: |
           set -euo pipefail
           test "$(git ls-remote origin refs/heads/experiment/repository-atlas-20261021 | cut -f1)" = 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
+          test -z "$(git ls-remote origin refs/heads/qualification/atlas-tested-content-20261021)"
+          git rm -f .github/workflows/repository-atlas.yml
+          test "$(git write-tree)" = 64245b4e637f0e5fa352b222240665eae322f758
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat(experiment): evidence-bound editable repository atlas and UML views'
+          git commit -m 'qualification: tested repository atlas content pending separately authorized workflow'
           test "$(git rev-parse HEAD^)" = 1edb27b06d1a5a96bfb113b8ec854dc9831dde63
-          test "$(git rev-parse HEAD^{tree})" = 157fe51ef291c02521cbde54b4a90422d35040b8
-          git push origin HEAD:refs/heads/experiment/repository-atlas-20261021
+          test "$(git rev-parse HEAD^{tree})" = 64245b4e637f0e5fa352b222240665eae322f758
+          git push origin HEAD:refs/heads/qualification/atlas-tested-content-20261021
