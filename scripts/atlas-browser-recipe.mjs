@@ -19,13 +19,13 @@ for(const width of [1440,390]) {
     await page.goto(app.url+'/atlas.html');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
     await check(`${width}: captured graph loads without network providers or a scan`,async()=>{
       const d=await api();assert.equal(d.nodes.length,3);assert.equal(await page.locator('#canvas canvas').count()>0,true);assert.equal(requests.some(r=>!r.url.startsWith(app.url)),false);assert.equal(requests.some(r=>r.method==='POST'),false);
-      assert.match(await page.locator('#notice').innerText(),/SYNTHETIC DEMO/);
+      assert.match(await page.locator('#notice').innerText(),/SYNTHETIC DEMO/);assert.match(await page.locator('#identity').innerText(),/SYNTHETIC DEMO/);
     });
     await page.locator('#elements summary').click();await page.locator('#elementList button[data-node]').first().click();
     await check(`${width}: source identity visible and evidence cannot be renamed by aliases`,async()=>{
       assert.match(await page.locator('#details').innerText(),/Content hash/);await page.locator('#alias').fill('Payment boundary');await page.locator('#note').fill('Review the dependency; not an observed implementation fact.');await page.locator('#annotation button').click();
       assert.equal(await page.locator('#save').isEnabled(),true);await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('User model saved'));
-      const d=await api();assert.equal(d.sequence,1);assert.equal(d.overlay.aliases[0].label,'Payment boundary');assert.notEqual(d.nodes.find(n=>n.id===d.overlay.aliases[0].id).label,'Payment boundary');
+      const d=await api();assert.equal(d.sequence,1);assert.equal(d.overlay.aliases[0].label,'Payment boundary');assert.match(await page.locator('#details').innerText(),/User alias; captured name:/);assert.notEqual(d.nodes.find(n=>n.id===d.overlay.aliases[0].id).label,'Payment boundary');
     });
     await check(`${width}: user class and inheritance are editable and persist as declarations`,async()=>{
       await page.locator('#view').selectOption('classes');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
@@ -33,6 +33,16 @@ for(const width of [1440,390]) {
       await page.locator('#addEdge').click();const opts=await page.locator('#edgeFrom option').evaluateAll(a=>a.map(x=>({id:x.value,text:x.textContent})));await page.locator('#edgeFrom').selectOption(opts.find(o=>o.text==='PlannedCalculator').id);await page.locator('#edgeTo').selectOption(opts.find(o=>o.text!=='PlannedCalculator').id);await page.locator('#edgeKind').selectOption('generalization');await page.locator('#edgeLabel').fill('proposed inheritance');await page.locator('#editorForm button[type=submit]').click();await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('User model saved'));
       await page.reload();await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));const d=await api();assert.equal(d.overlay.nodes[0].label,'PlannedCalculator');assert.equal(d.overlay.edges[0].kind,'generalization');assert.equal(d.sequence,3);
       const full=await page.evaluate(async()=>await (await fetch('/api/atlas?action=export&format=json')).json());assert.equal(full.facts.nodes.some(n=>n.label==='PlannedCalculator'),false);assert.equal(full.userModel.overlay.nodes[0].label,'PlannedCalculator');
+    });
+    await check(`${width}: focused UML view distinguishes extracted classes and user inheritance`,async()=>{
+      await page.locator('#view').selectOption('classes');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
+      const view=await page.evaluate(async()=>await (await fetch('/api/atlas?view=classes')).json());
+      assert.ok(view.nodes.some(n=>n.kind==='class'&&n.origin==='core-scan'&&n.authority==='OBSERVED'));
+      assert.ok(view.nodes.some(n=>n.label==='PlannedCalculator'&&n.authority==='DECLARED'));
+      assert.ok(view.edges.some(e=>e.kind==='generalization'&&e.authority==='DECLARED'));
+      assert.equal(view.edges.some(e=>e.kind==='generalization'&&e.authority==='OBSERVED'),false);
+      await page.screenshot({path:path.join(out,`atlas-${width}-uml.png`),fullPage:true});
+      await page.locator('#view').selectOption('modules');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
     });
     await check(`${width}: revisions remain available and history stays closed until requested`,async()=>{
       assert.equal(await page.locator('#historyDialog').evaluate(e=>e.open),false);await page.locator('#history').click();await page.waitForSelector('#historyRows button');assert.equal(await page.locator('#historyRows button').count(),3);await page.locator('#closeHistory').click();assert.equal(await page.locator('#historyDialog').evaluate(e=>e.open),false);
@@ -50,6 +60,7 @@ for(const width of [1440,390]) {
       await page.locator('#elements summary').click();await page.locator('#elementList button[data-node]').first().click();await page.locator('#openSource').click();await page.waitForFunction(()=>document.getElementById('sourceCode').textContent.includes('def captured'));assert.equal(requests.some(r=>r.url.includes('openrouter')),false);await page.unroute('**/api/atlas?*');
     });
     await check(`${width}: no horizontal overflow, keyboard controls and theme are usable`,async()=>{
+      assert.match(await page.locator('#identity').innerText(),/SYNTHETIC DEMO/);
       const sizes=await page.evaluate(()=>({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));assert.ok(sizes.scroll<=sizes.width+1,JSON.stringify(sizes));await page.locator('#theme').click();await page.screenshot({path:path.join(out,`atlas-${width}-dark.png`),fullPage:true});await page.locator('#theme').click();await page.screenshot({path:path.join(out,`atlas-${width}-light.png`),fullPage:true});
       await page.locator('#addNode').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#editor').evaluate(e=>e.open),true);await page.keyboard.press('Escape');assert.equal(await page.locator('#editor').evaluate(e=>e.open),false);
     });

@@ -39,11 +39,11 @@ function displayNodes(){
 function displayEdges(nodes){const ids=new Set(nodes.map(n=>n.id));return [...data.edges.filter(e=>e.origin!=='user-model'),...overlay.edges.map(e=>({...e,origin:'user-model',authority:'DECLARED',source:null}))].filter(e=>ids.has(e.from)&&ids.has(e.to)).slice(0,1300);}
 function redraw({fit=true}={}) {
   if(!data||data.status!=='READY')return;
-  const nodes=displayNodes(),edges=displayEdges(nodes),elements=[];
+  const nodes=displayNodes(),edges=displayEdges(nodes),elements=[],columns=$('canvas').clientWidth<600?1:4;
   nodes.forEach((n,i)=>{
     const members=(n.members||[]).slice(0,3).map(m=>typeof m==='string'?m:m.name.split('.').at(-1));
     const label=`${n.kind==='module'?'«module»':n.origin==='user-model'?'«declared '+n.kind+'»':'«'+n.kind+'»'}\n${n.displayLabel}${members.length?'\n──────────\n'+members.join('\n'):''}`;
-    elements.push({group:'nodes',data:{...n,label},position:n.position||{x:150+(i%4)*285,y:100+Math.floor(i/4)*175}});
+    elements.push({group:'nodes',data:{...n,label},position:n.position||{x:150+(i%columns)*285,y:100+Math.floor(i/columns)*175}});
   });
   for(const e of edges)elements.push({group:'edges',data:{...e,source:e.from,target:e.to,label:(e.origin==='user-model'?'declared · ':'')+(e.label||e.kind),provenance:e.source}});
   const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;
@@ -64,6 +64,7 @@ function inspect(id,nodes=displayNodes(),edges=displayEdges(nodes)){
   const edge=Boolean(item.from);selected={...item,edge};$('selectedTitle').textContent=edge?(item.label||item.kind):item.displayLabel;
   const badge=element('span',`${item.authority} · ${item.origin==='user-model'?'user model':edge?'static relation':'captured definition'}`);badge.className='authority '+(item.origin==='user-model'?'declared':item.authority==='UNKNOWN'?'unknown':'');$('authority').replaceChildren(badge);
   const dl=element('dl');const row=(k,v)=>{dl.append(element('dt',k),element('dd',v));};
+  if(item.origin!=='user-model'&&item.displayLabel&&item.displayLabel!==item.label)row('Display label',`User alias; captured name: ${item.label}`);
   row('Kind',item.symbolKind||item.kind);if(item.origin==='user-model')row('Basis','Declared by you. Does not establish current implementation.');
   if(item.path)row('Captured path',item.path);if(item.source){row('Source location',item.source.locationScope==='file-anchor'?'Captured file; exact syntax line not supplied':`${item.source.line}–${item.source.endLine}`);row('Snapshot',item.source.snapshotId);row('Content hash',item.source.sourceSha256);}
   if(edge){row('From',nodes.find(n=>n.id===item.from)?.displayLabel||item.from);row('To',nodes.find(n=>n.id===item.to)?.displayLabel||item.to);row('Meaning',item.origin==='user-model'?'User-authored relationship, not execution evidence.':item.kind==='contains'?'Lexical declaration, not UML ownership.':'Static relation. Neither execution nor reachability is established.');}
@@ -80,7 +81,7 @@ async function load() {
     const next=await request(params(),null,controller.signal);if(my!==sequence)return;data=next;
     if(data.status!=='READY'){cy?.destroy();cy=null;overlay=null;clearInspector();$('elementList').replaceChildren();$('identity').textContent='No snapshot loaded for this source.';$('coverage').textContent='No graph available.';status(data.message||'No captured project available. Create an explicit scan from Local.',true);return;}
     overlay=copy(data.overlay);setDirty(false);clearInspector();redraw();
-    $('identity').textContent=`${data.identity.source} · ${data.identity.snapshotId.slice(0,22)}…\n${data.freshness.status} · captured ${data.identity.capturedAt||'date unavailable'}`;
+    $('identity').textContent=`${data.identity.profile?.syntheticFixture?'SYNTHETIC DEMO — not your repository\n':''}${data.identity.source} · ${data.identity.snapshotId.slice(0,22)}…\n${data.freshness.status} · captured ${data.identity.capturedAt||'date unavailable'}`;
     const cov=data.coverage;
     $('limits').textContent=`${cov.scan.read??'Unknown'} files read by the scan · ${cov.unparsedFiles} captured but unparsed · ${cov.unresolvedImports} unresolved imports · ${cov.ambiguousImports} ambiguous imports · ${cov.unresolvedCalls} call sites with unresolved targets. ${cov.nodeOverflow||cov.edgeOverflow?'Projection capacity was exceeded.':''}`;
     $('unresolved').replaceChildren(...data.unresolved.map(c=>element('p',`${c.source.path}:${c.source.line} · ${c.name} · target not resolved`)));
