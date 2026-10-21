@@ -1,0 +1,66 @@
+name: qualification-atlas-ux
+on:
+  push:
+    branches: [qualification/atlas-transfer-20261021]
+    paths: [.github/workflows/qualification-atlas-ux.yml]
+permissions:
+  contents: write
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: bba1ff9aa53efabf5aedf9cb59de0963a620533d
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Apply exact read-only-view refinements and qualify the tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^{tree})" = 050154573464f7e0f81d7a4796c30c3df149f70c
+          python3 - <<'PY'
+          from pathlib import Path
+          def rep(path, old, new):
+              p=Path(path); s=p.read_text(); assert s.count(old)==1,(path,old); p.write_text(s.replace(old,new))
+          ui='public/atlas.js'
+          rep(ui,'const nodes=displayNodes(),edges=displayEdges(nodes),elements=[];',"const nodes=displayNodes(),edges=displayEdges(nodes),elements=[],columns=$('canvas').clientWidth<600?1:4;")
+          rep(ui,'x:150+(i%4)*285,y:100+Math.floor(i/4)*175','x:150+(i%columns)*285,y:100+Math.floor(i/columns)*175')
+          rep(ui,"row('Kind',item.symbolKind||item.kind);if(item.origin==='user-model')", "if(item.origin!=='user-model'&&item.displayLabel&&item.displayLabel!==item.label)row('Display label',`User alias; captured name: ${item.label}`);\n  row('Kind',item.symbolKind||item.kind);if(item.origin==='user-model')")
+          rep(ui,"$('identity').textContent=`${data.identity.source}",r"$('identity').textContent=`${data.identity.profile?.syntheticFixture?'SYNTHETIC DEMO — not your repository\n':''}${data.identity.source}")
+          tests='scripts/atlas-browser-recipe.mjs'
+          rep(tests,"assert.match(await page.locator('#notice').innerText(),/SYNTHETIC DEMO/);", "assert.match(await page.locator('#notice').innerText(),/SYNTHETIC DEMO/);assert.match(await page.locator('#identity').innerText(),/SYNTHETIC DEMO/);")
+          rep(tests,"assert.equal(d.overlay.aliases[0].label,'Payment boundary');assert.notEqual", "assert.equal(d.overlay.aliases[0].label,'Payment boundary');assert.match(await page.locator('#details').innerText(),/User alias; captured name:/);assert.notEqual")
+          rep(tests,'const sizes=await page.evaluate(()=>({width:',"assert.match(await page.locator('#identity').innerText(),/SYNTHETIC DEMO/);\n      const sizes=await page.evaluate(()=>({width:")
+          anchor="    await check(`${width}: revisions remain available and history stays closed until requested`,async()=>{"
+          extra="""    await check(`${width}: focused UML view distinguishes extracted classes and user inheritance`,async()=>{
+                await page.locator('#view').selectOption('classes');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
+                const view=await page.evaluate(async()=>await (await fetch('/api/atlas?view=classes')).json());
+                assert.ok(view.nodes.some(n=>n.kind==='class'&&n.origin==='core-scan'&&n.authority==='OBSERVED'));
+                assert.ok(view.nodes.some(n=>n.label==='PlannedCalculator'&&n.authority==='DECLARED'));
+                assert.ok(view.edges.some(e=>e.kind==='generalization'&&e.authority==='DECLARED'));
+                assert.equal(view.edges.some(e=>e.kind==='generalization'&&e.authority==='OBSERVED'),false);
+                await page.screenshot({path:path.join(out,`atlas-${width}-uml.png`),fullPage:true});
+                await page.locator('#view').selectOption('modules');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Static capture loaded'));
+              });
+          """
+          rep(tests,anchor,extra+anchor)
+          PY
+          git add public/atlas.js scripts/atlas-browser-recipe.mjs
+          test "$(git write-tree)" = 44a70050e7ab73d9751436c7be175b16c46711a4
+          git diff --cached --check
+          node --check public/atlas.js
+          node --check scripts/atlas-browser-recipe.mjs
+          node --test --test-concurrency=1 test/atlas*.test.mjs
+      - name: Publish qualified content to isolated staging branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git ls-remote origin refs/heads/qualification/atlas-ux-tested-20261021)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'qualification: mobile graph defaults and explicit user alias/demo identity'
+          test "$(git rev-parse HEAD^)" = bba1ff9aa53efabf5aedf9cb59de0963a620533d
+          git push origin HEAD:refs/heads/qualification/atlas-ux-tested-20261021
