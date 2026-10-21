@@ -1,0 +1,66 @@
+name: qualification-context-thread-transfer
+on:
+  push:
+    branches: ['qualification/context-thread-transfer-20261021']
+    paths: ['.github/workflows/qualification-context-thread-transfer.yml']
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: deece3e24d7d0422571d8fe2f04c4b3c4e11aa7b
+          path: candidate
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: qualification/context-thread-transfer-20261021
+          path: transfer
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - name: Verify isolated patch and exact code tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          test "$(git rev-parse HEAD)" = deece3e24d7d0422571d8fe2f04c4b3c4e11aa7b
+          test "$(git rev-parse HEAD^{tree})" = b667f774e75c93e51dc07e3f1dbbf31f32514ea0
+          cat ../transfer/payload/chunk-* > "$RUNNER_TEMP/context-thread.b64"
+          test "$(wc -c < "$RUNNER_TEMP/context-thread.b64")" = 20468
+          printf '4b31b2b5a9f517c34484596fcf20ab1fa55a3956e001f24d8c23e7f881d4aabd  %s\n' "$RUNNER_TEMP/context-thread.b64" | sha256sum -c -
+          node -e 'const fs=require("fs"),zlib=require("zlib"); const buf=Buffer.from(fs.readFileSync(process.argv[1],"utf8"),"base64");fs.writeFileSync(process.argv[2],zlib.brotliDecompressSync(buf))' "$RUNNER_TEMP/context-thread.b64" "$RUNNER_TEMP/context-thread.patch"
+          printf '6c141ce68e84a212c1ed8247ad4d69633fadd799070c2d8e0701a3e9a9ca9371  %s\n' "$RUNNER_TEMP/context-thread.patch" | sha256sum -c -
+          git apply --check "$RUNNER_TEMP/context-thread.patch"
+          git apply "$RUNNER_TEMP/context-thread.patch"
+          git add -A
+          test "$(git write-tree)" = cc0223e841e807b1988512b36a225c9272c540d3
+          test "$(git diff --cached --name-only | wc -l)" -eq 13
+          git diff --cached --check
+          node --check src/byok-thread.mjs
+          node --check src/byok.mjs
+          node --check src/server.mjs
+          node --check public/byok-thread-ui.js
+          node --check public/project-scan.js
+          node --check scripts/local-ui-browser-recipe.mjs
+      - name: Run all optional OpenRouter and new contextual discussion tests
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 test/byok-*.test.mjs
+          npm pack --dry-run >/dev/null
+      - name: Publish only validated feature branch, without helper files
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat(local): source-anchored persistent BYOK learning discussion"
+          test "$(git rev-parse HEAD^)" = deece3e24d7d0422571d8fe2f04c4b3c4e11aa7b
+          test "$(git rev-parse HEAD^{tree})" = cc0223e841e807b1988512b36a225c9272c540d3
+          git push origin HEAD:refs/heads/feature/contextual-learning-thread-20261021
