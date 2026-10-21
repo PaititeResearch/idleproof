@@ -55,7 +55,10 @@ for(const width of [1440,390]){
   await check(`${width}: keyboard dismissal and same-origin message boundary preserve controls`,async()=>{
    await page.evaluate(()=>window.dispatchEvent(new MessageEvent('message',{origin:'https://foreign.invalid',source:document.getElementById('atlasSectionFrame').contentWindow,data:{type:'idleproof:atlas-close'}})));
    assert.equal(await page.locator('#atlasSectionWorkspace').isVisible(),true);const frame=page.frameLocator('#atlasSectionFrame');
-   await frame.locator('#query').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('#atlasSectionWorkspace').isHidden(),true);assert.equal(await page.locator('#atlasSectionOpen').evaluate(e=>e===document.activeElement),true);
+   await frame.locator('#query').focus();await page.keyboard.press('Escape');
+   // Escape crosses the iframe boundary through an asynchronous postMessage.
+   await page.waitForFunction(()=>document.getElementById('atlasSectionWorkspace').hidden&&document.activeElement===document.getElementById('atlasSectionOpen'),null,{timeout:5000});
+   assert.equal(await page.locator('#atlasSectionWorkspace').isHidden(),true);assert.equal(await page.locator('#atlasSectionOpen').evaluate(e=>e===document.activeElement),true);
    await page.keyboard.press('Enter');await page.waitForFunction(()=>!document.getElementById('atlasSectionWorkspace').hidden);
   });
   await check(`${width}: embedded layout is bounded and original Local remains usable`,async()=>{
