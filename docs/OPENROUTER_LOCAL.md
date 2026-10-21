@@ -1,10 +1,10 @@
 # Optional Local OpenRouter interpretation
 
-Current request-policy candidate: v7 (2026-10-21), with an explicit bounded
-source/review mode documented in
-[the grounded-review qualification record](qualification/OPENROUTER_GROUNDED_REVIEW_20261021.md).
-The dated v3/v5/v6 notes below remain historical. This candidate is not yet
-HUMAN-qualified for semantic quality; the observed v6 content failure is retained.
+Current request-policy candidate: v8 (2026-10-21), with an answer-first
+presentation and explicit question coverage in the opt-in reviewed path. See
+[the answer-first qualification record](qualification/OPENROUTER_ANSWER_FIRST_20261021.md).
+The earlier v3/v5/v6/v7 notes below remain historical. The observed v7 result
+improved but stayed HUMAN PARTIAL; no automated result upgrades that finding.
 
 Status: implementation candidate. The 2026-10-13 HUMAN recipe reached paid responses but failed utility: Mistral upstream 429, DeepSeek truncation and an empty interpretation. The recovery changes below require a new HUMAN run; simulated tests do not qualify live provider behavior. No key belongs in ChatGPT, GitHub, Portal, a CLI argument, a screenshot or a test artifact.
 
@@ -169,3 +169,39 @@ the cost meter. The first human comparison should retain the same model, questio
 and 2000-token limit so that the new evidence/review intervention can be assessed
 before changing additional parameters. The qualification record lists acceptance
 criteria and known limitations. No workflow or mock result proves live quality.
+
+## Answer-first reviewed explanations (v8)
+
+The existing quality checkbox now prepares an ordered checklist from exact spans
+of the user's question. It is visible in the preview and part of its consent
+identity. Complete captured source files replace duplicate flattened behavior
+clauses; partial windows retain their additional descriptions. No selected path,
+source byte, source opt-in, memory opt-in or capture limit changes.
+
+The two model passes return short titled answer sections, real information gaps,
+optional follow-up checks, and explicit links from question points to answer/gap
+sections. The editor receives missing links and is asked to repair substantive
+omissions before polishing prose. Proposed tests cannot serve as answer links.
+The final page leads with the answer and puts optional follow-up checks behind
+an expandable section. Existing citation buttons remain local source navigation.
+
+These links are model-reported, NOT evidence of semantic completeness or truth.
+Unknown/duplicate question IDs, invalid indexes, malformed headings and invalid
+legacy answer fields are rejected. An unlinked final point is visibly flagged as
+needing completion while the useful sourced portions remain available. A model
+can still link an inadequate sentence or misclassify a content request as a
+style instruction; human evaluation remains necessary. No green coverage score,
+independent verification or automatic additional call is introduced.
+
+The stored answer retains the existing three-array structure and authority;
+optional `presentation` holds headings and model-reported coverage, including
+redacted question spans. The intermediate draft is still not stored. Historical
+results without this field render as before. Request policy v8 requires a fresh
+preview; keys, meter reservations, costs and old results remain intact.
+
+The same two-call plan, configured token ceiling, 60-second deadline and existing
+whole-explanation cost ceiling apply. The estimated reservation now includes an
+explicit bounded allowance for the larger response schema. Existing 2000-token
+and $0.02 settings are unchanged. Ordinary single-call mode keeps its previous
+message/three-array output policy. No execution or hidden evidence retrieval is
+added, and no live semantic improvement is claimed from fixture responses.

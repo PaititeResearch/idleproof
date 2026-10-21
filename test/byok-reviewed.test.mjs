@@ -48,7 +48,11 @@ function provider(log,rows=[{},{}],{cap=1,onPost=null,price={prompt:'0.00000001'
     onPost?.(i,request);
     if(row.throw)throw row.throw;
     if(row.status)return new Response('provider failure',{status:row.status});
-    const content=Object.hasOwn(row,'content')?row.content:JSON.stringify(row.answer||answer(i?'REVISED_SYNTHETIC':'DRAFT_SYNTHETIC'));
+    const sent=JSON.parse(request.body),original=row.answer||answer(i?'REVISED_SYNTHETIC':'DRAFT_SYNTHETIC');
+    const wire=sent.response_format.json_schema.schema.properties.coverage?{...original,
+      claims:original.claims.map(c=>({...c,heading:'Synthetic heading'})),
+      coverage:JSON.parse(sent.messages[1].content).evidencePacket.answerPlan.points.map(p=>({questionId:p.id,kind:original.claims.length?'answered':'gap',claims:original.claims.length?[0]:[],unknowns:original.claims.length?[]:[0]}))}:original;
+    const content=Object.hasOwn(row,'content')?row.content:JSON.stringify(wire);
     return reply({model:'test/review',provider:'synthetic/provider',choices:[{finish_reason:row.finish||'stop',message:{content}}],usage:{prompt_tokens:100+i,completion_tokens:50+i,completion_tokens_details:{reasoning_tokens:0},...(row.cost===null?{}:{cost:row.cost??.0001})}});
   };
 }

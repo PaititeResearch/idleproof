@@ -598,6 +598,45 @@ for (const scheme of ['light', 'dark']) {
   });
 }
 
+// New answer renderer in the real page/CSS; synthetic data only, no model call.
+for (const width of [390, 1440]) {
+  await section(`F2 ${width} px: answer-first sections, source links and collapsed follow-up checks remain readable`, async () => {
+    const ui = await open(completeUrl, { width, height: 900 }); await waitConnection(ui.page, 'live');
+    await ui.page.evaluate(async () => {
+      const { renderByokResult } = await import('/byok-view.js');
+      document.getElementById('optionalAI').open = true;
+      const result = {
+        status: 'INTERPRETATION', reportedCostUsd: 0.001, latencyMs: 1200,
+        answer: { claims: [
+          { text: 'This synthetic billing example checks an admission rule before applying the selected rate.', citations: ['S1'] },
+          { text: 'A permitted input of 240 is predicted to become 180. This is a code-derived prediction, not an executed test.', citations: ['S1'] }
+        ], nextTests: [{ text: 'Additional boundary checks can be run separately.', citations: ['S1'] }], unknowns: ['The external business objective is not part of this example.'] },
+        evidence: [{ citation: 'S1', path: 'tariff.py', snapshotId: 'synthetic-browser-snapshot' }],
+        review: { callsMade: 2, completed: true, semanticVerified: false },
+        presentation: { schema: 'idleproof.byok-presentation.v1', format: 'answer-first-v1', headings: ['What this code does', 'A concrete example'],
+          questionCoverage: { basis: 'model-reported-links', semanticVerified: false, points: [], links: [], missing: [] } }
+      };
+      document.getElementById('aiResult').innerHTML = renderByokResult(result);
+    });
+    await ui.page.locator('#aiResult').scrollIntoViewIfNeeded();
+    const measured = await ui.page.evaluate(() => {
+      const result = document.getElementById('aiResult');
+      const sections = [...result.querySelectorAll('section')];
+      const checks = [...result.querySelectorAll('details')].find(d => d.querySelector('summary')?.textContent === 'Suggested checks — not executed');
+      return { titles: sections.map(s => s.querySelector('h4')?.textContent),
+        links: result.querySelectorAll('button[data-ai-source="tariff.py"]').length,
+        checksClosed: !!checks && !checks.open, detailPresent: !!document.getElementById('aiSourceDetail'),
+        width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
+        afterAnswer: !!checks && sections.every(s => !!(s.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING)) };
+    });
+    check(`F2 ${width} px: answer-first sections, source links and collapsed follow-up checks remain readable`,
+      measured.titles.join('|') === 'What this code does|A concrete example' && measured.links === 3 && measured.checksClosed && measured.detailPresent && measured.afterAnswer && measured.scroll <= measured.width,
+      measured);
+    await shot(ui.page, `f1-answer-first-${width}`);
+    await ui.close();
+  });
+}
+
 check('E5 the page raised no script error in any scenario above', pageErrors.length === 0, { errors: pageErrors.slice(0, 20) });
 
 for (const step of cleanup) await step()?.catch?.(() => {});

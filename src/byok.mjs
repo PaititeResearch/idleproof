@@ -11,6 +11,7 @@ import {byokDirectory,readByok,writeByok,byokLock,saveCredential,loadCredential}
 import {REQUEST_VERSION,selectEvidence,validateAnswer,unknownsFormatDetail,completionDiagnostics,reasoningOptions} from './byok-contract.mjs';
 import {buildByokMessages} from './byok-prompt.mjs';
 import {groundedPacket} from './byok-grounding.mjs';
+import {ANSWER_FORMAT,answerFirstPacket,humanAnswerSchema,unpackHumanAnswer} from './byok-answer-plan.mjs';
 import {groundedMessages,reviewReservations,boundedReviewMessages} from './byok-review.mjs';
 
 const ENDPOINT='https://openrouter.ai/api/v1';
@@ -208,10 +209,10 @@ export async function prepareByokPreview(cwd,options={},dependencies={}) {
   if(options.quality!==true)return previewByok(cwd,options);
   const configuration=JSON.stringify(config(cwd));
   const base=previewByok(cwd,{...options,quality:false,retryOf:null});
-  const packet=await groundedPacket(cwd,base.packet,dependencies);
+  const packet=answerFirstPacket(await groundedPacket(cwd,base.packet,dependencies));
   const selected=config(cwd);
   if(JSON.stringify(selected)!==configuration)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
-  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000};
+  const requestPolicy={...base.requestPolicy,mode:'grounded-review',maxCalls:2,maxCostUsd:selected?.maxRequestUsd??null,deadlineMs:60000,answerFormat:ANSWER_FORMAT};
   const contextDigest=hash({packet,model:base.model,requestPolicy,version:REQUEST_VERSION});
   const retryOf=options.retryOf??null;
   if(retryOf!==null) {
@@ -246,6 +247,7 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     const selected=config(cwd);if(!selected)throw new Error('BYOK_NOT_CONFIGURED');
     if(selected.model!==preview.model||selected.maxTokens!==preview.requestPolicy.maxTokens||selected.maxRequestUsd!==preview.requestPolicy.maxCostUsd)throw new Error('BYOK_EXPLICIT_CONSENT_REQUIRED');
     const cached=readByok(cacheFile,{optional:true});if(cached)return {...cached,cached:true};
+    const structuredSchema=humanAnswerSchema(answerSchema,preview.packet);
     const credential=readCredential(cwd);
     const request=async(route,body,limit)=>{controller.signal.throwIfAborted();return boundedJson(await fetchImpl(ENDPOINT+route,{method:body?'POST':'GET',redirect:'error',signal:controller.signal,headers:{Authorization:`Bearer ${credential}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}),limit);};
     const catalogue=await request('/models',null,8*1024*1024),model=catalogue.data?.find(m=>m.id===selected.model);
@@ -261,14 +263,14 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     controller.signal.throwIfAborted();
     meter.reservedUsd+=total;writeByok(files(cwd).meter,meter);funded=true;
     writeByok(cacheFile,pending()); // Reserve the complete plan before any payment.
-    let answer=null;
+    let answer=null,presentation=null;
     for(const step of steps) {
       controller.signal.throwIfAborted();
-      const messages=step.stage==='draft'?groundedMessages(preview.packet):boundedReviewMessages(preview.packet,answer);
+      const messages=step.stage==='draft'?groundedMessages(preview.packet):boundedReviewMessages(preview.packet,answer,presentation);
       step.attempted=true;writeByok(cacheFile,pending());
       const result=await request('/chat/completions',{model:selected.model,messages,max_tokens:selected.maxTokens,temperature:0,stream:false,...reasoning,
         provider:{require_parameters:true,data_collection:'deny',max_price:{prompt:price.prompt*1e6,completion:price.completion*1e6,request:price.request}},
-        response_format:{type:'json_schema',json_schema:{name:'grounded_project_interpretation',strict:true,schema:answerSchema}}},128*1024);
+        response_format:{type:'json_schema',json_schema:{name:'grounded_project_interpretation',strict:true,schema:structuredSchema}}},128*1024);
       finalResult=result;
       step.diagnostics=diagnostics=completionDiagnostics(result);
       step.reportedModel=typeof result.model==='string'?redactPortalText(result.model,160):null;
@@ -284,7 +286,8 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
       if(diagnostics.finishReason==='content_filter')throw new Error('BYOK_CONTENT_FILTERED');
       if(!diagnostics.contentPresent)throw new Error('BYOK_EMPTY_RESPONSE');
       let parsed;try{parsed=JSON.parse(result.choices?.[0]?.message?.content);}catch{throw new Error('BYOK_INVALID_JSON');}
-      answer=admitAnswer(parsed,preview.packet);
+      const unpacked=unpackHumanAnswer(parsed,preview.packet);
+      answer=admitAnswer(unpacked.base,preview.packet);presentation=unpacked.presentation;
       // No second paid request while the first one's cost remains uncertain.
       if(step.stage==='draft'&&step.cost===null)throw new Error('BYOK_REVIEW_COST_UNKNOWN');
     }
@@ -292,7 +295,7 @@ async function interpretReviewedByok(cwd,options,preview,{fetchImpl,signal,readC
     const safe={schema:'idleproof.byok-result.v1',digest:preview.digest,contextDigest:preview.contextDigest,diagnostics,status:'INTERPRETATION',model:selected.model,
       reportedModel:typeof finalResult?.model==='string'?redactPortalText(finalResult.model,160):null,generatedAt:new Date().toISOString(),latencyMs:Date.now()-started,
       reportedCostUsd:cost(),reservedUsd:retained(),review:review(true),passes:passes(),tokens:{input:sumTokens('inputTokens'),output:sumTokens('outputTokens')},
-      answer,evidence:[...preview.packet.evidence.map(({citation,snapshotId,path,sourceSha256})=>({citation,snapshotId,path,sourceSha256})),...preview.packet.recordedMemory.map(({citation,id,authority,source})=>({citation,id,authority,source}))],deterministicAvailable:true};
+      answer,presentation,evidence:[...preview.packet.evidence.map(({citation,snapshotId,path,sourceSha256})=>({citation,snapshotId,path,sourceSha256})),...preview.packet.recordedMemory.map(({citation,id,authority,source})=>({citation,id,authority,source}))],deterministicAvailable:true};
     writeByok(cacheFile,safe);return safe;
   }catch(error) {
     releaseUnused();
