@@ -1,0 +1,84 @@
+name: qualification-http-v11-transfer
+on:
+  push:
+    branches: ['qualification/openrouter-http-v11-transfer-20261021']
+    paths: ['.github/workflows/qualification-http-v11-transfer.yml']
+permissions:
+  contents: write
+jobs:
+  qualify-transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: c2de3fc55b1006bc14f35916dcdce3e537f58541
+          path: payload
+          persist-credentials: false
+          sparse-checkout: .qualification
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fa9565952cd05da58b03eb83f97c4aa3bc8ae741
+          path: candidate
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - name: Verify payload and apply only the tested eleven paths
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = fa9565952cd05da58b03eb83f97c4aa3bc8ae741
+          test "$(git rev-parse HEAD^{tree})" = 55c9712e61713e14a96b48ea52e16baa7d8f91fb
+          python3 - <<'PY'
+          import base64, hashlib, lzma, pathlib, subprocess
+          root=pathlib.Path('../payload/.qualification')
+          encoded=''.join((root/f'v11-http.part{i}.b64').read_text().strip() for i in (1,2))
+          packed=base64.b64decode(encoded,validate=True)
+          assert hashlib.sha256(packed).hexdigest()=='30a530e14f51ea1fcf4bdaae6b9a7136fc09adb3540760913c49e13e531d7ede'
+          patch=lzma.decompress(packed)
+          assert len(patch)==52135
+          assert hashlib.sha256(patch).hexdigest()=='84142555ea9254c2ae304ca9cc02b336bed60699ecdcedad9a536b82f561445b'
+          subprocess.run(['git','apply','--index','--binary','--unidiff-zero','-'],input=patch,check=True)
+          expected={'docs/OPENROUTER_LOCAL.md','docs/qualification/OPENROUTER_HTTP_20261021.md','public/byok-view.js','scripts/local-ui-browser-recipe.mjs','src/byok-contract.mjs','src/byok-http.mjs','src/byok-price.mjs','src/byok.mjs','test/byok-http.test.mjs','test/byok-plain-language.test.mjs','test/byok-price.test.mjs'}
+          actual=set(subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines())
+          assert actual==expected,(actual,expected)
+          assert subprocess.check_output(['git','write-tree']).decode().strip()=='11381f7a7f2820d4017a86bdf7ad084ec3037f21'
+          PY
+          git diff --cached --check
+          node --check src/byok-http.mjs
+          node --check src/byok-price.mjs
+          node --check src/byok.mjs
+          node --check public/byok-view.js
+          node --check scripts/local-ui-browser-recipe.mjs
+      - name: Run unchanged gates with synthetic provider responses only
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 test/byok*.test.mjs
+          npm test
+          npm pack --dry-run
+          git diff --exit-code
+          test "$(git write-tree)" = 11381f7a7f2820d4017a86bdf7ad084ec3037f21
+      - name: Publish isolated candidate without helper ancestry or a PR merge
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          CANDIDATE=$(git commit-tree 11381f7a7f2820d4017a86bdf7ad084ec3037f21 -p fa9565952cd05da58b03eb83f97c4aa3bc8ae741 <<'MSG'
+          fix(openrouter): diagnose routing rejections and preserve exact price ceilings
+
+          Decode only bounded fixed HTTP diagnostics. Keep no-endpoints recovery
+          separate from reviewed answers and bind retention to fresh v11 consent.
+          Retain known costs and unresolved reservations without automatic retries.
+          Convert catalogue decimals exactly to routing units without a price markup.
+          Preserve v10 plain-language prompts, two-call cap, budgets, privacy and v9
+          timing/deadline behavior. No live provider, deployment or quality PASS.
+          MSG
+          )
+          git push origin "$CANDIDATE:refs/heads/qualification/openrouter-http-v11-tested-20261021"
+          printf 'CANDIDATE=%s\nTREE=11381f7a7f2820d4017a86bdf7ad084ec3037f21\n' "$CANDIDATE"
+          printf 'Candidate `%s`, tree `11381f7a7f2820d4017a86bdf7ad084ec3037f21`. Parent is pinned v10; helper files and commits are excluded.\n' "$CANDIDATE" >> "$GITHUB_STEP_SUMMARY"
