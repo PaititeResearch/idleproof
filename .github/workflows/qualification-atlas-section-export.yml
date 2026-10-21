@@ -1,0 +1,30 @@
+name: qualification-atlas-section-export
+on:
+  push:
+    branches: ['qualification/atlas-section-export-20261021']
+    paths: ['.github/workflows/qualification-atlas-section-export.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 45bfd4b3f467ab46436b0aa8187b35bf289c8ca1
+          persist-credentials: false
+      - name: Export exact tracked bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^{tree})" = 44a70050e7ab73d9751436c7be175b16c46711a4
+          mkdir -p "$RUNNER_TEMP/export"
+          git archive --format=tar HEAD > "$RUNNER_TEMP/export/atlas-baseline.tar"
+          sha256sum "$RUNNER_TEMP/export/atlas-baseline.tar" > "$RUNNER_TEMP/export/SHA256SUMS"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: atlas-section-pinned-source
+          path: ${{ runner.temp }}/export/
+          if-no-files-found: error
+          retention-days: 3
