@@ -858,7 +858,7 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
           set(value){
             window.__f7HiddenWrites.push({
               hidden:Boolean(value),scrollY:window.scrollY,
-              stack:(new Error().stack||'').split('\\n').slice(1,6).join(' | ')
+              stack:(new Error().stack||'').split('\n').slice(1,6).join(' | ')
             });
             hidden.set.call(this,value);
           }
