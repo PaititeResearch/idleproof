@@ -47,6 +47,8 @@ try {
       await page.locator('#fit').click();
       const fit=await probe();assert.ok(Math.abs(fit.z-initial.z)<.05,'Fit must restore the original viewport scale; got '+fit.z+' vs '+initial.z);
       passed++;
+      // Fit was clicked in the toolbar; return the real pointer to the graph before testing trackpad scrolling.
+      await page.mouse.move(rect.x+x,rect.y+y);
       const before=await probe();
       for(let i=0;i<4;i++)await page.mouse.wheel(0,-8);
       const ratio=(await probe()).z/before.z;
