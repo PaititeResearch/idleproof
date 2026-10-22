@@ -846,23 +846,6 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
           paragraph:[prect.top,prect.bottom,prect.width,prect.height],
           scrollY:window.scrollY,innerHeight:window.innerHeight
         });
-        // Diagnostic-only observation: record the exact caller changing the
-        // floating action's hidden property. The native accessor still runs.
-        // This cannot make a missing action count as a PASS.
-        const action=document.querySelector('.ai-selection-action');
-        const hidden=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'hidden');
-        window.__f7HiddenWrites=[];
-        if(action&&hidden?.get&&hidden?.set)Object.defineProperty(action,'hidden',{
-          configurable:true,
-          get(){return hidden.get.call(this);},
-          set(value){
-            window.__f7HiddenWrites.push({
-              hidden:Boolean(value),scrollY:window.scrollY,
-              stack:(new Error().stack||'').split('\n').slice(1,6).join(' | ')
-            });
-            hidden.set.call(this,value);
-          }
-        });
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
@@ -878,7 +861,6 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         const r=selection.getRangeAt(0).getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})(),
       innerWidth:window.innerWidth,innerHeight:window.innerHeight,scrollY:window.scrollY,
       selectionActionHidden:document.querySelector('.ai-selection-action').hidden,
-      hiddenWrites:window.__f7HiddenWrites?.slice(-15)||[],
       actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.left,r.right,r.width,r.height];})()
     }));
     console.log('F7_GEOMETRY '+width+' '+gesture+' '+JSON.stringify(geometry));
@@ -970,6 +952,65 @@ for(const width of [390,1440]) {
       &&expanded&&collapsed&&closed&&count(ui.posts,'/api/ai/thread')===0
       &&size.scroll<=size.width,{initial,history,compose,expanded,collapsed,closed,size});
     await shot(ui.page,`f8-contextual-history-${width}`);await ui.close();
+  });
+}
+
+// F9: deterministic delayed restore response must never replace a fresh root.
+// The endpoint is mocked and no paid generation is performed.
+for(const width of [390,1440]) {
+  await section(`F9 ${width} px: stale history GET cannot overwrite a fresh selected explanation`,async()=>{
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    const makeRoot=(digest,statement)=>({
+      schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest,
+      reportedCostUsd:0,latencyMs:0,review:{callsMade:0,completed:true,semanticVerified:false},
+      answer:{claims:[{text:statement,citations:['S1']}],nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-race-source'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['Boundary']}
+    });
+    const fresh=makeRoot('a'.repeat(64),'For an active operator, a value of 100 becomes 90 at the inclusive threshold.');
+    const stale=makeRoot('b'.repeat(64),'A stale previous explanation must not replace the current answer.');
+    let releaseLatest,seenLatest;
+    const held=new Promise(resolve=>{releaseLatest=resolve;});
+    const started=new Promise(resolve=>{seenLatest=resolve;});
+    await ui.page.route('**/api/ai/thread*',async route=>{
+      const id=new URL(route.request().url()).searchParams.get('rootDigest');
+      if(id==='latest') {
+        seenLatest();await held;
+        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:stale.digest,root:stale,turns:[]})});
+      }else{
+        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:fresh.digest,root:fresh,turns:[]})});
+      }
+    });
+    try {
+      await ui.page.evaluate(()=>{document.getElementById('optionalAI').open=true;});
+      await started; // Latest restoration is now outstanding.
+      await ui.page.evaluate(async result=>{
+        const {renderByokResult}=await import('/byok-view.js');
+        const host=document.getElementById('aiResult');host.innerHTML=renderByokResult(result);
+        window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
+        const p=host.querySelector('section h4')?.nextElementSibling;
+        p.scrollIntoView({block:'center',behavior:'instant'});
+        const text=p.firstChild,phrase='value of 100',offset=p.textContent.indexOf(phrase);
+        const range=document.createRange();range.setStart(text,offset);range.setEnd(text,offset+phrase.length);
+        window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+        p.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
+      },fresh);
+      await ui.page.waitForFunction(()=>!document.querySelector('.ai-selection-action')?.hidden);
+      const response=ui.page.waitForResponse(value=>value.url().includes('rootDigest=latest'));
+      releaseLatest();await response;
+      await ui.page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      const state=await ui.page.evaluate(()=>({
+        buttonVisible:!document.querySelector('.ai-selection-action').hidden,
+        composerHidden:document.getElementById('aiLearningThread').hidden,
+        quote:document.getElementById('aiThreadAnchor').textContent,
+        result:document.getElementById('aiResult').textContent,
+        width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth
+      }));
+      check(`F9 ${width} px: stale history GET cannot overwrite a fresh selected explanation`,
+        state.buttonVisible&&state.composerHidden&&state.quote.includes('value of 100')
+        &&state.result.includes('100 becomes 90')&&!state.result.includes('stale previous explanation')
+        &&state.scroll<=state.width&&count(ui.posts,'/api/ai/thread')===0,state);
+    }finally{releaseLatest();await ui.close();}
   });
 }
 
