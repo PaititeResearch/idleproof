@@ -89,15 +89,30 @@
           <div id="aiResult" role="status" aria-live="polite"></div>
           <button type="button" id="aiRetry" hidden>Prepare a retry (a new call may incur a charge)</button>
         </details>
-          <section id="aiLearningThread" class="ai-learning-thread" aria-label="Explore this explanation" hidden>
-            <div class="ai-thread-header"><div><span class="mini-label">Connected learning</span><h3>Explore this explanation</h3></div><span class="chip">Private · local history</span></div>
-            <p class="memory-intro">Select a sentence in the explanation or choose "Ask about section". Each follow-up uses the cited project evidence, with your approval before any provider request. Answers remain inferred, not Proof.</p>
-            <div id="aiThreadLog" class="ai-thread-log" role="log" aria-label="Contextual discussion" aria-live="polite"><p>No follow-up yet.</p></div>
-            <div id="aiThreadAnchor" class="ai-thread-anchor" role="status">Select a passage in the explanation above to begin.</div>
-            <label>Ask a question about this passage<textarea id="aiThreadQuestion" rows="2" maxlength="480" placeholder="Why does this condition matter? Where is the function called?"></textarea></label>
-            <div class="ai-actions"><button type="button" id="aiThreadPreviewButton" disabled>Preview focused sources</button><button type="button" id="aiThreadSend" disabled>Send approved follow-up</button><button type="button" id="aiThreadCancel">Cancel generation</button></div>
-            <div id="aiThreadPreview" role="status" aria-live="polite">No follow-up preview. No network request authorized.</div>
-            <p id="aiThreadStatus" role="status" aria-live="polite"></p>
+          <section id="aiLearningThread" class="ai-learning-thread" role="dialog" aria-modal="false" aria-labelledby="aiThreadHeading" hidden>
+            <div class="ai-thread-header">
+              <div><span class="mini-label">Connected learning · private</span><h3 id="aiThreadHeading">Ask about this passage</h3></div>
+              <button id="aiThreadClose" type="button" aria-label="Close contextual question">Close ×</button>
+            </div>
+            <div id="aiThreadComposer" class="ai-thread-composer">
+              <div id="aiThreadAnchor" class="ai-thread-anchor" role="status">Select a passage in the explanation above to begin.</div>
+              <label for="aiThreadQuestion">Ask a question about this passage
+                <textarea id="aiThreadQuestion" rows="2" maxlength="480" placeholder="Why does this condition matter? Where is the function called?"></textarea>
+              </label>
+              <div class="ai-actions">
+                <button type="button" id="aiThreadPreviewButton" disabled>Preview focused sources</button>
+                <button type="button" id="aiThreadSend" disabled>Send approved follow-up</button>
+                <button type="button" id="aiThreadCancel">Cancel generation</button>
+              </div>
+              <div id="aiThreadPreview" role="status" aria-live="polite">No follow-up preview. No network request authorized.</div>
+              <p id="aiThreadStatus" role="status" aria-live="polite"></p>
+              <div id="aiThreadLatest" class="ai-thread-latest" role="status" aria-live="polite" hidden></div>
+            </div>
+            <details id="aiThreadHistory" class="ai-thread-history">
+              <summary>Conversation history <span id="aiThreadHistoryCount">0 questions</span></summary>
+              <p class="memory-intro">Stored privately on this machine. Opening past answers never sends a model request.</p>
+              <div id="aiThreadLog" class="ai-thread-log" role="log" aria-label="Contextual discussion"><p>No follow-up yet.</p></div>
+            </details>
           </section>
       </div>
     </section>

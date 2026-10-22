@@ -790,11 +790,14 @@ for(const width of [390,1440]) {
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadLog').textContent.includes('boundary comparison'));
     const observed=await ui.page.evaluate(()=>({thread:document.getElementById('aiThreadLog').textContent,
       original:document.getElementById('aiResult').textContent,visible:!document.getElementById('aiLearningThread').hidden,
+      latest:document.getElementById('aiThreadLatest').textContent,historyOpen:document.getElementById('aiThreadHistory').open,
+      historyCount:document.getElementById('aiThreadHistoryCount').textContent,
       width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
     check(`F6 ${width} px: selected explanation starts a distinct cited learning thread only after explicit Send`,
       selected.includes('A value of 100')&&beforeSend===1&&count(ui.posts,'/api/ai/thread')===2
-      &&observed.visible&&observed.thread.includes('rules.py')&&observed.original.includes('100 becomes 90')
-      &&observed.scroll<=observed.width,{selected,beforeSend,...observed});
+      &&observed.visible&&observed.thread.includes('rules.py')&&observed.latest.includes('boundary comparison')
+      &&observed.historyOpen===false&&observed.historyCount==='1 question'
+      &&observed.original.includes('100 becomes 90')&&observed.scroll<=observed.width,{selected,beforeSend,...observed});
     await shot(ui.page,`f6-context-thread-${width}`);await ui.close();
   });
 }
@@ -821,17 +824,93 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         range.setStart(text,start);range.setEnd(text,start+phrase.length);
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
         document.documentElement.dataset.aiTestSelectionBefore=window.getSelection().toString();
+        document.documentElement.dataset.aiTestScrollBefore=String(window.scrollY);
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadAnchor').textContent.includes('value of 100'));
     const observed=await ui.page.evaluate(()=>({selectionBefore:document.documentElement.dataset.aiTestSelectionBefore,anchor:document.getElementById('aiThreadAnchor').textContent,
-      visible:!document.getElementById('aiLearningThread').hidden,sendDisabled:document.getElementById('aiThreadSend').disabled,
+      visible:!document.getElementById('aiLearningThread').hidden,actionVisible:!document.querySelector('.ai-selection-action').hidden,
+      sendDisabled:document.getElementById('aiThreadSend').disabled,
+      scrollY:window.scrollY,scrollBefore:Number(document.documentElement.dataset.aiTestScrollBefore),
       original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
     check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
-      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.sendDisabled
-      &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width&&count(ui.posts,'/api/ai/thread')===0,observed);
+      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')
+      &&observed.visible===false&&observed.actionVisible&&observed.sendDisabled
+      &&observed.scrollY===observed.scrollBefore
+      &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width
+      &&count(ui.posts,'/api/ai/thread')===0,observed);
+    await ui.page.locator('.ai-selection-action').click();
+    const opened=await ui.page.evaluate(()=>({shown:!document.getElementById('aiLearningThread').hidden,
+      historyOpen:document.getElementById('aiThreadHistory').open,
+      quote:document.getElementById('aiThreadAnchor').textContent,
+      focused:document.activeElement.id,sendDisabled:document.getElementById('aiThreadSend').disabled}));
+    await ui.page.keyboard.press('Escape');
+    const closed=await ui.page.evaluate(()=>({hidden:document.getElementById('aiLearningThread').hidden,
+      actionVisible:!document.querySelector('.ai-selection-action').hidden,focused:document.activeElement.className}));
+    check(`F7 ${width} px: selection popover is explicit, dismissible and source-bound`,
+      opened.shown&&opened.historyOpen===false&&opened.quote.includes('value of 100')
+      &&opened.focused==='aiThreadQuestion'&&opened.sendDisabled&&closed.hidden
+      &&closed.actionVisible&&closed.focused.includes('ai-selection-action')
+      &&count(ui.posts,'/api/ai/thread')===0,{opened,closed});
     await ui.close();
+  });
+}
+
+// The persisted conversation is independent of an active selection. Opening
+// history is an explicit read-only UI action; it must not pre-open or bill.
+for(const width of [390,1440]) {
+  await section(`F8 ${width} px: history stays folded until requested, standalone access and Escape work`,async()=>{
+    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
+    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'d'.repeat(64),
+      reportedCostUsd:.0002,latencyMs:1200,review:{callsMade:2,completed:true,semanticVerified:false},
+      answer:{claims:[{text:'For an active operator, a value of 100 becomes 90 at the inclusive threshold.',citations:['S1']}],
+        nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-history-source'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['The boundary']}};
+    const stored={rootDigest:root.digest,root,turns:[{digest:'e'.repeat(64),createdAt:'2026-10-22T10:00:00Z',
+      claimIndex:0,selection:'value of 100',question:'Why does this branch matter?',result:{
+        status:'INTERPRETATION',reportedCostUsd:.0003,
+        answer:{claims:[{text:'The saved explanation uses a cited captured source.',citations:['S1']}],nextTests:[],unknowns:[]},
+        presentation:{headings:['Saved response']},evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-history-source'}]}}]};
+    await ui.page.route('**/api/ai/thread*',route=>route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify(route.request().method()==='GET'?stored:{error:'UNAUTHORIZED_WRITE'})}));
+    await ui.page.evaluate(async result=>{
+      const {renderByokResult}=await import('/byok-view.js');document.getElementById('optionalAI').open=true;
+      document.getElementById('aiResult').innerHTML=renderByokResult(result);
+      window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
+    },root);
+    await ui.page.waitForFunction(()=>!document.querySelector('.ai-thread-history-shortcut')?.hidden);
+    const initial=await ui.page.evaluate(()=>({panelHidden:document.getElementById('aiLearningThread').hidden,
+      shortcutVisible:!document.querySelector('.ai-thread-history-shortcut').hidden,
+      historyOpen:document.getElementById('aiThreadHistory').open,
+      original:document.getElementById('aiResult').textContent,
+      count:document.getElementById('aiThreadHistoryCount').textContent}));
+    await ui.page.locator('#aiResult .ai-thread-history-shortcut').click();
+    const history=await ui.page.evaluate(()=>({panelVisible:!document.getElementById('aiLearningThread').hidden,
+      composerHidden:document.getElementById('aiThreadComposer').hidden,
+      opened:document.getElementById('aiThreadHistory').open,
+      stored:document.getElementById('aiThreadLog').textContent}));
+    await ui.page.locator('#aiThreadClose').click();
+    await ui.page.locator('#aiResult [data-ai-discuss="0"]').click();
+    const compose=await ui.page.evaluate(()=>({panelVisible:!document.getElementById('aiLearningThread').hidden,
+      composerHidden:document.getElementById('aiThreadComposer').hidden,
+      historyOpen:document.getElementById('aiThreadHistory').open}));
+    await ui.page.locator('#aiThreadHistory summary').click();
+    const expanded=await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open);
+    await ui.page.locator('#aiThreadHistory summary').click();
+    const collapsed=!(await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open));
+    await ui.page.keyboard.press('Escape');
+    const closed=await ui.page.locator('#aiLearningThread').isHidden();
+    const size=await ui.page.evaluate(()=>({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+    check(`F8 ${width} px: history stays folded until requested, standalone access and Escape work`,
+      initial.panelHidden&&initial.shortcutVisible&&!initial.historyOpen&&initial.count==='1 question'
+      &&initial.original.includes('100 becomes 90')&&history.panelVisible&&history.composerHidden
+      &&history.opened&&history.stored.includes('The saved explanation uses a cited captured source')
+      &&compose.panelVisible&&!compose.composerHidden&&!compose.historyOpen
+      &&expanded&&collapsed&&closed&&count(ui.posts,'/api/ai/thread')===0
+      &&size.scroll<=size.width,{initial,history,compose,expanded,collapsed,closed,size});
+    await shot(ui.page,`f8-contextual-history-${width}`);await ui.close();
   });
 }
 
