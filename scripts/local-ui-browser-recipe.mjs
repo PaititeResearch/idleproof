@@ -820,6 +820,10 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         host.innerHTML=renderByokResult(result);
         window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
         const p=host.querySelector('section h4')?.nextElementSibling,text=p.firstChild,phrase='value of 100';
+        // The real user can highlight only visible words; this fixture must
+        // scroll the paragraph into view BEFORE selection, then require that
+        // the selection interaction itself leaves the page in place.
+        p.scrollIntoView({block:'center',behavior:'instant'});
         const start=p.textContent.indexOf(phrase),range=document.createRange();
         range.setStart(text,start);range.setEnd(text,start+phrase.length);
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
