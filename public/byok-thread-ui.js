@@ -28,13 +28,20 @@ const historyPanel=$('aiThreadHistory'),latest=$('aiThreadLatest');
 let selectedRange=null,anchorElement=null,anchorRect=null,openOrigin=null,panelMode=null;
 const clamp=(v,min,max)=>Math.max(min,Math.min(v,Math.max(min,max)));
 function rectForSelection() {
+  // A reviewed explanation may rerender while an asynchronous read completes.
+  // DOMRange and an old element both still return a truthy DOMRect when detached,
+  // but that rect is 0x0. Fall back to the exact coordinates captured on selection.
   if(selectedRange) {
     try {
       const r=selectedRange.getBoundingClientRect();
       if(r.width>0&&r.height>0)return r;
-    }catch{/* Detached selection: retain the last explicit anchor. */}
+    }catch{/* Detached selection: use preserved coordinates. */}
   }
-  return anchorElement?.getBoundingClientRect()||anchorRect;
+  if(anchorElement?.isConnected){
+    const r=anchorElement.getBoundingClientRect();
+    if(r.width>0&&r.height>0)return r;
+  }
+  return anchorRect;
 }
 function positionSelectionAction() {
   if(selectionAction.hidden||!anchor)return;
