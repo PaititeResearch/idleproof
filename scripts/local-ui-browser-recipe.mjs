@@ -842,7 +842,7 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         document.documentElement.dataset.aiTestScrollBefore=String(window.scrollY);
         const selrect=range.getBoundingClientRect(),prect=p.getBoundingClientRect();
         document.documentElement.dataset.aiTestGeometry=JSON.stringify({
-          range:[selrect.top,selrect.bottom,selrect.width,selrect.height],
+          range:[selrect.top,selrect.bottom,selrect.left,selrect.right,selrect.width,selrect.height],
           paragraph:[prect.top,prect.bottom,prect.width,prect.height],
           scrollY:window.scrollY,innerHeight:window.innerHeight
         });
@@ -859,14 +859,21 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
       before:document.documentElement.dataset.aiTestGeometry,
       afterRange:(()=>{const selection=window.getSelection();if(!selection.rangeCount)return null;
         const r=selection.getRangeAt(0).getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})(),
-      innerHeight:window.innerHeight,scrollY:window.scrollY,
+      innerWidth:window.innerWidth,innerHeight:window.innerHeight,scrollY:window.scrollY,
       selectionActionHidden:document.querySelector('.ai-selection-action').hidden,
-      actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})()
+      actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.left,r.right,r.width,r.height];})()
     }));
     console.log('F7_GEOMETRY '+width+' '+gesture+' '+JSON.stringify(geometry));
+    const originalRange=JSON.parse(geometry.before).range, actionBox=geometry.actionRect;
+    const expectedLeft=Math.max(8,Math.min(originalRange[2],geometry.innerWidth-actionBox[4]-8));
+    const closeToQuote=(Math.abs(actionBox[0]-(originalRange[1]+8))<=3
+      ||Math.abs(actionBox[1]-(originalRange[0]-8))<=3)
+      &&Math.abs(actionBox[2]-expectedLeft)<=3;
+    const actionOnScreen=actionBox[4]>0&&actionBox[5]>0&&actionBox[0]>=0
+      &&actionBox[1]<=geometry.innerHeight&&actionBox[2]>=0&&actionBox[3]<=geometry.innerWidth;
     check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
       observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')
-      &&observed.visible===false&&observed.actionVisible&&observed.sendDisabled
+      &&observed.visible===false&&observed.actionVisible&&actionOnScreen&&closeToQuote&&observed.sendDisabled
       &&observed.scrollY===observed.scrollBefore
       &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width
       &&count(ui.posts,'/api/ai/thread')===0,observed);

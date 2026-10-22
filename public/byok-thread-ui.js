@@ -25,28 +25,34 @@ historyShortcut.type='button';historyShortcut.hidden=true;
 historyShortcut.setAttribute('aria-controls','aiLearningThread');
 historyShortcut.setAttribute('aria-expanded','false');
 const historyPanel=$('aiThreadHistory'),latest=$('aiThreadLatest');
-let selectedRange=null,anchorElement=null,anchorRect=null,openOrigin=null,panelMode=null;
+let selectedRange=null,anchorElement=null,anchorRect=null,anchorViewport=null,openOrigin=null,panelMode=null;
 const clamp=(v,min,max)=>Math.max(min,Math.min(v,Math.max(min,max)));
 function rectForSelection() {
-  // A reviewed explanation may rerender while an asynchronous read completes.
-  // DOMRange and an old element both still return a truthy DOMRect when detached,
-  // but that rect is 0x0. Fall back to the exact coordinates captured on selection.
+  // A cloned Range can lose its box after an asynchronous explanation repaint.
+  // Prefer the exact highlighted viewport box captured on selection to the
+  // enclosing section: the section may be offscreen while the phrase was visible.
   if(selectedRange) {
     try {
       const r=selectedRange.getBoundingClientRect();
       if(r.width>0&&r.height>0)return r;
-    }catch{/* Detached selection: use preserved coordinates. */}
+    }catch{/* Detached selection: try its captured rectangle. */}
+  }
+  if(anchorRect?.width>0&&anchorRect?.height>0) {
+    // A frozen viewport rectangle must not follow the user after scrolling
+    // or resizing; a new selection is required if its live Range disappeared.
+    if(anchorViewport&&scrollX===anchorViewport.x&&scrollY===anchorViewport.y
+       &&innerWidth===anchorViewport.width&&innerHeight===anchorViewport.height)return anchorRect;
+    return null;
   }
   if(anchorElement?.isConnected){
     const r=anchorElement.getBoundingClientRect();
     if(r.width>0&&r.height>0)return r;
   }
-  return anchorRect;
+  return null;
 }
 function positionSelectionAction() {
   if(selectionAction.hidden||!anchor)return;
-  const r=rectForSelection();if(!r)return;
-  if(r.bottom<0||r.top>innerHeight){selectionAction.hidden=true;return;}
+  const r=rectForSelection();if(!r||r.bottom<0||r.top>innerHeight){selectionAction.hidden=true;return;}
   const w=selectionAction.offsetWidth||170,h=selectionAction.offsetHeight||36;
   const y=r.bottom+8+h<=innerHeight-8?r.bottom+8:r.top-h-8;
   selectionAction.style.left=clamp(r.left,8,innerWidth-w-8)+'px';
@@ -121,6 +127,7 @@ function selectAnchor(index,selection,{rect=null,range=null,element=null}={}) {
   }
   closePopover();anchor={claimIndex:index,selection:quote};invalidate();
   selectedRange=range||null;anchorElement=element||null;anchorRect=rect||null;
+  anchorViewport={x:scrollX,y:scrollY,width:innerWidth,height:innerHeight};
   anchorBox.replaceChildren();anchorBox.append(el('strong','Selected passage · '),el('span',quote));
   $('aiThreadPreviewButton').disabled=false;latest.hidden=true;latest.replaceChildren();
   historyPanel.open=false;
@@ -225,7 +232,7 @@ async function showRoot(result,{restore=false}={}) {
     $('aiThreadPreviewButton').disabled=true;$('aiThreadQuestion').value='';
   }
   // A restored discussion never opens a large panel or scrolls the original explanation.
-  card.hidden=true;selectionAction.hidden=true;selectedRange=null;anchorElement=null;anchorRect=null;
+  card.hidden=true;selectionAction.hidden=true;selectedRange=null;anchorElement=null;anchorRect=null;anchorViewport=null;
   latest.hidden=true;latest.replaceChildren();historyPanel.open=false;
   root=result;decorate();
   if(!historyShortcut.isConnected)host.prepend(historyShortcut);
