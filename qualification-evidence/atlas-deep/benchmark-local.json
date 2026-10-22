@@ -1,0 +1,2235 @@
+{
+  "schema": "idleproof.atlas-deep-benchmark.v1",
+  "classification": "MACHINE / SYNTHETIC plus separately reported EXTERNAL_OPEN_SOURCE",
+  "createdAt": "2026-10-22T15:02:00.480Z",
+  "runtime": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "runs": [
+    {
+      "generatedFiles": 0,
+      "selectedFiles": 13,
+      "sourceBytes": 1639,
+      "snapshotId": "dwscan_9b7184735ccd1b651d947154786898022d9e774da5f9cfcb091a7640b86abe8a",
+      "tree": "68e6df36ec98e95943915020b68489b2a78b305b",
+      "durationMs": 481.35525100000007,
+      "baselineProjectionMs": 3.030729000000008,
+      "baselineUnchanged": true,
+      "targetNotExecuted": true,
+      "orchestratorCpuMs": {
+        "user": 34.46,
+        "system": 24.724
+      },
+      "orchestratorPeakRssKiB": 47664,
+      "resourceMeasurement": "CPU and peak RSS above describe this Node orchestration process only, not workers or Python; peak RSS is process-lifetime. Provider measurements appear in metrics when available. Baseline projection and deep end-to-end work differ in scope.",
+      "metrics": {
+        "sourceReadMs": 66.197852,
+        "analysisAndAdmissionMs": 414.85458100000005,
+        "totalMs": 481.05587899999995,
+        "providers": [
+          {
+            "provider": "python-ast",
+            "wallMs": 4.513052001129836,
+            "cpuMs": 4.511680000000004,
+            "peakRssBytes": 12582912,
+            "measurement": "provider process wall/CPU; RSS unavailable on some platforms"
+          },
+          {
+            "provider": "typescript"
+          },
+          {
+            "provider": "data-stdlib"
+          }
+        ],
+        "measurement": "parent wall time; provider CPU/RSS reported separately when available"
+      },
+      "providers": [
+        {
+          "name": "python-ast",
+          "version": "1",
+          "runtime": "3.12.14"
+        },
+        {
+          "name": "typescript",
+          "version": "5.9.3"
+        },
+        {
+          "name": "data-stdlib",
+          "version": "1"
+        }
+      ],
+      "nodes": 128,
+      "edges": 175,
+      "coverage": {
+        "inventory": {
+          "complete": true,
+          "inventoryEntries": 14,
+          "eligible": 13,
+          "read": 13,
+          "capturedSources": 13,
+          "statuses": {
+            "parsed": 13,
+            "excluded": 1
+          },
+          "reasons": {
+            "sensitive-name": 1
+          }
+        },
+        "admittedFiles": 13,
+        "analyzedFiles": 13,
+        "unsupportedFiles": 0,
+        "omittedByLimit": 0,
+        "bytes": 1639,
+        "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+        "complete": true,
+        "semanticCompleteness": "UNKNOWN",
+        "providers": {
+          "python-ast": {
+            "files": 7,
+            "parsedFiles": 7,
+            "syntaxErrors": [],
+            "astNodes": 223,
+            "unresolvedCalls": 5,
+            "resolvedCalls": 6,
+            "ambiguousCalls": 1,
+            "externalCalls": 3,
+            "unsupportedControlStatements": 0,
+            "truncated": false,
+            "semanticCompleteness": "UNKNOWN",
+            "callSites": 15,
+            "complete": false
+          },
+          "typescript": {
+            "files": 2,
+            "parsedFiles": 2,
+            "syntaxErrors": 0,
+            "syntaxErrorFiles": [],
+            "unsupportedFiles": 11,
+            "callSites": 2,
+            "resolved": 1,
+            "ambiguous": 0,
+            "unknown": 1,
+            "external": 0,
+            "semanticCompleteness": "UNKNOWN"
+          },
+          "data-stdlib": {
+            "complete": false,
+            "files": [
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "async_flow.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "closures.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "danger.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "dynamic.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/main.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/math.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "objects.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "rules.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "sql",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "schema.sql",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "service.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "json",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.json",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "toml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.toml",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "yaml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.yaml",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              }
+            ],
+            "inputFiles": 13,
+            "invalidFiles": 0,
+            "keyProjectionComplete": false,
+            "omittedContainers": 0,
+            "omittedNodes": 0,
+            "parsedFiles": 2,
+            "retainedNodes": 6,
+            "semanticCompleteness": "UNKNOWN",
+            "syntaxValidationComplete": false,
+            "truncatedFiles": 0,
+            "unsupportedFiles": 11
+          }
+        },
+        "calls": {
+          "total": 17,
+          "resolved": 7,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        }
+      },
+      "score": {
+        "oracle": "hand-annotated-synthetic-v1",
+        "annotationIndependence": "Separate source-span oracle authored by qualification agent; not external human annotation.",
+        "expectedCertainTargets": 7,
+        "actualCertainTargets": 7,
+        "truePositive": 7,
+        "falsePositive": 0,
+        "falseNegative": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRateWithinAssertedTargets": 0,
+        "callSites": {
+          "total": 17,
+          "resolved": 7,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        },
+        "unresolvedRate": 0.5882352941176471,
+        "falsePositiveRelations": [],
+        "missingRelations": [],
+        "denominator": "All annotated expected targets remain in recall denominator, including unsupported or volume-omitted targets. All emitted CALLS edges count in precision; UNKNOWN/EXTERNAL/AMBIGUOUS are reported separately."
+      }
+    },
+    {
+      "generatedFiles": 20,
+      "selectedFiles": 33,
+      "sourceBytes": 3199,
+      "snapshotId": "dwscan_2fc8869edf26ade2f23b56bca4a527b9bce010a3958a16576b55fd905d236169",
+      "tree": "ebb0711e341d64267f77ab5644f89a5f0c0b2a09",
+      "durationMs": 575.451594,
+      "baselineProjectionMs": 0.8878740000000107,
+      "baselineUnchanged": true,
+      "targetNotExecuted": true,
+      "orchestratorCpuMs": {
+        "user": 53.599,
+        "system": 45.433
+      },
+      "orchestratorPeakRssKiB": 62748,
+      "resourceMeasurement": "CPU and peak RSS above describe this Node orchestration process only, not workers or Python; peak RSS is process-lifetime. Provider measurements appear in metrics when available. Baseline projection and deep end-to-end work differ in scope.",
+      "metrics": {
+        "sourceReadMs": 141.71701500000006,
+        "analysisAndAdmissionMs": 433.64199799999994,
+        "totalMs": 575.3603149999999,
+        "providers": [
+          {
+            "provider": "python-ast",
+            "wallMs": 10.064586000225972,
+            "cpuMs": 10.045487999999999,
+            "peakRssBytes": 13369344,
+            "measurement": "provider process wall/CPU; RSS unavailable on some platforms"
+          },
+          {
+            "provider": "typescript"
+          },
+          {
+            "provider": "data-stdlib"
+          }
+        ],
+        "measurement": "parent wall time; provider CPU/RSS reported separately when available"
+      },
+      "providers": [
+        {
+          "name": "python-ast",
+          "version": "1",
+          "runtime": "3.12.14"
+        },
+        {
+          "name": "typescript",
+          "version": "5.9.3"
+        },
+        {
+          "name": "data-stdlib",
+          "version": "1"
+        }
+      ],
+      "nodes": 328,
+      "edges": 475,
+      "coverage": {
+        "inventory": {
+          "complete": true,
+          "inventoryEntries": 34,
+          "eligible": 33,
+          "read": 33,
+          "capturedSources": 33,
+          "statuses": {
+            "parsed": 33,
+            "excluded": 1
+          },
+          "reasons": {
+            "sensitive-name": 1
+          }
+        },
+        "admittedFiles": 33,
+        "analyzedFiles": 33,
+        "unsupportedFiles": 0,
+        "omittedByLimit": 0,
+        "bytes": 3199,
+        "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+        "complete": true,
+        "semanticCompleteness": "UNKNOWN",
+        "providers": {
+          "python-ast": {
+            "files": 27,
+            "parsedFiles": 27,
+            "syntaxErrors": [],
+            "astNodes": 603,
+            "unresolvedCalls": 5,
+            "resolvedCalls": 26,
+            "ambiguousCalls": 1,
+            "externalCalls": 3,
+            "unsupportedControlStatements": 0,
+            "truncated": false,
+            "semanticCompleteness": "UNKNOWN",
+            "callSites": 35,
+            "complete": false
+          },
+          "typescript": {
+            "files": 2,
+            "parsedFiles": 2,
+            "syntaxErrors": 0,
+            "syntaxErrorFiles": [],
+            "unsupportedFiles": 31,
+            "callSites": 2,
+            "resolved": 1,
+            "ambiguous": 0,
+            "unknown": 1,
+            "external": 0,
+            "semanticCompleteness": "UNKNOWN"
+          },
+          "data-stdlib": {
+            "complete": false,
+            "files": [
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "async_flow.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "closures.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "danger.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "dynamic.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/main.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/math.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "objects.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "rules.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0000.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0001.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0002.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0003.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0004.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0005.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0006.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0007.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0008.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0009.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0010.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0011.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0012.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0013.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0014.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0015.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0016.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0017.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0018.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0019.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "sql",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "schema.sql",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "service.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "json",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.json",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "toml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.toml",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "yaml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.yaml",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              }
+            ],
+            "inputFiles": 33,
+            "invalidFiles": 0,
+            "keyProjectionComplete": false,
+            "omittedContainers": 0,
+            "omittedNodes": 0,
+            "parsedFiles": 2,
+            "retainedNodes": 6,
+            "semanticCompleteness": "UNKNOWN",
+            "syntaxValidationComplete": false,
+            "truncatedFiles": 0,
+            "unsupportedFiles": 31
+          }
+        },
+        "calls": {
+          "total": 37,
+          "resolved": 27,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        }
+      },
+      "score": {
+        "oracle": "hand-annotated-synthetic-v1",
+        "annotationIndependence": "Separate source-span oracle authored by qualification agent; not external human annotation.",
+        "expectedCertainTargets": 27,
+        "actualCertainTargets": 27,
+        "truePositive": 27,
+        "falsePositive": 0,
+        "falseNegative": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRateWithinAssertedTargets": 0,
+        "callSites": {
+          "total": 37,
+          "resolved": 27,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        },
+        "unresolvedRate": 0.2702702702702703,
+        "falsePositiveRelations": [],
+        "missingRelations": [],
+        "denominator": "All annotated expected targets remain in recall denominator, including unsupported or volume-omitted targets. All emitted CALLS edges count in precision; UNKNOWN/EXTERNAL/AMBIGUOUS are reported separately."
+      }
+    },
+    {
+      "generatedFiles": 100,
+      "selectedFiles": 113,
+      "sourceBytes": 9439,
+      "snapshotId": "dwscan_a12aaa601c34912bce0a143a772d8427cfc797a6d29d2d3fb73ec3b8540dd87a",
+      "tree": "1897a2ecb9f45cc0f83bfe484b3d84593d456356",
+      "durationMs": 1114.654872,
+      "baselineProjectionMs": 2.9013230000000476,
+      "baselineUnchanged": true,
+      "targetNotExecuted": true,
+      "orchestratorCpuMs": {
+        "user": 224.384,
+        "system": 142.636
+      },
+      "orchestratorPeakRssKiB": 90716,
+      "resourceMeasurement": "CPU and peak RSS above describe this Node orchestration process only, not workers or Python; peak RSS is process-lifetime. Provider measurements appear in metrics when available. Baseline projection and deep end-to-end work differ in scope.",
+      "metrics": {
+        "sourceReadMs": 566.817088,
+        "analysisAndAdmissionMs": 547.7213979999999,
+        "totalMs": 1114.5397269999999,
+        "providers": [
+          {
+            "provider": "python-ast",
+            "wallMs": 40.1268900022842,
+            "cpuMs": 40.125325999999994,
+            "peakRssBytes": 15990784,
+            "measurement": "provider process wall/CPU; RSS unavailable on some platforms"
+          },
+          {
+            "provider": "typescript"
+          },
+          {
+            "provider": "data-stdlib"
+          }
+        ],
+        "measurement": "parent wall time; provider CPU/RSS reported separately when available"
+      },
+      "providers": [
+        {
+          "name": "python-ast",
+          "version": "1",
+          "runtime": "3.12.14"
+        },
+        {
+          "name": "typescript",
+          "version": "5.9.3"
+        },
+        {
+          "name": "data-stdlib",
+          "version": "1"
+        }
+      ],
+      "nodes": 1128,
+      "edges": 1675,
+      "coverage": {
+        "inventory": {
+          "complete": true,
+          "inventoryEntries": 114,
+          "eligible": 113,
+          "read": 113,
+          "capturedSources": 113,
+          "statuses": {
+            "parsed": 113,
+            "excluded": 1
+          },
+          "reasons": {
+            "sensitive-name": 1
+          }
+        },
+        "admittedFiles": 113,
+        "analyzedFiles": 113,
+        "unsupportedFiles": 0,
+        "omittedByLimit": 0,
+        "bytes": 9439,
+        "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+        "complete": true,
+        "semanticCompleteness": "UNKNOWN",
+        "providers": {
+          "python-ast": {
+            "files": 107,
+            "parsedFiles": 107,
+            "syntaxErrors": [],
+            "astNodes": 2123,
+            "unresolvedCalls": 5,
+            "resolvedCalls": 106,
+            "ambiguousCalls": 1,
+            "externalCalls": 3,
+            "unsupportedControlStatements": 0,
+            "truncated": false,
+            "semanticCompleteness": "UNKNOWN",
+            "callSites": 115,
+            "complete": false
+          },
+          "typescript": {
+            "files": 2,
+            "parsedFiles": 2,
+            "syntaxErrors": 0,
+            "syntaxErrorFiles": [],
+            "unsupportedFiles": 111,
+            "callSites": 2,
+            "resolved": 1,
+            "ambiguous": 0,
+            "unknown": 1,
+            "external": 0,
+            "semanticCompleteness": "UNKNOWN"
+          },
+          "data-stdlib": {
+            "complete": false,
+            "files": [
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "async_flow.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "closures.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "danger.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "dynamic.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/main.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "frontend/math.ts",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "objects.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "rules.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0000.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0001.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0002.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0003.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0004.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0005.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0006.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0007.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0008.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0009.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0010.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0011.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0012.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0013.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0014.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0015.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0016.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0017.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0018.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0019.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0020.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0021.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0022.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0023.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0024.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0025.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0026.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0027.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0028.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0029.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0030.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0031.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0032.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0033.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0034.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0035.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0036.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0037.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0038.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0039.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0040.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0041.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0042.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0043.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0044.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0045.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0046.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0047.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0048.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0049.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0050.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0051.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0052.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0053.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0054.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0055.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0056.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0057.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0058.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0059.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0060.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0061.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0062.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0063.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0064.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0065.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0066.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0067.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0068.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0069.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0070.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0071.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0072.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0073.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0074.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0075.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0076.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0077.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0078.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0079.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0080.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0081.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0082.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0083.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0084.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0085.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0086.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0087.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0088.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0089.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0090.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0091.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0092.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0093.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0094.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0095.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0096.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0097.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0098.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "scale/m0099.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "sql",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "schema.sql",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "unknown",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "service.py",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              },
+              {
+                "language": "json",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.json",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "toml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.toml",
+                "retainedNodes": 3,
+                "status": "PARSED",
+                "syntaxValidated": true
+              },
+              {
+                "language": "yaml",
+                "omittedContainers": 0,
+                "omittedNodes": 0,
+                "path": "settings.yaml",
+                "reason": "NO_QUALIFIED_STDLIB_PARSER",
+                "retainedNodes": 0,
+                "status": "UNSUPPORTED",
+                "syntaxValidated": false
+              }
+            ],
+            "inputFiles": 113,
+            "invalidFiles": 0,
+            "keyProjectionComplete": false,
+            "omittedContainers": 0,
+            "omittedNodes": 0,
+            "parsedFiles": 2,
+            "retainedNodes": 6,
+            "semanticCompleteness": "UNKNOWN",
+            "syntaxValidationComplete": false,
+            "truncatedFiles": 0,
+            "unsupportedFiles": 111
+          }
+        },
+        "calls": {
+          "total": 117,
+          "resolved": 107,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        }
+      },
+      "score": {
+        "oracle": "hand-annotated-synthetic-v1",
+        "annotationIndependence": "Separate source-span oracle authored by qualification agent; not external human annotation.",
+        "expectedCertainTargets": 107,
+        "actualCertainTargets": 107,
+        "truePositive": 107,
+        "falsePositive": 0,
+        "falseNegative": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRateWithinAssertedTargets": 0,
+        "callSites": {
+          "total": 117,
+          "resolved": 107,
+          "ambiguous": 1,
+          "unknown": 6,
+          "external": 3
+        },
+        "unresolvedRate": 0.08547008547008547,
+        "falsePositiveRelations": [],
+        "missingRelations": [],
+        "denominator": "All annotated expected targets remain in recall denominator, including unsupported or volume-omitted targets. All emitted CALLS edges count in precision; UNKNOWN/EXTERNAL/AMBIGUOUS are reported separately."
+      }
+    }
+  ],
+  "realUserProject": {
+    "status": "NOT_RUN",
+    "reason": "Historical projet-multicouche source and WSL snapshot are unavailable in this environment."
+  },
+  "externalHumanAnnotatedCorpus": {
+    "status": "NOT_RUN"
+  },
+  "openSourceSemanticCorpus": {
+    "status": "PASS",
+    "classification": "EXTERNAL_OPEN_SOURCE / MACHINE",
+    "provenance": {
+      "schema": "idleproof.external-corpus.v1",
+      "repository": "https://github.com/python/cpython",
+      "commit": "0fb18b02c8ad56299d6a2910be0bab8ad601ef24",
+      "tag": "v3.12.0",
+      "retrievedAt": "2026-10-22",
+      "sourcePath": "Lib/colorsys.py",
+      "sourceBlob": "bc897bd0f9929828a4a826879b7274b18a442b81",
+      "sourceSha256": "d9800f8e81d46e63ca6f2e7d6ac5f344d85afb92c3cf6d103b5f977f1ad66ac2",
+      "licensePath": "LICENSE",
+      "licenseBlob": "f26bcf4d2de6eb136e31006ca3ab447d5e488adf",
+      "licenseSha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf",
+      "license": "Python Software Foundation License Version 2 with retained historical licenses",
+      "modifications": "None. Source and license preserve exact upstream Git blob identities.",
+      "classification": "External open-source source code; oracle annotated by qualification agent, not independent human review.",
+      "execution": "Never imported or executed by this corpus. Immutable bytes are parsed as data.",
+      "oracle": {
+        "callSites": 8,
+        "localTargetSites": [
+          {
+            "path": "colorsys.py",
+            "line": 107,
+            "column": 12,
+            "targetPath": "colorsys.py",
+            "targetLine": 109
+          },
+          {
+            "path": "colorsys.py",
+            "line": 107,
+            "column": 37,
+            "targetPath": "colorsys.py",
+            "targetLine": 109
+          },
+          {
+            "path": "colorsys.py",
+            "line": 107,
+            "column": 52,
+            "targetPath": "colorsys.py",
+            "targetLine": 109
+          }
+        ],
+        "externalCalls": [
+          {
+            "line": 76,
+            "name": "max"
+          },
+          {
+            "line": 77,
+            "name": "min"
+          },
+          {
+            "line": 126,
+            "name": "max"
+          },
+          {
+            "line": 127,
+            "name": "min"
+          },
+          {
+            "line": 148,
+            "name": "int"
+          }
+        ],
+        "interpretation": "The three hls_to_rgb sites bind the source-defined _v under the static provider contract. The five builtins are outside the captured module; their absence from the local-target oracle does not erase them from the whole-module call denominator. External mutation and arbitrary runtime environments are not established."
+      }
+    },
+    "score": {
+      "oracle": "hand-annotated-cpython-colorsys-v1",
+      "annotationIndependence": "External open-source bytes; source-span oracle authored independently of provider output by qualification agent, not external human annotation.",
+      "expectedCertainTargets": 3,
+      "actualCertainTargets": 3,
+      "truePositive": 3,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "precision": 1,
+      "recall": 1,
+      "falsePositiveRateWithinAssertedTargets": 0,
+      "callSites": {
+        "total": 8,
+        "resolved": 3,
+        "ambiguous": 0,
+        "unknown": 0,
+        "external": 5
+      },
+      "unresolvedRate": 0.625,
+      "falsePositiveRelations": [],
+      "missingRelations": [],
+      "denominator": "All annotated expected targets remain in recall denominator, including unsupported or volume-omitted targets. All emitted CALLS edges count in precision; UNKNOWN/EXTERNAL/AMBIGUOUS are reported separately."
+    },
+    "wholeModuleCallCount": 8,
+    "expectedWholeModuleCallCount": 8,
+    "durationMs": 130.49970200000007,
+    "metrics": {
+      "sourceReadMs": 7.629737000000205,
+      "analysisAndAdmissionMs": 122.63201500000014,
+      "totalMs": 130.26276300000018,
+      "providers": [
+        {
+          "provider": "python-ast",
+          "wallMs": 14.544762998411898,
+          "cpuMs": 14.526652,
+          "peakRssBytes": 13078528,
+          "measurement": "provider process wall/CPU; RSS unavailable on some platforms"
+        }
+      ],
+      "measurement": "parent wall time; provider CPU/RSS reported separately when available"
+    },
+    "providers": [
+      {
+        "name": "python-ast",
+        "version": "1",
+        "runtime": "3.12.14"
+      }
+    ],
+    "coverage": {
+      "inventory": {
+        "complete": true,
+        "inventoryEntries": 2,
+        "eligible": 1,
+        "read": 1,
+        "capturedSources": 1,
+        "statuses": {
+          "parsed": 1,
+          "excluded": 1
+        },
+        "reasons": {
+          "sensitive-name": 1
+        }
+      },
+      "admittedFiles": 1,
+      "analyzedFiles": 1,
+      "unsupportedFiles": 0,
+      "omittedByLimit": 0,
+      "bytes": 4062,
+      "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+      "complete": true,
+      "semanticCompleteness": "UNKNOWN",
+      "providers": {
+        "python-ast": {
+          "files": 1,
+          "parsedFiles": 1,
+          "syntaxErrors": [],
+          "astNodes": 998,
+          "unresolvedCalls": 0,
+          "resolvedCalls": 3,
+          "ambiguousCalls": 0,
+          "externalCalls": 5,
+          "unsupportedControlStatements": 0,
+          "truncated": false,
+          "semanticCompleteness": "UNKNOWN",
+          "callSites": 8,
+          "complete": false
+        }
+      },
+      "calls": {
+        "total": 8,
+        "resolved": 3,
+        "ambiguous": 0,
+        "unknown": 0,
+        "external": 5
+      }
+    }
+  },
+  "interpretation": "Zero false positives here is a bounded corpus result, not a proof of universal correctness. Runtime observations and production-scale latency are not measured by this benchmark."
+}

@@ -159,7 +159,7 @@ function mime(file) {
   if (file.endsWith('.html')) return 'text/html; charset=utf-8'; if (file.endsWith('.js')) return 'text/javascript; charset=utf-8'; if (file.endsWith('.css')) return 'text/css; charset=utf-8'; if (file.endsWith('.svg')) return 'image/svg+xml'; return 'application/octet-stream';
 }
 
-async function serveStatic(req, res, experimentalAtlas = false) {
+async function serveStatic(req, res, experimentalAtlas = false, experimentalAtlasDeep = false) {
   const url = new URL(req.url, 'http://localhost'); const relative = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\//, ''); const publicRoot = path.join(PACKAGE_ROOT, 'public'); const file = path.resolve(publicRoot, relative);
   if (!(file === publicRoot || file.startsWith(`${publicRoot}${path.sep}`))) { res.writeHead(403, SECURITY_HEADERS); res.end('Forbidden'); return; }
   try {
@@ -167,6 +167,9 @@ async function serveStatic(req, res, experimentalAtlas = false) {
     if (experimentalAtlas && file === path.join(publicRoot, 'index.html')) {
       const {injectAtlasSection} = await import('./atlas-section.mjs');
       data = injectAtlasSection(data.toString('utf8'));
+    }
+    if (experimentalAtlasDeep && file === path.join(publicRoot, 'atlas.html')) {
+      data = data.toString('utf8').replace('<footer>', '<footer><a href="/atlas-deep.html" target="_blank" rel="noopener">Open experimental Deep Understanding ↗</a> · ');
     }
     // Only this opt-in Atlas document may be framed by this same Local origin.
     // The cockpit, standalone Atlas and all APIs retain DENY / frame-ancestors none.
@@ -189,15 +192,26 @@ function writeServerInfoAtomic(file, info) {
   }
 }
 
-export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experimentalAtlas = process.env.IDLEPROOF_EXPERIMENTAL_ATLAS === '1' } = {}) {
+export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experimentalAtlas = process.env.IDLEPROOF_EXPERIMENTAL_ATLAS === '1', experimentalAtlasDeep = process.env.IDLEPROOF_EXPERIMENTAL_ATLAS_DEEP === '1' } = {}) {
+  experimentalAtlasDeep = experimentalAtlas && experimentalAtlasDeep;
   const instanceId = randomUUID();
   let optionalInterpretation=null;
+  let cancelDeep=null;
   const server = http.createServer(async (req, res) => {
     try {
       const boundary = validateLocalRequest(req);
       if (!boundary.ok) return json(res, boundary.status, { error:boundary.error });
       const url = new URL(req.url, 'http://127.0.0.1');
       const paths = projectPaths(cwd);
+      if (url.pathname.startsWith('/atlas-deep.') && !experimentalAtlasDeep) return json(res,404,{error:'Experimental deep understanding is disabled.'});
+      if (url.pathname === '/api/atlas-deep') {
+        if (!experimentalAtlasDeep) return json(res,404,{error:'Experimental deep understanding is disabled.'});
+        const {atlasDeepApi,deepErrorStatus,cancelAtlasDeep}=await import('./atlas-deep-api.mjs');
+        cancelDeep=()=>cancelAtlasDeep(cwd);
+        const {readAtlasBody}=await import('./atlas-api.mjs');
+        try { return json(res,200,await atlasDeepApi(cwd,req,url,req.method==='POST'?await readAtlasBody(req):null)); }
+        catch(error) { return json(res,deepErrorStatus(error),{error:/^ATLAS_DEEP_[A-Z_]+$/.test(error.message)?error.message:'ATLAS_DEEP_UNAVAILABLE'}); }
+      }
       if (url.pathname === '/atlas.html' && !experimentalAtlas) return json(res,404,{error:'Experimental repository atlas is disabled.'});
       if (url.pathname === '/api/atlas') {
         if (!experimentalAtlas) return json(res,404,{error:'Experimental repository atlas is disabled.'});
@@ -307,7 +321,7 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experim
       if (url.pathname === '/api/preferences' && req.method === 'POST') { const body=await readBody(req); mutateState(cwd,(state) => { if (['learn','review'].includes(body.mode)) state.preferences.mode=body.mode; if (['adaptive','beginner','experienced'].includes(body.level)) state.preferences.level=body.level; return state; }); return json(res,200,presentState(cwd)); }
       if (url.pathname === '/api/approve' && req.method === 'POST') { const body=await readBody(req); const grant=grantApproval(cwd,body.fingerprint,{ minutes:Number(body.minutes || 10), uses:Number(body.uses || 1), note:body.note || 'Approved from local control plane' }); return json(res,200,{ ok:true, fingerprint:body.fingerprint, grant }); }
       if (url.pathname === '/api/responsibility/accept' && req.method === 'POST') { const body=await readBody(req); const acceptance=acceptResponsibility(cwd,{ principal:body.principal || '', note:body.note || 'Accepted from local control plane' }); createAttestation(cwd); return json(res,200,{ ok:true, acceptance, responsibility:responsibilityReport(cwd) }); }
-      return await serveStatic(req,res,experimentalAtlas);
+      return await serveStatic(req,res,experimentalAtlas,experimentalAtlasDeep);
     } catch (error) { return json(res,500,{ error:error.message }); }
   });
   return new Promise((resolve,reject) => {
@@ -320,7 +334,7 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experim
       fs.mkdirSync(paths.dir,{recursive:true});
       writeServerInfoAtomic(paths.server, info);
       const stopProjectWatch=watchProject(cwd);
-      server.once('close',()=>{stopProjectWatch();optionalInterpretation?.abort();});
+      server.once('close',()=>{stopProjectWatch();optionalInterpretation?.abort();cancelDeep?.();});
       resolve({ server, url:`http://127.0.0.1:${actualPort}`, instanceId });
     });
   });

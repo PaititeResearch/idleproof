@@ -1,0 +1,30 @@
+{
+  "schema": "idleproof.external-corpus.v1",
+  "repository": "https://github.com/python/cpython",
+  "commit": "0fb18b02c8ad56299d6a2910be0bab8ad601ef24",
+  "tag": "v3.12.0",
+  "retrievedAt": "2026-10-22",
+  "sourcePath": "Lib/colorsys.py",
+  "sourceBlob": "bc897bd0f9929828a4a826879b7274b18a442b81",
+  "sourceSha256": "d9800f8e81d46e63ca6f2e7d6ac5f344d85afb92c3cf6d103b5f977f1ad66ac2",
+  "licensePath": "LICENSE",
+  "licenseBlob": "f26bcf4d2de6eb136e31006ca3ab447d5e488adf",
+  "licenseSha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf",
+  "license": "Python Software Foundation License Version 2 with retained historical licenses",
+  "modifications": "None. Source and license preserve exact upstream Git blob identities.",
+  "classification": "External open-source source code; oracle annotated by qualification agent, not independent human review.",
+  "execution": "Never imported or executed by this corpus. Immutable bytes are parsed as data.",
+  "oracle": {
+    "callSites": 8,
+    "localTargetSites": [
+      {"path":"colorsys.py","line":107,"column":12,"targetPath":"colorsys.py","targetLine":109},
+      {"path":"colorsys.py","line":107,"column":37,"targetPath":"colorsys.py","targetLine":109},
+      {"path":"colorsys.py","line":107,"column":52,"targetPath":"colorsys.py","targetLine":109}
+    ],
+    "externalCalls": [
+      {"line":76,"name":"max"}, {"line":77,"name":"min"},
+      {"line":126,"name":"max"}, {"line":127,"name":"min"}, {"line":148,"name":"int"}
+    ],
+    "interpretation": "The three hls_to_rgb sites bind the source-defined _v under the static provider contract. The five builtins are outside the captured module; their absence from the local-target oracle does not erase them from the whole-module call denominator. External mutation and arbitrary runtime environments are not established."
+  }
+}
