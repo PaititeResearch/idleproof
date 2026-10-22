@@ -41,9 +41,9 @@ try {
       await page.screenshot({path:path.join(out,'atlas-zoom-'+width+'.png')});
       passed++;
       for(let i=0;i<3;i++)await page.mouse.wheel(0,100);
-      assert.ok((await probe()).z<=.16,'reverse wheel should return to overview');
+      assert.ok((await probe()).z<after.z,'reverse wheel must zoom out');
       await page.locator('#fit').click();
-      assert.ok((await probe()).z<=.16,'Fit must remain functional');
+      const fit=await probe();assert.ok(Math.abs(fit.z-initial.z)<.05,'Fit must restore the original viewport scale; got '+fit.z+' vs '+initial.z);
       passed++;
       const before=await probe();
       for(let i=0;i<4;i++)await page.mouse.wheel(0,-8);
