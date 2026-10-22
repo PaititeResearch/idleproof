@@ -846,6 +846,23 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
           paragraph:[prect.top,prect.bottom,prect.width,prect.height],
           scrollY:window.scrollY,innerHeight:window.innerHeight
         });
+        // Diagnostic-only observation: record the exact caller changing the
+        // floating action's hidden property. The native accessor still runs.
+        // This cannot make a missing action count as a PASS.
+        const action=document.querySelector('.ai-selection-action');
+        const hidden=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'hidden');
+        window.__f7HiddenWrites=[];
+        if(action&&hidden?.get&&hidden?.set)Object.defineProperty(action,'hidden',{
+          configurable:true,
+          get(){return hidden.get.call(this);},
+          set(value){
+            window.__f7HiddenWrites.push({
+              hidden:Boolean(value),scrollY:window.scrollY,
+              stack:(new Error().stack||'').split('\\n').slice(1,6).join(' | ')
+            });
+            hidden.set.call(this,value);
+          }
+        });
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
@@ -861,6 +878,7 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         const r=selection.getRangeAt(0).getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})(),
       innerWidth:window.innerWidth,innerHeight:window.innerHeight,scrollY:window.scrollY,
       selectionActionHidden:document.querySelector('.ai-selection-action').hidden,
+      hiddenWrites:window.__f7HiddenWrites?.slice(-15)||[],
       actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.left,r.right,r.width,r.height];})()
     }));
     console.log('F7_GEOMETRY '+width+' '+gesture+' '+JSON.stringify(geometry));
