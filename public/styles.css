@@ -526,9 +526,17 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;pa
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 
-/* Contextual exploration: a grounded, optional discussion under the existing interpretation. */
-.ai-learning-thread{margin-top:22px;border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;display:grid;gap:12px;background:var(--surface,var(--canvas))}
-.ai-learning-thread[hidden]{display:none!important}
+/* Original source-anchored discussion; move this SAME section immediately below
+   the selected paragraph. When nothing is selected, only saved history appears. */
+.ai-learning-thread{margin-top:12px;max-width:100%;min-width:0;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;display:grid;gap:10px;background:var(--surface,var(--canvas))}
+.ai-learning-thread[hidden],.ai-thread-history[hidden]{display:none!important}
+.ai-learning-thread:not(.ai-thread-selected){margin-top:10px;padding:0;border:0;background:transparent}
+.ai-learning-thread:not(.ai-thread-selected)>:not(.ai-thread-history){display:none}
+.ai-thread-history{min-width:0;max-width:100%;border-top:1px solid var(--line);padding-top:6px}
+.ai-thread-history>summary{cursor:pointer;font-size:13px;font-weight:600;padding:7px 0}
+.ai-thread-history>summary span{color:var(--muted);font-weight:400}
+.ai-learning-thread:not(.ai-thread-selected)>.ai-thread-history{padding:7px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface,var(--canvas))}
+.ai-thread-history[open]>.ai-thread-log{margin-top:10px}
 .ai-thread-header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ai-thread-header .mini-label{display:block}
 .ai-thread-log{display:grid;gap:10px;max-height:640px;overflow-y:auto;overscroll-behavior:contain}

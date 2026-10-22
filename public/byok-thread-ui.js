@@ -3,6 +3,7 @@
 import {renderByokPreview,renderByokResult,formatByokError} from './byok-view.js';
 const $=id=>document.getElementById(id);
 const host=$('aiResult'),card=$('aiLearningThread'),log=$('aiThreadLog'),anchorBox=$('aiThreadAnchor');
+const cardHome=card.parentElement,history=$('aiThreadHistory');
 let root=null,thread=null,anchor=null,previewConsent=null,busy=false,sequence=0,sourceSequence=0;
 const endpoint='/api/ai/thread';
 const requests=async(url,body)=>{
@@ -24,7 +25,7 @@ function decorate() {
     section.append(button);
   }
 }
-function selectAnchor(index,selection) {
+function selectAnchor(index,selection,source=null) {
   if(!root||root.status!=='INTERPRETATION'||!Number.isInteger(index)||!root.answer?.claims?.[index])return;
   const full=root.answer.claims[index].text;
   const quote=String(selection||'').trim();
@@ -33,6 +34,13 @@ function selectAnchor(index,selection) {
   }
   anchor={claimIndex:index,selection:quote};invalidate();
   anchorBox.replaceChildren();anchorBox.append(el('strong','Selected passage · '),el('span',quote));
+  // Reposition the EXISTING Selected passage section directly after the
+  // chosen paragraph. No floating action, overlay, or replacement controls.
+  const paragraph=source?.closest?.('p')||source?.closest?.('section[data-ai-claim-index]')?.querySelector('p');
+  if(paragraph&&host.contains(paragraph))paragraph.after(card);
+  else cardHome.append(card);
+  card.classList.add('ai-thread-selected');
+  history.open=false;
   $('aiThreadPreviewButton').disabled=false;card.hidden=false;
   status('This selection is local. Ask a question and preview the exact source context before sending.');
 }
@@ -44,15 +52,15 @@ function selectionInRoot() {
   const a=start?.closest?.('section[data-ai-claim-index]'),b=end?.closest?.('section[data-ai-claim-index]');
   if(!a||a!==b)return;
   // Selecting citation buttons or technical provenance must not add unapproved context.
-  if(!start.closest?.('p')||!end.closest?.('p'))return;
-  selectAnchor(Number(a.dataset.aiClaimIndex),selection.toString());
+  if(!start.closest?.('p')||!end.closest?.('p')||card.contains(start)||card.contains(end))return;
+  selectAnchor(Number(a.dataset.aiClaimIndex),selection.toString(),end.closest('p'));
 }
 host.addEventListener('mouseup',selectionInRoot);
 host.addEventListener('keyup',selectionInRoot);
 host.addEventListener('click',event=>{
   const button=event.target.closest?.('button[data-ai-discuss]');if(!button)return;
   const index=Number(button.dataset.aiDiscuss),claim=root?.answer?.claims?.[index];
-  if(claim){selectAnchor(index,claim.text.slice(0,Math.min(300,claim.text.length)));$('aiThreadQuestion').focus();}
+  if(claim){selectAnchor(index,claim.text.slice(0,Math.min(300,claim.text.length)),button);$('aiThreadQuestion').focus({preventScroll:true});}
 });
 async function openSource(button) {
   const id=++sourceSequence,output=el('pre','Loading captured source…');output.tabIndex=-1;
@@ -64,7 +72,7 @@ async function openSource(button) {
     output.textContent=`${data.path} · ${data.sourceSha256}\n${data.lines.map(l=>`${l.line}: ${l.text}${l.truncated?' [truncated]':''}`).join('\n')}`;
   }catch(e){if(id===sourceSequence)output.textContent='Captured source unavailable: '+formatByokError(e);}
 }
-log.addEventListener('click',event=>{const button=event.target.closest?.('button[data-ai-source]');if(button)openSource(button);});
+log.addEventListener('click',event=>{const button=event.target.closest?.('button[data-ai-source]');if(button){event.stopPropagation();openSource(button);}});
 function appendAnswer(container,result) {
   if(!result||result.status!=='INTERPRETATION'||!result.answer?.claims?.length){
     container.append(el('p','No reviewed answer accepted. The attempt and any uncertain reservation remain recorded.'));return;
@@ -83,7 +91,11 @@ function appendAnswer(container,result) {
 }
 function renderThread(data) {
   thread=data;log.replaceChildren();
-  if(!data?.turns?.length){log.append(el('p','No follow-ups yet. Select a passage in the explanation above.'));return;}
+  const count=data?.turns?.length||0;
+  $('aiThreadHistoryCount').textContent=count===1?'1 question':count+' questions';
+  history.hidden=count===0;
+  card.hidden=!card.classList.contains('ai-thread-selected')&&count===0;
+  if(!count){log.append(el('p','No follow-ups yet. Select a passage in the explanation above.'));return;}
   for(const turn of data.turns){
     const article=el('article',undefined,'ai-thread-turn');article.append(el('small',`Question · ${new Date(turn.createdAt).toLocaleString()}`));
     article.append(el('blockquote',`“${turn.selection}”`),el('p',turn.question));
@@ -99,21 +111,41 @@ function renderThread(data) {
     }else article.append(el('p','Stored answer is unavailable; no new request was made.'));
     log.append(article);
   }
-  log.scrollTop=log.scrollHeight;
+  if(history.open)log.scrollTop=log.scrollHeight;
 }
 async function showRoot(result,{restore=false}={}) {
+  // The composer may be inside an old explanation's DOM when a new result
+  // replaces innerHTML. Preserve the same DOM node/handlers by parking it.
+  if(card.parentElement!==cardHome)cardHome.append(card);
+  card.classList.remove('ai-thread-selected');
+  card.hidden=true;
+  history.open=false;
   if(result?.status!=='INTERPRETATION'||!result.digest||!result.presentation)return;
-  if(!restore||root?.digest!==result.digest){anchor=null;invalidate();anchorBox.textContent='Select a passage in the explanation above to ask about it.';$('aiThreadPreviewButton').disabled=true;}
-  root=result;card.hidden=false;decorate();
-  try{const data=await requests(`${endpoint}?${new URLSearchParams({rootDigest:root.digest})}`);if(data.rootDigest===root.digest)renderThread(data);}
-  catch(e){status('Local discussion cannot be loaded: '+formatByokError(e));}
+  if(!restore||root?.digest!==result.digest){
+    anchor=null;invalidate();
+    anchorBox.textContent='Select a passage in the explanation above to ask about it.';
+    $('aiThreadPreviewButton').disabled=true;
+  }
+  root=result;decorate();
+  const digest=result.digest;
+  try {
+    const data=await requests(`${endpoint}?${new URLSearchParams({rootDigest:digest})}`);
+    if(data.rootDigest===digest&&root?.digest===digest)renderThread(data);
+  }catch(e){if(root?.digest===digest)status('Local discussion cannot be loaded: '+formatByokError(e));}
 }
-window.addEventListener('idleproof:ai-result',event=>showRoot(event.detail?.result));
+// If an old automatic history lookup finishes after a newer explanation, it
+// must not erase that explanation or relocate the in-progress Selected passage.
+let restoreVersion=0;
+window.addEventListener('idleproof:ai-result',event=>{
+  restoreVersion++;
+  void showRoot(event.detail?.result);
+});
 $('optionalAI').addEventListener('toggle',async()=>{
+  const version=++restoreVersion;
   if(!$('optionalAI').open||root)return;
   try{
     const data=await requests(`${endpoint}?rootDigest=latest`);
-    if(!data.root)return;
+    if(version!==restoreVersion||!$('optionalAI').open||root||!data.root)return;
     host.innerHTML=renderByokResult(data.root);
     await showRoot(data.root,{restore:true});
     if(data.stale)status('The project snapshot has changed. Previous messages stay readable, but new questions need a fresh explanation.');
@@ -138,7 +170,7 @@ $('aiThreadSend').onclick=async()=>{
   if(!previewConsent||busy)return;
   const approved=previewConsent;invalidate();busy=true;
   $('aiThreadPreviewButton').disabled=true;status('Generating one explicitly approved follow-up. No automatic retries.');
-  try{const result=await requests(endpoint,{...approved,action:'explain'});renderThread(result);status('Follow-up saved privately on this machine. Model interpretations are not Proof.');}
+  try{const result=await requests(endpoint,{...approved,action:'explain'});renderThread(result);history.open=true;log.scrollTop=log.scrollHeight;status('Follow-up saved privately on this machine. Model interpretations are not Proof.');}
   catch(e){status(formatByokError(e)+' Any attempted call may still have an uncertain charge.');}
   finally{busy=false;$('aiThreadPreviewButton').disabled=!anchor;}
 };
