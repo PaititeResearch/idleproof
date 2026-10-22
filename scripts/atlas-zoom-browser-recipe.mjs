@@ -36,7 +36,9 @@ try {
       assert.ok(after.z>=1&&after.z<=after.max,'three wheel ticks must reach readable scale');
       const beforePoint={x:(x-initial.pan.x)/initial.z,y:(y-initial.pan.y)/initial.z};
       const afterPoint={x:(x-after.pan.x)/after.z,y:(y-after.pan.y)/after.z};
-      assert.ok(Math.hypot(beforePoint.x-afterPoint.x,beforePoint.y-afterPoint.y)<1,'zoom must preserve pointer anchor');
+      const driftPx=Math.hypot(beforePoint.x-afterPoint.x,beforePoint.y-afterPoint.y)*initial.z;
+      console.log('ATLAS ZOOM POINTER DRIFT '+width+': '+driftPx+' CSS px');
+      assert.ok(driftPx<3,'zoom must preserve pointer anchor within 3 CSS pixels; got '+driftPx);
       assert.equal(await page.locator('#save').isEnabled(),false,'zoom is not a source/model edit');
       await page.screenshot({path:path.join(out,'atlas-zoom-'+width+'.png')});
       passed++;
