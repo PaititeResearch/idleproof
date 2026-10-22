@@ -3,6 +3,7 @@
 import {renderByokPreview,renderByokResult,formatByokError} from './byok-view.js';
 const $=id=>document.getElementById(id);
 const host=$('aiResult'),card=$('aiLearningThread'),log=$('aiThreadLog'),anchorBox=$('aiThreadAnchor');
+const cardHome=card.parentElement,history=$('aiThreadHistory');
 let root=null,thread=null,anchor=null,previewConsent=null,busy=false,sequence=0,sourceSequence=0;
 const endpoint='/api/ai/thread';
 const requests=async(url,body)=>{
@@ -12,94 +13,6 @@ const requests=async(url,body)=>{
   return data;
 };
 const el=(tag,text,css)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);if(css)e.className=css;return e;};
-// UX only: the saved thread, consent, provider calls and source binding remain untouched.
-// A text selection exposes a small action. Only an explicit click opens the nearby
-// composer. History is available independently and closed by default.
-const selectionAction=el('button','Ask about selection','ai-selection-action');
-selectionAction.type='button';selectionAction.hidden=true;
-selectionAction.setAttribute('aria-controls','aiLearningThread');
-selectionAction.setAttribute('aria-expanded','false');
-document.body.append(selectionAction);
-const historyShortcut=el('button','Conversation history','ai-thread-history-shortcut');
-historyShortcut.type='button';historyShortcut.hidden=true;
-historyShortcut.setAttribute('aria-controls','aiLearningThread');
-historyShortcut.setAttribute('aria-expanded','false');
-const historyPanel=$('aiThreadHistory'),latest=$('aiThreadLatest');
-let selectedRange=null,anchorElement=null,anchorRect=null,openOrigin=null,panelMode=null;
-const clamp=(v,min,max)=>Math.max(min,Math.min(v,Math.max(min,max)));
-function rectForSelection() {
-  // A reviewed explanation may rerender while an asynchronous read completes.
-  // DOMRange and an old element both still return a truthy DOMRect when detached,
-  // but that rect is 0x0. Fall back to the exact coordinates captured on selection.
-  if(selectedRange) {
-    try {
-      const r=selectedRange.getBoundingClientRect();
-      if(r.width>0&&r.height>0)return r;
-    }catch{/* Detached selection: use preserved coordinates. */}
-  }
-  if(anchorElement?.isConnected){
-    const r=anchorElement.getBoundingClientRect();
-    if(r.width>0&&r.height>0)return r;
-  }
-  return anchorRect;
-}
-function positionSelectionAction() {
-  if(selectionAction.hidden||!anchor)return;
-  const r=rectForSelection();if(!r)return;
-  if(r.bottom<0||r.top>innerHeight){selectionAction.hidden=true;return;}
-  const w=selectionAction.offsetWidth||170,h=selectionAction.offsetHeight||36;
-  const y=r.bottom+8+h<=innerHeight-8?r.bottom+8:r.top-h-8;
-  selectionAction.style.left=clamp(r.left,8,innerWidth-w-8)+'px';
-  selectionAction.style.top=clamp(y,8,innerHeight-h-8)+'px';
-}
-function positionPanel(r=rectForSelection()) {
-  if(card.hidden)return;
-  if(matchMedia('(max-width:650px)').matches) {
-    card.style.left='';card.style.top='';return; // CSS bottom sheet
-  }
-  const w=card.offsetWidth,h=card.offsetHeight;
-  const target=r||{top:innerHeight/3,bottom:innerHeight/3,left:innerWidth/2};
-  const below=target.bottom+10,above=target.top-h-10;
-  const y=below+h<=innerHeight-12?below:above>=12?above:clamp(below,12,innerHeight-h-12);
-  card.style.left=clamp(target.left,12,innerWidth-w-12)+'px';
-  card.style.top=clamp(y,12,innerHeight-h-12)+'px';
-}
-function closePopover({focus=false,reopenAction=false}={}) {
-  if(card.hidden)return;
-  card.hidden=true;historyPanel.open=false;
-  historyShortcut.setAttribute('aria-expanded','false');
-  selectionAction.setAttribute('aria-expanded','false');
-  const previous=openOrigin;openOrigin=null;panelMode=null;
-  if(reopenAction&&anchor){selectionAction.hidden=false;positionSelectionAction();}
-  if(focus&&previous?.isConnected&&!previous.hidden)previous.focus({preventScroll:true});
-}
-function openPopover({history=false,origin=null,rect=null}={}) {
-  if(!root)return;
-  const source=rect||rectForSelection();
-  panelMode=history?'history':'question';openOrigin=origin;
-  selectionAction.hidden=true;
-  $('aiThreadComposer').hidden=history;
-  $('aiThreadHeading').textContent=history?'Conversation history':'Ask about this passage';
-  historyPanel.open=history;
-  card.hidden=false;
-  historyShortcut.setAttribute('aria-expanded',String(history));
-  selectionAction.setAttribute('aria-expanded',String(!history));
-  positionPanel(source);
-  (history?historyPanel.querySelector('summary'):$('aiThreadQuestion')).focus({preventScroll:true});
-}
-selectionAction.onclick=()=>openPopover({origin:selectionAction});
-historyShortcut.onclick=()=>openPopover({history:true,origin:historyShortcut,rect:historyShortcut.getBoundingClientRect()});
-$('aiThreadClose').onclick=()=>closePopover({focus:true,reopenAction:panelMode==='question'});
-document.addEventListener('keydown',event=>{
-  if(event.key!=='Escape')return;
-  if(!card.hidden){event.preventDefault();closePopover({focus:true,reopenAction:panelMode==='question'});}
-  else if(!selectionAction.hidden)selectionAction.hidden=true;
-});
-document.addEventListener('pointerdown',event=>{
-  if(!card.hidden&&!card.contains(event.target)&&event.target!==selectionAction&&event.target!==historyShortcut)closePopover();
-});
-window.addEventListener('resize',()=>{if(!card.hidden)positionPanel();else positionSelectionAction();},{passive:true});
-document.addEventListener('scroll',()=>{if(!card.hidden)return;positionSelectionAction();},{capture:true,passive:true});
 const invalidate=()=>{sequence++;previewConsent=null;$('aiThreadSend').disabled=true;$('aiThreadPreview').textContent='Preview required before sending. No call authorized.';};
 const status=value=>{$('aiThreadStatus').textContent=value;};
 function decorate() {
@@ -112,20 +25,24 @@ function decorate() {
     section.append(button);
   }
 }
-function selectAnchor(index,selection,{rect=null,range=null,element=null}={}) {
+function selectAnchor(index,selection,source=null) {
   if(!root||root.status!=='INTERPRETATION'||!Number.isInteger(index)||!root.answer?.claims?.[index])return;
   const full=root.answer.claims[index].text;
   const quote=String(selection||'').trim();
   if(quote.length<3||quote.length>360||!full.includes(quote)){
     status('Select a passage of up to 360 characters inside a single explanation section.');return;
   }
-  closePopover();anchor={claimIndex:index,selection:quote};invalidate();
-  selectedRange=range||null;anchorElement=element||null;anchorRect=rect||null;
+  anchor={claimIndex:index,selection:quote};invalidate();
   anchorBox.replaceChildren();anchorBox.append(el('strong','Selected passage · '),el('span',quote));
-  $('aiThreadPreviewButton').disabled=false;latest.hidden=true;latest.replaceChildren();
-  historyPanel.open=false;
-  selectionAction.hidden=false;positionSelectionAction();
-  status('Selection captured locally. Choose Ask about selection to preview focused sources; no provider call was made.');
+  // Reposition the EXISTING Selected passage section directly after the
+  // chosen paragraph. No floating action, overlay, or replacement controls.
+  const paragraph=source?.closest?.('p')||source?.closest?.('section[data-ai-claim-index]')?.querySelector('p');
+  if(paragraph&&host.contains(paragraph))paragraph.after(card);
+  else cardHome.append(card);
+  card.classList.add('ai-thread-selected');
+  history.open=false;
+  $('aiThreadPreviewButton').disabled=false;card.hidden=false;
+  status('This selection is local. Ask a question and preview the exact source context before sending.');
 }
 function selectionInRoot() {
   if(!root||typeof window.getSelection!=='function')return;
@@ -135,19 +52,15 @@ function selectionInRoot() {
   const a=start?.closest?.('section[data-ai-claim-index]'),b=end?.closest?.('section[data-ai-claim-index]');
   if(!a||a!==b)return;
   // Selecting citation buttons or technical provenance must not add unapproved context.
-  if(!start.closest?.('p')||!end.closest?.('p'))return;
-  const range=selection.getRangeAt(0).cloneRange();
-  selectAnchor(Number(a.dataset.aiClaimIndex),selection.toString(),{range,rect:range.getBoundingClientRect(),element:a});
+  if(!start.closest?.('p')||!end.closest?.('p')||card.contains(start)||card.contains(end))return;
+  selectAnchor(Number(a.dataset.aiClaimIndex),selection.toString(),end.closest('p'));
 }
 host.addEventListener('mouseup',selectionInRoot);
 host.addEventListener('keyup',selectionInRoot);
 host.addEventListener('click',event=>{
   const button=event.target.closest?.('button[data-ai-discuss]');if(!button)return;
   const index=Number(button.dataset.aiDiscuss),claim=root?.answer?.claims?.[index];
-  if(claim){
-    selectAnchor(index,claim.text.slice(0,Math.min(300,claim.text.length)),{rect:button.getBoundingClientRect(),element:button});
-    openPopover({origin:button,rect:button.getBoundingClientRect()});
-  }
+  if(claim){selectAnchor(index,claim.text.slice(0,Math.min(300,claim.text.length)),button);$('aiThreadQuestion').focus({preventScroll:true});}
 });
 async function openSource(button) {
   const id=++sourceSequence,output=el('pre','Loading captured source…');output.tabIndex=-1;
@@ -159,10 +72,7 @@ async function openSource(button) {
     output.textContent=`${data.path} · ${data.sourceSha256}\n${data.lines.map(l=>`${l.line}: ${l.text}${l.truncated?' [truncated]':''}`).join('\n')}`;
   }catch(e){if(id===sourceSequence)output.textContent='Captured source unavailable: '+formatByokError(e);}
 }
-// Inline latest reply and collapsed history share the same verified local source route.
-for(const container of [log,latest])container.addEventListener('click',event=>{
-  const button=event.target.closest?.('button[data-ai-source]');if(button)openSource(button);
-});
+log.addEventListener('click',event=>{const button=event.target.closest?.('button[data-ai-source]');if(button){event.stopPropagation();openSource(button);}});
 function appendAnswer(container,result) {
   if(!result||result.status!=='INTERPRETATION'||!result.answer?.claims?.length){
     container.append(el('p','No reviewed answer accepted. The attempt and any uncertain reservation remain recorded.'));return;
@@ -183,8 +93,8 @@ function renderThread(data) {
   thread=data;log.replaceChildren();
   const count=data?.turns?.length||0;
   $('aiThreadHistoryCount').textContent=count===1?'1 question':count+' questions';
-  historyShortcut.textContent='Conversation history · '+count;
-  historyShortcut.hidden=count===0;
+  history.hidden=count===0;
+  card.hidden=!card.classList.contains('ai-thread-selected')&&count===0;
   if(!count){log.append(el('p','No follow-ups yet. Select a passage in the explanation above.'));return;}
   for(const turn of data.turns){
     const article=el('article',undefined,'ai-thread-turn');article.append(el('small',`Question · ${new Date(turn.createdAt).toLocaleString()}`));
@@ -201,45 +111,37 @@ function renderThread(data) {
     }else article.append(el('p','Stored answer is unavailable; no new request was made.'));
     log.append(article);
   }
-  if(historyPanel.open)log.scrollTop=log.scrollHeight;
-}
-function showLatest(data) {
-  const turn=data?.turns?.at(-1);if(!turn)return;
-  latest.replaceChildren(el('small',`Question · ${turn.question}`));
-  const result=turn.result;
-  if(result){
-    const cost=Number.isFinite(result.reportedCostUsd)?` · ${result.reportedCostUsd.toFixed(6)} USD reported`:'';
-    latest.append(el('small',result.status==='INTERPRETATION'?'Model explanation — not Proof'+cost:'Incomplete · no reviewed answer'+cost));
-    appendAnswer(latest,result);
-    if(result.status!=='INTERPRETATION'&&result.unreviewedDraft) {
-      const detail=el('details'),summary=el('summary','View the unreviewed draft (not verified)');
-      detail.append(summary);appendAnswer(detail,{status:'INTERPRETATION',answer:result.unreviewedDraft.answer,presentation:result.unreviewedDraft.presentation,evidence:result.unreviewedDraft.evidence});latest.append(detail);
-    }
-  }else latest.append(el('p','Saved answer unavailable; no new request was made.'));
-  latest.hidden=false;
+  if(history.open)log.scrollTop=log.scrollHeight;
 }
 async function showRoot(result,{restore=false}={}) {
+  // The composer may be inside an old explanation's DOM when a new result
+  // replaces innerHTML. Preserve the same DOM node/handlers by parking it.
+  if(card.parentElement!==cardHome)cardHome.append(card);
+  card.classList.remove('ai-thread-selected');
+  card.hidden=true;
+  history.open=false;
   if(result?.status!=='INTERPRETATION'||!result.digest||!result.presentation)return;
-  if(!restore||root?.digest!==result.digest) {
-    anchor=null;invalidate();anchorBox.textContent='Select a passage in the explanation above to ask about it.';
-    $('aiThreadPreviewButton').disabled=true;$('aiThreadQuestion').value='';
+  if(!restore||root?.digest!==result.digest){
+    anchor=null;invalidate();
+    anchorBox.textContent='Select a passage in the explanation above to ask about it.';
+    $('aiThreadPreviewButton').disabled=true;
   }
-  // A restored discussion never opens a large panel or scrolls the original explanation.
-  card.hidden=true;selectionAction.hidden=true;selectedRange=null;anchorElement=null;anchorRect=null;
-  latest.hidden=true;latest.replaceChildren();historyPanel.open=false;
   root=result;decorate();
-  if(!historyShortcut.isConnected)host.prepend(historyShortcut);
-  try{const data=await requests(`${endpoint}?${new URLSearchParams({rootDigest:root.digest})}`);if(data.rootDigest===root.digest)renderThread(data);}
-  catch(e){status('Local discussion cannot be loaded: '+formatByokError(e));}
+  const digest=result.digest;
+  try {
+    const data=await requests(`${endpoint}?${new URLSearchParams({rootDigest:digest})}`);
+    if(data.rootDigest===digest&&root?.digest===digest)renderThread(data);
+  }catch(e){if(root?.digest===digest)status('Local discussion cannot be loaded: '+formatByokError(e));}
 }
-// A slow latest-thread read cannot replace a newer explanation or selection.
+// If an old automatic history lookup finishes after a newer explanation, it
+// must not erase that explanation or relocate the in-progress Selected passage.
 let restoreVersion=0;
 window.addEventListener('idleproof:ai-result',event=>{
   restoreVersion++;
   void showRoot(event.detail?.result);
 });
 $('optionalAI').addEventListener('toggle',async()=>{
-  const version=++restoreVersion; // Closing/reopening also invalidates old GETs.
+  const version=++restoreVersion;
   if(!$('optionalAI').open||root)return;
   try{
     const data=await requests(`${endpoint}?rootDigest=latest`);
@@ -268,7 +170,7 @@ $('aiThreadSend').onclick=async()=>{
   if(!previewConsent||busy)return;
   const approved=previewConsent;invalidate();busy=true;
   $('aiThreadPreviewButton').disabled=true;status('Generating one explicitly approved follow-up. No automatic retries.');
-  try{const result=await requests(endpoint,{...approved,action:'explain'});renderThread(result);showLatest(result);positionPanel();status('Follow-up saved privately on this machine. Model interpretations are not Proof.');}
+  try{const result=await requests(endpoint,{...approved,action:'explain'});renderThread(result);history.open=true;log.scrollTop=log.scrollHeight;status('Follow-up saved privately on this machine. Model interpretations are not Proof.');}
   catch(e){status(formatByokError(e)+' Any attempted call may still have an uncertain charge.');}
   finally{busy=false;$('aiThreadPreviewButton').disabled=!anchor;}
 };

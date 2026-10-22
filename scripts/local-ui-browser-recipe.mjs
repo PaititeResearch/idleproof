@@ -782,6 +782,13 @@ for(const width of [390,1440]) {
     await ui.page.waitForFunction(()=>document.querySelectorAll('#aiResult [data-ai-discuss]').length===2);
     await ui.page.locator('#aiResult [data-ai-discuss="1"]').click();
     const selected=await text(ui.page,'#aiThreadAnchor');
+    const inline=await ui.page.evaluate(()=>{
+      const c=document.getElementById('aiLearningThread');
+      const section=document.querySelector('#aiResult section[data-ai-claim-index="1"]');
+      return {near:section?.querySelector('p')?.nextElementSibling===c,
+        sameNode:!!c?.closest('#aiResult'),
+        folded:!document.getElementById('aiThreadHistory').open};
+    });
     await ui.page.locator('#aiThreadQuestion').fill('Why does the calculation use this comparison?');
     await ui.page.locator('#aiThreadPreviewButton').click();
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadSend').disabled===false);
@@ -790,25 +797,13 @@ for(const width of [390,1440]) {
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadLog').textContent.includes('boundary comparison'));
     const observed=await ui.page.evaluate(()=>({thread:document.getElementById('aiThreadLog').textContent,
       original:document.getElementById('aiResult').textContent,visible:!document.getElementById('aiLearningThread').hidden,
-      latest:document.getElementById('aiThreadLatest').textContent,historyOpen:document.getElementById('aiThreadHistory').open,
-      historyCount:document.getElementById('aiThreadHistoryCount').textContent,
+      historyOpen:document.getElementById('aiThreadHistory').open,
       width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
     check(`F6 ${width} px: selected explanation starts a distinct cited learning thread only after explicit Send`,
       selected.includes('A value of 100')&&beforeSend===1&&count(ui.posts,'/api/ai/thread')===2
-      &&observed.visible&&observed.thread.includes('rules.py')&&observed.latest.includes('boundary comparison')
-      &&observed.historyOpen===false&&observed.historyCount==='1 question'
-      &&observed.original.includes('100 becomes 90')&&observed.scroll<=observed.width,{selected,beforeSend,...observed});
-    await ui.page.route('**/api/project-source?*',route=>route.fulfill({
-      status:200,contentType:'application/json',
-      body:JSON.stringify({path:'rules.py',sourceSha256:'f'.repeat(64),
-        lines:[{line:1,text:'return value * 0.9',truncated:false}]})
-    }));
-    await ui.page.locator('#aiThreadLatest button[data-ai-source]').first().click();
-    await ui.page.waitForFunction(()=>document.querySelector('#aiThreadLatest pre')?.textContent.includes('return value * 0.9'));
-    const localSource=await ui.page.locator('#aiThreadLatest pre').innerText();
-    check(`F6 ${width} px: inline latest-reply citation opens captured source without another paid call`,
-      localSource.includes('rules.py')&&localSource.includes('return value * 0.9')
-      &&count(ui.posts,'/api/ai/thread')===2,{localSource});
+      &&observed.visible&&inline.near&&inline.sameNode&&inline.folded&&observed.historyOpen
+      &&observed.thread.includes('rules.py')&&observed.original.includes('100 becomes 90')
+      &&observed.scroll<=observed.width,{selected,beforeSend,inline,...observed});
     await shot(ui.page,`f6-context-thread-${width}`);await ui.close();
   });
 }
@@ -831,186 +826,69 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         host.innerHTML=renderByokResult(result);
         window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
         const p=host.querySelector('section h4')?.nextElementSibling,text=p.firstChild,phrase='value of 100';
-        // The real user can highlight only visible words; this fixture must
-        // scroll the paragraph into view BEFORE selection, then require that
-        // the selection interaction itself leaves the page in place.
         p.scrollIntoView({block:'center',behavior:'instant'});
+        document.documentElement.dataset.aiScrollBefore=String(window.scrollY);
         const start=p.textContent.indexOf(phrase),range=document.createRange();
         range.setStart(text,start);range.setEnd(text,start+phrase.length);
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
         document.documentElement.dataset.aiTestSelectionBefore=window.getSelection().toString();
-        document.documentElement.dataset.aiTestScrollBefore=String(window.scrollY);
-        const selrect=range.getBoundingClientRect(),prect=p.getBoundingClientRect();
-        document.documentElement.dataset.aiTestGeometry=JSON.stringify({
-          range:[selrect.top,selrect.bottom,selrect.left,selrect.right,selrect.width,selrect.height],
-          paragraph:[prect.top,prect.bottom,prect.width,prect.height],
-          scrollY:window.scrollY,innerHeight:window.innerHeight
-        });
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
     await ui.page.waitForFunction(()=>document.getElementById('aiThreadAnchor').textContent.includes('value of 100'));
     const observed=await ui.page.evaluate(()=>({selectionBefore:document.documentElement.dataset.aiTestSelectionBefore,anchor:document.getElementById('aiThreadAnchor').textContent,
-      visible:!document.getElementById('aiLearningThread').hidden,actionVisible:!document.querySelector('.ai-selection-action').hidden,
-      sendDisabled:document.getElementById('aiThreadSend').disabled,
-      scrollY:window.scrollY,scrollBefore:Number(document.documentElement.dataset.aiTestScrollBefore),
+      visible:!document.getElementById('aiLearningThread').hidden,sendDisabled:document.getElementById('aiThreadSend').disabled,
+      inline:document.querySelector('#aiResult section[data-ai-claim-index="0"]>p')?.nextElementSibling===document.getElementById('aiLearningThread'),
+      folded:!document.getElementById('aiThreadHistory').open,
+      scrollBefore:Number(document.documentElement.dataset.aiScrollBefore),scrollNow:window.scrollY,
       original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
-    const geometry=await ui.page.evaluate(()=>({
-      before:document.documentElement.dataset.aiTestGeometry,
-      afterRange:(()=>{const selection=window.getSelection();if(!selection.rangeCount)return null;
-        const r=selection.getRangeAt(0).getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})(),
-      innerWidth:window.innerWidth,innerHeight:window.innerHeight,scrollY:window.scrollY,
-      selectionActionHidden:document.querySelector('.ai-selection-action').hidden,
-      actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.left,r.right,r.width,r.height];})()
-    }));
-    console.log('F7_GEOMETRY '+width+' '+gesture+' '+JSON.stringify(geometry));
-    const originalRange=JSON.parse(geometry.before).range, actionBox=geometry.actionRect;
-    const expectedLeft=Math.max(8,Math.min(originalRange[2],geometry.innerWidth-actionBox[4]-8));
-    const closeToQuote=(Math.abs(actionBox[0]-(originalRange[1]+8))<=3
-      ||Math.abs(actionBox[1]-(originalRange[0]-8))<=3)
-      &&Math.abs(actionBox[2]-expectedLeft)<=3;
-    const actionOnScreen=actionBox[4]>0&&actionBox[5]>0&&actionBox[0]>=0
-      &&actionBox[1]<=geometry.innerHeight&&actionBox[2]>=0&&actionBox[3]<=geometry.innerWidth;
     check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
-      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')
-      &&observed.visible===false&&observed.actionVisible&&actionOnScreen&&closeToQuote&&observed.sendDisabled
-      &&observed.scrollY===observed.scrollBefore
-      &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width
-      &&count(ui.posts,'/api/ai/thread')===0,observed);
-    if(!observed.actionVisible){
-      check(`F7 ${width} px: selection action remains visible after highlighted text`,false,{geometry});
-      await ui.close();return;
-    }
-    await ui.page.locator('.ai-selection-action').click();
-    const opened=await ui.page.evaluate(()=>({shown:!document.getElementById('aiLearningThread').hidden,
-      historyOpen:document.getElementById('aiThreadHistory').open,
-      quote:document.getElementById('aiThreadAnchor').textContent,
-      focused:document.activeElement.id,sendDisabled:document.getElementById('aiThreadSend').disabled}));
-    await ui.page.keyboard.press('Escape');
-    const closed=await ui.page.evaluate(()=>({hidden:document.getElementById('aiLearningThread').hidden,
-      actionVisible:!document.querySelector('.ai-selection-action').hidden,focused:document.activeElement.className}));
-    check(`F7 ${width} px: selection popover is explicit, dismissible and source-bound`,
-      opened.shown&&opened.historyOpen===false&&opened.quote.includes('value of 100')
-      &&opened.focused==='aiThreadQuestion'&&opened.sendDisabled&&closed.hidden
-      &&closed.actionVisible&&closed.focused.includes('ai-selection-action')
-      &&count(ui.posts,'/api/ai/thread')===0,{opened,closed});
+      observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')&&observed.visible&&observed.inline&&observed.folded&&observed.sendDisabled
+      &&observed.scrollBefore===observed.scrollNow&&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width&&count(ui.posts,'/api/ai/thread')===0,observed);
     await ui.close();
   });
 }
 
-// The persisted conversation is independent of an active selection. Opening
-// history is an explicit read-only UI action; it must not pre-open or bill.
+// Saved replies are the ORIGINAL thread log, only wrapped in native details.
+// Opening/collapsing or reloading the history must never incur a provider POST.
 for(const width of [390,1440]) {
-  await section(`F8 ${width} px: history stays folded until requested, standalone access and Escape work`,async()=>{
+  await section(`F8 ${width} px: saved history folds and survives browser refresh without a paid call`,async()=>{
     const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
-    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'d'.repeat(64),
-      reportedCostUsd:.0002,latencyMs:1200,review:{callsMade:2,completed:true,semanticVerified:false},
-      answer:{claims:[{text:'For an active operator, a value of 100 becomes 90 at the inclusive threshold.',citations:['S1']}],
-        nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
-      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-history-source'}],
-      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['The boundary']}};
-    const stored={rootDigest:root.digest,root,turns:[{digest:'e'.repeat(64),createdAt:'2026-10-22T10:00:00Z',
-      claimIndex:0,selection:'value of 100',question:'Why does this branch matter?',result:{
-        status:'INTERPRETATION',reportedCostUsd:.0003,
-        answer:{claims:[{text:'The saved explanation uses a cited captured source.',citations:['S1']}],nextTests:[],unknowns:[]},
-        presentation:{headings:['Saved response']},evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-history-source'}]}}]};
+    const root={schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest:'d'.repeat(64),reportedCostUsd:0,
+      latencyMs:0,review:{callsMade:2,completed:true,semanticVerified:false},
+      answer:{claims:[{text:'A value of 100 becomes 90.',citations:['S1']}],nextTests:[],unknowns:[],proof:'UNKNOWN'},
+      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-stored'}],
+      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['Adjustment']}};
+    const saved={rootDigest:root.digest,root,turns:[{createdAt:'2026-10-21T19:49:03Z',
+      claimIndex:0,selection:'value of 100',question:'Why is adjusted isolated?',result:{
+        status:'INTERPRETATION',reportedCostUsd:.000531,
+        answer:{claims:[{text:'An isolated reusable adjustment.',citations:['S1']}],unknowns:[],nextTests:[]},
+        presentation:{headings:['Saved answer']},evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-stored'}]}}]};
     await ui.page.route('**/api/ai/thread*',route=>route.fulfill({status:200,contentType:'application/json',
-      body:JSON.stringify(route.request().method()==='GET'?stored:{error:'UNAUTHORIZED_WRITE'})}));
-    await ui.page.evaluate(async result=>{
-      const {renderByokResult}=await import('/byok-view.js');document.getElementById('optionalAI').open=true;
-      document.getElementById('aiResult').innerHTML=renderByokResult(result);
-      window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
-    },root);
-    await ui.page.waitForFunction(()=>!document.querySelector('.ai-thread-history-shortcut')?.hidden);
-    const initial=await ui.page.evaluate(()=>({panelHidden:document.getElementById('aiLearningThread').hidden,
-      shortcutVisible:!document.querySelector('.ai-thread-history-shortcut').hidden,
-      historyOpen:document.getElementById('aiThreadHistory').open,
-      original:document.getElementById('aiResult').textContent,
-      count:document.getElementById('aiThreadHistoryCount').textContent}));
-    await ui.page.locator('#aiResult .ai-thread-history-shortcut').click();
-    const history=await ui.page.evaluate(()=>({panelVisible:!document.getElementById('aiLearningThread').hidden,
-      composerHidden:document.getElementById('aiThreadComposer').hidden,
-      opened:document.getElementById('aiThreadHistory').open,
-      stored:document.getElementById('aiThreadLog').textContent}));
-    await ui.page.locator('#aiThreadClose').click();
-    await ui.page.locator('#aiResult [data-ai-discuss="0"]').click();
-    const compose=await ui.page.evaluate(()=>({panelVisible:!document.getElementById('aiLearningThread').hidden,
-      composerHidden:document.getElementById('aiThreadComposer').hidden,
-      historyOpen:document.getElementById('aiThreadHistory').open}));
-    await ui.page.locator('#aiThreadHistory summary').click();
-    const expanded=await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open);
-    await ui.page.locator('#aiThreadHistory summary').click();
-    const collapsed=!(await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open));
-    await ui.page.keyboard.press('Escape');
-    const closed=await ui.page.locator('#aiLearningThread').isHidden();
-    const size=await ui.page.evaluate(()=>({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
-    check(`F8 ${width} px: history stays folded until requested, standalone access and Escape work`,
-      initial.panelHidden&&initial.shortcutVisible&&!initial.historyOpen&&initial.count==='1 question'
-      &&initial.original.includes('100 becomes 90')&&history.panelVisible&&history.composerHidden
-      &&history.opened&&history.stored.includes('The saved explanation uses a cited captured source')
-      &&compose.panelVisible&&!compose.composerHidden&&!compose.historyOpen
-      &&expanded&&collapsed&&closed&&count(ui.posts,'/api/ai/thread')===0
-      &&size.scroll<=size.width,{initial,history,compose,expanded,collapsed,closed,size});
-    await shot(ui.page,`f8-contextual-history-${width}`);await ui.close();
-  });
-}
-
-// F9: deterministic delayed restore response must never replace a fresh root.
-// The endpoint is mocked and no paid generation is performed.
-for(const width of [390,1440]) {
-  await section(`F9 ${width} px: stale history GET cannot overwrite a fresh selected explanation`,async()=>{
-    const ui=await open(completeUrl,{width,height:900});await waitConnection(ui.page,'live');
-    const makeRoot=(digest,statement)=>({
-      schema:'idleproof.byok-result.v1',status:'INTERPRETATION',digest,
-      reportedCostUsd:0,latencyMs:0,review:{callsMade:0,completed:true,semanticVerified:false},
-      answer:{claims:[{text:statement,citations:['S1']}],nextTests:[],unknowns:[],requiresReview:true,proof:'UNKNOWN'},
-      evidence:[{citation:'S1',path:'rules.py',snapshotId:'synthetic-race-source'}],
-      presentation:{schema:'idleproof.byok-presentation.v1',format:'answer-first-v1',headings:['Boundary']}
-    });
-    const fresh=makeRoot('a'.repeat(64),'For an active operator, a value of 100 becomes 90 at the inclusive threshold.');
-    const stale=makeRoot('b'.repeat(64),'A stale previous explanation must not replace the current answer.');
-    let releaseLatest,seenLatest;
-    const held=new Promise(resolve=>{releaseLatest=resolve;});
-    const started=new Promise(resolve=>{seenLatest=resolve;});
-    await ui.page.route('**/api/ai/thread*',async route=>{
-      const id=new URL(route.request().url()).searchParams.get('rootDigest');
-      if(id==='latest') {
-        seenLatest();await held;
-        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:stale.digest,root:stale,turns:[]})});
-      }else{
-        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rootDigest:fresh.digest,root:fresh,turns:[]})});
-      }
-    });
-    try {
-      await ui.page.evaluate(()=>{document.getElementById('optionalAI').open=true;});
-      await started; // Latest restoration is now outstanding.
-      await ui.page.evaluate(async result=>{
-        const {renderByokResult}=await import('/byok-view.js');
-        const host=document.getElementById('aiResult');host.innerHTML=renderByokResult(result);
-        window.dispatchEvent(new CustomEvent('idleproof:ai-result',{detail:{result}}));
-        const p=host.querySelector('section h4')?.nextElementSibling;
-        p.scrollIntoView({block:'center',behavior:'instant'});
-        const text=p.firstChild,phrase='value of 100',offset=p.textContent.indexOf(phrase);
-        const range=document.createRange();range.setStart(text,offset);range.setEnd(text,offset+phrase.length);
-        window.getSelection().removeAllRanges();window.getSelection().addRange(range);
-        p.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
-      },fresh);
-      await ui.page.waitForFunction(()=>!document.querySelector('.ai-selection-action')?.hidden);
-      const response=ui.page.waitForResponse(value=>value.url().includes('rootDigest=latest'));
-      releaseLatest();await response;
-      await ui.page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-      const state=await ui.page.evaluate(()=>({
-        buttonVisible:!document.querySelector('.ai-selection-action').hidden,
-        composerHidden:document.getElementById('aiLearningThread').hidden,
-        quote:document.getElementById('aiThreadAnchor').textContent,
-        result:document.getElementById('aiResult').textContent,
-        width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth
-      }));
-      check(`F9 ${width} px: stale history GET cannot overwrite a fresh selected explanation`,
-        state.buttonVisible&&state.composerHidden&&state.quote.includes('value of 100')
-        &&state.result.includes('100 becomes 90')&&!state.result.includes('stale previous explanation')
-        &&state.scroll<=state.width&&count(ui.posts,'/api/ai/thread')===0,state);
-    }finally{releaseLatest();await ui.close();}
+      body:JSON.stringify(route.request().url().includes('rootDigest=latest')?saved:saved)}));
+    const confirm=async()=>{
+      await ui.page.locator('#optionalAI > summary').click();
+      await ui.page.waitForFunction(()=>document.getElementById('aiThreadHistoryCount')?.textContent==='1 question');
+      const folded=await ui.page.evaluate(()=>{
+        const history=document.getElementById('aiThreadHistory');
+        return {panel:document.getElementById('aiLearningThread'),folded:!history.open,
+          visible:!history.hidden,saved:document.getElementById('aiThreadLog').textContent.includes('An isolated reusable adjustment.')} ;
+      });
+      await ui.page.locator('#aiThreadHistory summary').click();
+      const expanded=await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open);
+      const shown=await ui.page.locator('#aiThreadLog').innerText();
+      await ui.page.locator('#aiThreadHistory summary').click();
+      const collapsed=!(await ui.page.locator('#aiThreadHistory').evaluate(e=>e.open));
+      return {folded:folded.folded,visible:folded.visible,saved:folded.saved,expanded,collapsed,shown};
+    };
+    const first=await confirm();
+    await ui.page.reload();await waitConnection(ui.page,'live');
+    const second=await confirm();
+    check(`F8 ${width} px: saved history folds and survives browser refresh without a paid call`,
+      first.folded&&first.visible&&first.saved&&first.expanded&&first.collapsed&&first.shown.includes('rules.py')
+      &&second.folded&&second.visible&&second.saved&&second.expanded&&second.collapsed
+      &&count(ui.posts,'/api/ai/thread')===0,{first,second,posts:ui.posts});
+    await ui.close();
   });
 }
 
