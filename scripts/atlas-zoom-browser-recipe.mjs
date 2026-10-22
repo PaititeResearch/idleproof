@@ -24,7 +24,7 @@ try {
     await page.route('**/atlas.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+"\nwindow.__probe=()=>cy?({z:cy.zoom(),pan:cy.pan(),min:cy.minZoom(),max:cy.maxZoom(),nodes:cy.nodes().length}):null;"}));
     try {
       await page.goto(app.url+'/atlas.html');
-      await page.waitForFunction(()=>window.__probe?.().nodes===32&&document.querySelector('#notice').textContent.includes('Static capture loaded'));
+      await page.waitForFunction(()=>window.__probe?.()?.nodes===32&&document.querySelector('#notice').textContent.includes('Static capture loaded'));
       const rect=await page.locator('#canvas').boundingBox();
       const x=rect.width*.42,y=rect.height*.53;
       await page.mouse.move(rect.x+x,rect.y+y);
