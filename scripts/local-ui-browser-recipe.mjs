@@ -840,6 +840,12 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
         window.getSelection().removeAllRanges();window.getSelection().addRange(range);
         document.documentElement.dataset.aiTestSelectionBefore=window.getSelection().toString();
         document.documentElement.dataset.aiTestScrollBefore=String(window.scrollY);
+        const selrect=range.getBoundingClientRect(),prect=p.getBoundingClientRect();
+        document.documentElement.dataset.aiTestGeometry=JSON.stringify({
+          range:[selrect.top,selrect.bottom,selrect.width,selrect.height],
+          paragraph:[prect.top,prect.bottom,prect.width,prect.height],
+          scrollY:window.scrollY,innerHeight:window.innerHeight
+        });
         p.dispatchEvent(gesture==='mouse'?new MouseEvent('mouseup',{bubbles:true}):new KeyboardEvent('keyup',{bubbles:true,key:'ArrowRight',shiftKey:true}));
       });
     },{result:root,gesture});
@@ -849,12 +855,25 @@ for(const [width,gesture] of [[390,'keyboard'],[1440,'mouse']]) {
       sendDisabled:document.getElementById('aiThreadSend').disabled,
       scrollY:window.scrollY,scrollBefore:Number(document.documentElement.dataset.aiTestScrollBefore),
       original:document.getElementById('aiResult').textContent,scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth}));
+    const geometry=await ui.page.evaluate(()=>({
+      before:document.documentElement.dataset.aiTestGeometry,
+      afterRange:(()=>{const selection=window.getSelection();if(!selection.rangeCount)return null;
+        const r=selection.getRangeAt(0).getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})(),
+      innerHeight:window.innerHeight,scrollY:window.scrollY,
+      selectionActionHidden:document.querySelector('.ai-selection-action').hidden,
+      actionRect:(()=>{const r=document.querySelector('.ai-selection-action').getBoundingClientRect();return [r.top,r.bottom,r.width,r.height];})()
+    }));
+    console.log('F7_GEOMETRY '+width+' '+gesture+' '+JSON.stringify(geometry));
     check(`F7 ${width} px: ${gesture} highlighted text anchors exact prose without a paid call`,
       observed.selectionBefore==='value of 100'&&observed.anchor.includes('value of 100')
       &&observed.visible===false&&observed.actionVisible&&observed.sendDisabled
       &&observed.scrollY===observed.scrollBefore
       &&observed.original.includes('inclusive threshold')&&observed.scroll<=observed.width
       &&count(ui.posts,'/api/ai/thread')===0,observed);
+    if(!observed.actionVisible){
+      check(`F7 ${width} px: selection action remains visible after highlighted text`,false,{geometry});
+      await ui.close();return;
+    }
     await ui.page.locator('.ai-selection-action').click();
     const opened=await ui.page.evaluate(()=>({shown:!document.getElementById('aiLearningThread').hidden,
       historyOpen:document.getElementById('aiThreadHistory').open,
