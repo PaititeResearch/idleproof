@@ -75,3 +75,5 @@ console.log(`${results.filter(r=>r.status==='PASS').length}/${results.length} PA
 
 // Additive acceptance for the same Atlas inside the opt-in Local section.
 await import('./atlas-section-browser-recipe.mjs');
+// Wheel/trackpad ergonomics are exercised on the real isolated canvas.
+await import('./atlas-zoom-browser-recipe.mjs');

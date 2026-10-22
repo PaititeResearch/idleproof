@@ -62,7 +62,7 @@ function redraw({fit=true}={}) {
   for(const e of edges)elements.push({group:'edges',data:{...e,source:e.from,target:e.to,label:(e.origin==='user-model'?'declared · ':'')+(e.label||e.kind),provenance:e.source}});
   const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;
   if(cy)cy.destroy();
-  cy=window.cytoscape({container:$('canvas'),elements,style:style(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,wheelSensitivity:.2,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
+  cy=window.cytoscape({container:$('canvas'),elements,style:style(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
   cy.on('tap','node,edge',event=>inspect(event.target.id(),nodes,edges));
   cy.on('dragfree','node',event=>{const n=event.target,p=n.position();setEntry('positions',{id:n.id(),x:Math.round(p.x),y:Math.round(p.y)});setDirty();});
   if(fit)cy.fit(undefined,40);else if(camera)cy.viewport(camera);
@@ -167,6 +167,25 @@ window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.return
 window.addEventListener('pagehide',()=>{stopMonitor();controller?.abort();cy?.destroy();});
 if(matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.dataset.theme='dark';
 // Script defer/module ordering does not imply provider or model initialization.
+// Atlas is a zoomable *overview*: a large repository may start at minZoom=.12.
+// Cytoscape's generic mousewheel normalization plus the previous .2 sensitivity
+// made several ordinary notches barely move the camera. Normalize both discrete
+// mouse notches and fine-grained trackpads here, before Cytoscape registers its
+// own wheel listener; never double-apply a gesture or change user-model data.
+function zoomAtPointer(event) {
+  if(!cy||!event.cancelable||event.ctrlKey||event.metaKey)return; // browser pinch/shortcuts
+  const raw=event.deltaY;
+  if(!Number.isFinite(raw)||raw===0)return;
+  const delta=event.deltaMode===0?raw:Math.sign(raw)*100; // line/page wheel: one notch
+  const steps=Math.max(-1,Math.min(1,delta/100)); // cap spikes; preserve smooth trackpad increments
+  const next=Math.min(cy.maxZoom(),Math.max(cy.minZoom(),cy.zoom()*Math.pow(2.6,-steps)));
+  // The zoom anchor is the pointer, not the centre of a potentially huge graph.
+  const rect=$('canvas').getBoundingClientRect();
+  event.preventDefault();event.stopImmediatePropagation();
+  if(next!==cy.zoom())cy.zoom({level:next,renderedPosition:{x:event.clientX-rect.left,y:event.clientY-rect.top}});
+}
+// Register once, before load() constructs Cytoscape and its default wheel listener.
+$('canvas').addEventListener('wheel',zoomAtPointer,{capture:true,passive:false});
 if(typeof window.cytoscape!=='function')status('Local graph runtime unavailable. The existing Local cockpit is unaffected.',true);else load();
 
 notifyHost('idleproof:atlas-ready');
