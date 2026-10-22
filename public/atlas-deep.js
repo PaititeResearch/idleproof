@@ -67,14 +67,25 @@ function graphStyle(){return [
 const name=id=>graph?.nodes.find(n=>n.id===id)?.qualifiedName||graph?.nodes.find(n=>n.id===id)?.label||id;
 function draw({fit=true}={}){
   if(!graph)return;
-  const runtime=['runtime','sequence'].includes($('view').value);$('canvas').hidden=runtime;$('runtimeView').hidden=!runtime;
+  const view=$('view').value,runtime=['runtime','sequence'].includes(view);$('canvas').hidden=runtime;$('runtimeView').hidden=!runtime;
+  const legends={calls:['— CALLS: statically resolved','┄ MAY_CALL: possible target','◇ UNKNOWN: target not established'],focused:['CALLS / MAY_CALL: static target status','Other labels: source-derived relations','No runtime execution established'],control:['Control relations: source-derived','Branch labels do not prove reachability','No runtime branch coverage'],data:['READS / WRITES: lexical dependencies','PASSES_ARGUMENT: explicit syntax','No observed values'],runtime:['Identified session events only','One scenario is not complete coverage'],sequence:['Recorded event order only','Static edges are not execution sequences']};
+  document.querySelector('.legend').replaceChildren(...legends[view].map(text=>element('span',text)));
   if(runtime){cy?.destroy();cy=null;renderRuntime();return;}
   const nodes=ARRAY(graph.nodes),edges=ARRAY(graph.edges),columns=$('canvas').clientWidth<600?1:4,elements=[];
   for(let i=0;i<nodes.length;i++){const node=nodes[i];elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:{x:135+(i%columns)*260,y:90+Math.floor(i/columns)*150}});}
   for(const edge of edges)elements.push({group:'edges',data:{...edge,source:edge.from,target:edge.to,label:edge.kind+(edge.branch?' · '+edge.branch:'')}});
   const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;cy?.destroy();
   cy=window.cytoscape({container:$('canvas'),elements,style:graphStyle(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
-  cy.on('tap','node,edge',event=>inspect(event.target.id()));if(fit)cy.fit(undefined,40);else if(camera)cy.viewport(camera);
+  cy.on('tap','node,edge',event=>inspect(event.target.id()));
+  if(fit){
+    cy.fit(undefined,40);
+    // A tall single-column page must not become microscopic on initial display.
+    // Keep the full graph and existing zoom bounds; Fit remains an explicit overview.
+    if(columns===1&&cy.nodes().length&&cy.zoom()<1){
+      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):cy.nodes().first(),position=anchor.position();
+      cy.viewport({zoom:1,pan:{x:cy.width()/2-position.x,y:80-position.y}});
+    }
+  }else if(camera)cy.viewport(camera);
 }
 function renderRuntime(){
   const runtime=graph?.runtime||state?.runtime||{},sessions=ARRAY(runtime.sessions);

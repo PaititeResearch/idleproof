@@ -40,6 +40,9 @@ if(browser){
     const f=fixture(),app=await createServer({cwd:f.cwd,port:0,experimentalAtlas:true,experimentalAtlasDeep:true});
     const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage(),requests=[],errors=[];
     page.on('request',r=>requests.push({url:r.url(),method:r.method(),body:r.postData()}));page.on('pageerror',e=>errors.push(e.message));
+    // Read actual Cytoscape geometry in the browser; no production debug API.
+    const js=fs.readFileSync(new URL('../public/atlas-deep.js',import.meta.url),'utf8');
+    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;'}));
     const api=async(action='status',extra={})=>page.evaluate(async ({action,extra})=>await (await fetch('/api/atlas-deep?'+new URLSearchParams({action,source:'HEAD',...extra}))).json(),{action,extra});
     try{
       await page.goto(app.url+'/atlas-deep.html');await page.waitForFunction(()=>!document.getElementById('analyze').disabled);
@@ -79,6 +82,20 @@ if(browser){
         const text=await page.locator('#runtimeDemoStatus').innerText();assert.match(text,/SYNTHETIC FIXTURE|UNAVAILABLE|INTERRUPTED/);assert.equal(fs.existsSync(path.join(f.cwd,'MUST_NOT_EXECUTE')),false);
         if(text.includes('UNAVAILABLE')){assert.match(text,/Nothing was executed/);assert.equal(await page.locator('#runtimeEvents li').count(),0);}
         assert.equal((await api()).identity.snapshotId,f.model.header.snapshotId);
+      });
+      await check(`${width}: view legend is accurate and initial mobile nodes remain readable with explicit Fit`,async()=>{
+        await page.locator('#view').selectOption('data');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Data flow'));
+        assert.match(await page.locator('.legend').innerText(),/READS \/ WRITES/);assert.doesNotMatch(await page.locator('.legend').innerText(),/MAY_CALL/);
+        if(width===390){
+          const initial=await page.evaluate(()=>window.__deepProbe());assert.ok(initial.fontPx>=10,'Initial graph labels must render at least 10 CSS px: '+JSON.stringify(initial));
+          assert.ok(initial.first.x1>=0&&initial.first.y1>=0&&initial.first.x2<=initial.width&&initial.first.y2<=initial.height,'Initial readable node must be on screen: '+JSON.stringify(initial));
+          const posts=requests.filter(r=>r.method==='POST').length;await page.locator('#fit').click();const overview=await page.evaluate(()=>window.__deepProbe());
+          assert.ok(overview.zoom<initial.zoom,'Explicit Fit must still reveal a broader overview');assert.ok(overview.all.y1>=-1&&overview.all.y2<=overview.height+1,'Fit must include the complete synthetic graph');
+          await page.locator('#layout').click();const arranged=await page.evaluate(()=>window.__deepProbe());assert.ok(arranged.fontPx>=10,'Arrange must recover readable initial geometry');
+          await page.locator('#canvas').scrollIntoViewIfNeeded();const box=await page.locator('#canvas').boundingBox();await page.mouse.move(box.x+box.width-15,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width-15,box.y+box.height/2-90,{steps:6});await page.mouse.up();
+          const panned=await page.evaluate(()=>window.__deepProbe());assert.ok(Math.abs(panned.pan.y-arranged.pan.y)>40,'Real pointer pan must reach the rest of the graph');await page.locator('#layout').click();
+          assert.equal(requests.filter(r=>r.method==='POST').length,posts,'Camera operations must not mutate or analyze');
+        }
       });
       await check(`${width}: responsive, theme, inert source labels and return link`,async()=>{
         await page.locator('#view').selectOption('data');await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Data flow'));

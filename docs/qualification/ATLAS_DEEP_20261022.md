@@ -121,3 +121,11 @@ Arrêter ce serveur puis omettre le flag Deep suffit au retour V1 dans la copie.
 7. Comparaison exécutée de REA avant toute intégration. Aucune supériorité mesurée revendiquée.
 
 Ces écarts sont explicites : cette livraison est une candidate fonctionnelle à périmètre borné, pas l’accomplissement de toutes les ambitions de la mission.
+
+## Premier passage CI et corrections de recette
+
+Head `4189354684662f84c3cbe10e4b1df4ce40a2bcb9`, [run Deep 39803274565](https://github.com/PaititeResearch/idleproof/actions/runs/39803274565) : contrats Linux/macOS et navigateur PASS ; Windows **FAIL** (145 pass / 1 fail / 3 tests spécifiques POSIX non exécutés). La conversion automatique CRLF du checkout invalidait les hashes du corpus externe. Des attributs Git limités aux cinq fichiers amont épinglés préservent désormais leurs octets ; aucune normalisation permissive ni suppression de vérification. Un checkout jetable avec `core.autocrlf=true` confirme ces cinq identités exactes.
+
+Le navigateur de ce premier head a passé 18 contrôles Deep et 41 contrôles V1/section/zoom. Les captures ont néanmoins montré un graphe mobile trop réduit par Fit initial. La caméra initiale mobile conserve maintenant une taille lisible et le bouton Fit garde l’aperçu global. Une nouvelle assertion mesure police rendue, visibilité, Fit et pan réels ; les légendes suivent la vue. Cette correction doit être vérifiée sur le head suivant et n’est pas couverte par les anciens PASS automatisés. Le runtime de ce premier run était `UNAVAILABLE / ISOLATION_TOOL_UNAVAILABLE`, `executed=false`. Le workflow installe maintenant explicitement le prérequis système bubblewrap dans son runner jetable, puis conserve la vérification d’isolation intégrale et le refus si elle échoue. Aucun sysctl ou contrôle hôte n’est désactivé.
+
+Les verdicts du head de livraison, les captures et les références d’artefacts doivent être lus dans le corps actualisé de la PR #48. Le présent historique ne transforme pas un passage antérieur en qualification de modifications ultérieures.

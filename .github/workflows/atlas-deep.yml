@@ -65,6 +65,10 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/deep-browser" --no-save --package-lock=false --ignore-scripts playwright@1.63.0
           node "$RUNNER_TEMP/deep-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Install explicit runtime isolation prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y bubblewrap
       - name: Real Deep UI and preserved Atlas journeys
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/deep-browser/node_modules/playwright/index.mjs
