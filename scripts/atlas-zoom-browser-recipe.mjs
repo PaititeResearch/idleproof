@@ -21,7 +21,7 @@ try {
     page.on('request',r=>requests.push({url:r.url(),method:r.method()}));
     page.on('pageerror',e=>errors.push(e.message));
     const js=fs.readFileSync(new URL('../public/atlas.js',import.meta.url),'utf8');
-    await page.route('**/atlas.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+"\nwindow.__probe=()=>({z:cy.zoom(),pan:cy.pan(),min:cy.minZoom(),max:cy.maxZoom(),nodes:cy.nodes().length});"}));
+    await page.route('**/atlas.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+"\nwindow.__probe=()=>cy?({z:cy.zoom(),pan:cy.pan(),min:cy.minZoom(),max:cy.maxZoom(),nodes:cy.nodes().length}):null;"}));
     try {
       await page.goto(app.url+'/atlas.html');
       await page.waitForFunction(()=>window.__probe?.().nodes===32&&document.querySelector('#notice').textContent.includes('Static capture loaded'));
