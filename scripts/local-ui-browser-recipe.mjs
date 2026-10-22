@@ -798,6 +798,17 @@ for(const width of [390,1440]) {
       &&observed.visible&&observed.thread.includes('rules.py')&&observed.latest.includes('boundary comparison')
       &&observed.historyOpen===false&&observed.historyCount==='1 question'
       &&observed.original.includes('100 becomes 90')&&observed.scroll<=observed.width,{selected,beforeSend,...observed});
+    await ui.page.route('**/api/project-source?*',route=>route.fulfill({
+      status:200,contentType:'application/json',
+      body:JSON.stringify({path:'rules.py',sourceSha256:'f'.repeat(64),
+        lines:[{line:1,text:'return value * 0.9',truncated:false}]})
+    }));
+    await ui.page.locator('#aiThreadLatest button[data-ai-source]').first().click();
+    await ui.page.waitForFunction(()=>document.querySelector('#aiThreadLatest pre')?.textContent.includes('return value * 0.9'));
+    const localSource=await ui.page.locator('#aiThreadLatest pre').innerText();
+    check(`F6 ${width} px: inline latest-reply citation opens captured source without another paid call`,
+      localSource.includes('rules.py')&&localSource.includes('return value * 0.9')
+      &&count(ui.posts,'/api/ai/thread')===2,{localSource});
     await shot(ui.page,`f6-context-thread-${width}`);await ui.close();
   });
 }

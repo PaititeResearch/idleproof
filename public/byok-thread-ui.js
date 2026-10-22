@@ -152,7 +152,10 @@ async function openSource(button) {
     output.textContent=`${data.path} · ${data.sourceSha256}\n${data.lines.map(l=>`${l.line}: ${l.text}${l.truncated?' [truncated]':''}`).join('\n')}`;
   }catch(e){if(id===sourceSequence)output.textContent='Captured source unavailable: '+formatByokError(e);}
 }
-log.addEventListener('click',event=>{const button=event.target.closest?.('button[data-ai-source]');if(button)openSource(button);});
+// Inline latest reply and collapsed history share the same verified local source route.
+for(const container of [log,latest])container.addEventListener('click',event=>{
+  const button=event.target.closest?.('button[data-ai-source]');if(button)openSource(button);
+});
 function appendAnswer(container,result) {
   if(!result||result.status!=='INTERPRETATION'||!result.answer?.claims?.length){
     container.append(el('p','No reviewed answer accepted. The attempt and any uncertain reservation remain recorded.'));return;
