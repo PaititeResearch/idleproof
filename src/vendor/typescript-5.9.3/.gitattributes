@@ -1,0 +1,4 @@
+# Preserve the exact upstream parser and notice bytes, including on Windows.
+typescript.cjs -text
+LICENSE.txt -text
+ThirdPartyNoticeText.txt -text

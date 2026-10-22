@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deep understanding · IdleProof experimental</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/atlas.css"><link rel="stylesheet" href="/atlas-deep.css"></head>
+<body>
+<header class="mast"><a href="/atlas.html" class="brand">◉ IdleProof <span>Deep understanding</span></a><div><span class="tag experimental">EXPERIMENTAL · LOCAL ONLY</span><button id="theme" type="button">Switch theme</button><a href="/atlas.html">Module atlas ↗</a></div></header>
+<main>
+<div class="intro"><div><p class="eyebrow">CALLS → CONTROL → DATA → OBSERVATIONS</p><h1>Follow the evidence.</h1><p>Explore how captured functions connect. Inspect the source and the limits of each relation.</p></div><div id="identity" class="identity">Reading capture identity…</div></div>
+<div id="notice" class="notice" role="status" aria-live="polite">Reading analysis status. No analysis or project execution has started.</div>
+<section class="surface analysis-controls" aria-label="Explicit local analysis">
+<div><h2>Analyze this capture</h2><p>Static analysis reads selected captured source. It does not execute the project or call an AI provider. Module atlas edits remain separate.</p></div>
+<div class="actions"><button id="analyze" type="button" class="primary" disabled>Analyze captured source</button><button id="cancel" type="button" disabled>Stop analysis</button><button id="reload" type="button">Refresh status</button></div><p id="job" class="job" aria-live="polite"></p>
+</section>
+<section class="tools" aria-label="Analysis view controls">
+<label>Capture<select id="source"><option value="HEAD">Committed snapshot</option><option value="WORKTREE">Working-tree snapshot</option></select></label>
+<label>View<select id="view"><option value="calls">Function call graph</option><option value="focused">Focused function</option><option value="control">Control flow</option><option value="data">Data flow</option><option value="runtime">Runtime trace</option><option value="sequence">Observed sequence</option></select></label>
+<label class="search">Find in analysis<input id="query" type="search" maxlength="200" placeholder="Path or function…"></label><button id="search" type="button">Find</button>
+</section>
+<div class="workspace">
+<section class="map-panel" aria-label="Read-only semantic graph">
+<div class="map-toolbar"><div><button id="fit" type="button">Fit</button><button id="layout" type="button">Arrange</button><button id="whole" type="button">Clear focus</button><button id="zoomOut" type="button" aria-label="Zoom out">−</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button></div><span class="read-only">Read-only analysis · no user-model changes</span></div>
+<div id="canvas" role="img" aria-label="Semantic diagram. Use the accessible element and relation list below to inspect with a keyboard." tabindex="0"></div>
+<div id="runtimeView" hidden><h2 id="runtimeTitle">Runtime observations</h2><p id="runtimeStatus">No runtime session loaded.</p><div class="surface"><h3>Isolated synthetic example</h3><p>This separate, built-in example is not your repository. It executes only after the isolation checks succeed. No network, credentials, argument values or returned values are collected. Opening this view never runs it.</p><button id="runtimeDemo" type="button">Run isolated synthetic example</button><p id="runtimeDemoStatus" role="status" aria-live="polite">Not requested.</p></div><ol id="runtimeEvents"></ol><pre id="reconciliation" hidden tabindex="0"></pre></div>
+<div class="legend"><span>— CALLS: statically resolved</span><span>┄ MAY_CALL: possible target</span><span>◇ UNKNOWN: target not established</span></div>
+<div class="map-footer"><span id="coverage">No analysis loaded.</span><div><button id="previous" type="button" disabled>Previous</button><button id="next" type="button" disabled>Next</button></div></div>
+<details id="elements" open><summary>Accessible element &amp; relation list</summary><div id="elementList"></div></details>
+</section>
+<aside class="inspector" aria-label="Semantic evidence inspector">
+<div class="inspector-head"><p class="eyebrow">SOURCE, METHOD, UNCERTAINTY</p><h2 id="selectedTitle">Select a function</h2><div id="authority"></div></div>
+<div id="details"><p>Inspect a function, call site or relation. A static target does not establish an executed or reachable call.</p></div>
+<div id="nodeActions" hidden><button id="focus" type="button">Focus this function</button><button id="openSource" type="button">Open captured source</button></div>
+<section id="connections" hidden><h3>Incoming calls in this view</h3><div id="incoming"></div><h3>Outgoing calls in this view</h3><div id="outgoing"></div><p id="connectionLimits"></p></section>
+<pre id="sourceCode" tabindex="0" hidden></pre>
+</aside>
+</div>
+<section class="bottom-grid">
+<article class="surface"><h2>Call-site coverage</h2><p id="callSummary">No call sites loaded.</p><div id="callSites" class="scroll-list"></div><p>Unresolved, ambiguous and external calls remain visible. Their absence from a focused page does not prove absence from the program.</p></article>
+<article class="surface"><h2>Evidence boundaries</h2><p id="viewMeaning">Static source observations and static deductions are distinct from runtime observations and user declarations. None is a DiffWitness Proof.</p><ul id="limitations"></ul><details><summary>Provider capabilities &amp; coverage</summary><pre id="capabilities">No analysis loaded.</pre></details></article>
+</section>
+<footer>Experimental deep understanding · no AI call required · return to <a href="/atlas.html">Module atlas</a> for your saved annotations</footer>
+</main>
+<script src="/vendor/cytoscape-3.34.4.min.js" defer></script><script src="/atlas-deep.js" type="module"></script>
+</body></html>

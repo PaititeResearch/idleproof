@@ -1,0 +1,84 @@
+✔ JS: ESM aliases, named re-export, namespace and default import preserve exact target provenance (22.290143ms)
+✔ JS: recursion, nested lexical function, const closure, const alias and direct IIFE (2.883016ms)
+✔ JS: parameter, block, catch and loop shadowing prevent outer target substitution (2.182131ms)
+✔ JS: parameter initializers cannot see declarations in function body (0.87923ms)
+✔ JS: all captured assignments and mutable initializers withhold certain relations (2.123022ms)
+✔ JS: import live binding mutation invalidates imported target (0.924608ms)
+✔ JS: type-only imports and exports never become runtime dependency or call edges (1.551888ms)
+✔ JS: computed dispatch, methods, callbacks and returned functions remain unknown (1.512898ms)
+✔ JS: ambiguous extension candidates and missing dependencies stay in denominator (1.109388ms)
+✔ JS: simple class construction qualified, inheritance and decorators withheld (1.457124ms)
+✔ JS: malformed sources retain parse diagnostics and emit no semantic relations (1.289832ms)
+✔ JS: direct eval disables lexical resolution without executing it (0.52247ms)
+✔ JS: shared scripts do not acquire assumed module/global semantics (0.402829ms)
+✔ JS: namespace declarations cannot leak unqualified functions into outer scope (0.801412ms)
+✔ JS: preinitialization and cyclic aliases do not get certain targets (2.062495ms)
+✔ JS: identical snapshots are deterministic; source hashes and snapshot IDs change identity (3.144757ms)
+✔ JS: syntax observations do not claim runtime event, branch or value coverage (0.906001ms)
+✔ JS: bounds, invalid hashes, unsafe paths and duplicates are rejected (1.250662ms)
+✔ JS: malicious target program and package scripts are only parsed, not executed (1.137811ms)
+✔ Python manually specified sixteen-site synthetic reference: every site and exact target, no hidden denominator (60.231154ms)
+✔ Python direct aliases, explicit module imports, relative imports and recursive lexical targets (38.798873ms)
+✔ Python closures resolve unique nested defs and preserve shadowing, free references and parameters (44.932756ms)
+✔ Python conditional, duplicate and reassigned bindings never receive certain CALLS (38.157162ms)
+✖ Python unknown decorators, dynamic imports/getattr, monkey patches and higher-order functions stay uncertain (122.351881ms)
+✔ Python plain class direct methods resolved; constructors labeled binding only; instance/inherited dispatch uncertain (40.138097ms)
+✔ Python comprehension/exception/match/local binders shadow same-named functions (34.668189ms)
+✔ Python no sibling-method lookup, no name similarity lookup, no source-root guessing or external resolution (37.41908ms)
+✔ Python syntactic branch, loop, return and argument flow preserve exact scopes and disclose gaps (42.15884ms)
+✔ Python source identities deterministic, same-name scopes distinct, UTF-8 byte spans admitted (80.099885ms)
+✔ Python malformed source remains explicitly unsupported while other files still analyzed (42.004536ms)
+✔ Python never imports or executes source even when statements would write files (47.278681ms)
+✔ Python provider rejects mismatched content identity, duplicate paths and oversized files (111.453329ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 31
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 852.597645
+
+✖ failing tests:
+
+test at test/atlas-deep-python.test.mjs:47:1
+✖ Python unknown decorators, dynamic imports/getattr, monkey patches and higher-order functions stay uncertain (122.351881ms)
+  AssertionError [ERR_ASSERTION]: Traceback (most recent call last):
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 608, in <module>
+      main()
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 595, in main
+      result = Analyzer(payload).run()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 537, in run
+      self.collect(tree, scope, file)
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 250, in collect
+      self.collect(child, scope, file, branch)
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 146, in collect
+      self.collect(stmt, child, file)
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 250, in collect
+      self.collect(child, scope, file, branch)
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 250, in collect
+      self.collect(child, scope, file, branch)
+    File "/workspace/scratch/a9dbe8632828/idleproof/src/atlas-deep-python.py", line 244, in collect
+      if isinstance(node.func, ast.Attribute) and node.func.attr in {'import_module', 'exec_module', 'exec', 'eval', 'globals', 'locals', 'vars', '__import__', 'setattr', 'delattr'}:
+                    ^^^^^^^^^
+  AttributeError: 'Name' object has no attribute 'func'
+   
+  
+  1 !== 0
+  
+      at run (file:///workspace/scratch/a9dbe8632828/idleproof/test/atlas-deep-python.test.mjs:14:277)
+      at TestContext.<anonymous> (file:///workspace/scratch/a9dbe8632828/idleproof/test/atlas-deep-python.test.mjs:51:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

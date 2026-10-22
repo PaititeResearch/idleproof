@@ -1,0 +1,2346 @@
+[
+  {
+    "id": "idleproof@0.10.0",
+    "name": "idleproof",
+    "version": "0.10.0",
+    "size": 2999772,
+    "unpackedSize": 12935006,
+    "shasum": "ce4817a7856cf96157b9f6d9d02e991a77c9f6c3",
+    "integrity": "sha512-h3+pHUQhlMPTtCN+jFrMwycDto+/kriVp6r5BHPca40IeAj6CXOpCMsswsy+/4ipzFSK3syBRXEHVrgg8tNKZA==",
+    "filename": "idleproof-0.10.0.tgz",
+    "files": [
+      {
+        "path": "LICENSE",
+        "size": 1079,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 17381,
+        "mode": 420
+      },
+      {
+        "path": "SECURITY.md",
+        "size": 2792,
+        "mode": 420
+      },
+      {
+        "path": "action.yml",
+        "size": 954,
+        "mode": 420
+      },
+      {
+        "path": "bin/idleproof-hook.mjs",
+        "size": 5423,
+        "mode": 420
+      },
+      {
+        "path": "bin/idleproof-support.mjs",
+        "size": 2475,
+        "mode": 420
+      },
+      {
+        "path": "bin/idleproof.mjs",
+        "size": 9722,
+        "mode": 493
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_20261022.md",
+        "size": 7132,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_DATA.md",
+        "size": 5207,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_JAVASCRIPT.md",
+        "size": 11085,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_PYTHON.md",
+        "size": 12148,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_RESEARCH_20261022.md",
+        "size": 11880,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_DEEP_RUNTIME.md",
+        "size": 7078,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/ATLAS_QUALIFICATION_20261021.md",
+        "size": 3368,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/REA_RESEARCH_20261021.md",
+        "size": 4922,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/REA_STATIC_ADAPTER_PROPOSAL_20261021.md",
+        "size": 6034,
+        "mode": 420
+      },
+      {
+        "path": "docs/architecture/REPOSITORY_UNDERSTANDING_20261021.md",
+        "size": 13627,
+        "mode": 420
+      },
+      {
+        "path": "docs/AUTO_DEBT.md",
+        "size": 9244,
+        "mode": 420
+      },
+      {
+        "path": "docs/EXPERIMENTAL_ATLAS_DEEP.md",
+        "size": 7620,
+        "mode": 420
+      },
+      {
+        "path": "docs/EXPERIMENTAL_ATLAS.md",
+        "size": 4742,
+        "mode": 420
+      },
+      {
+        "path": "docs/GLOBAL_PROJECT_SCAN.md",
+        "size": 6934,
+        "mode": 420
+      },
+      {
+        "path": "docs/JOURNAL_2026_09_18.md",
+        "size": 13977,
+        "mode": 420
+      },
+      {
+        "path": "docs/JOURNAL_2026_09_19.md",
+        "size": 3898,
+        "mode": 420
+      },
+      {
+        "path": "docs/MARKET_2026.md",
+        "size": 5006,
+        "mode": 420
+      },
+      {
+        "path": "docs/OPENROUTER_LOCAL.md",
+        "size": 20782,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_002_TASK_PARITY.md",
+        "size": 1719,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_004_CONTEXT_ADMISSION.md",
+        "size": 1487,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_004_SOURCE_BOUNDARIES.md",
+        "size": 1628,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_010A_CONTEXT_CONSUMER.md",
+        "size": 2986,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_011_LOCAL_LOCK.md",
+        "size": 1117,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_012_IDLE_SNAPSHOTS.md",
+        "size": 2544,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_013_MEMORY_EXPORT.md",
+        "size": 4588,
+        "mode": 420
+      },
+      {
+        "path": "docs/PM_P0_NATIVE_FAILURE.md",
+        "size": 1258,
+        "mode": 420
+      },
+      {
+        "path": "docs/PRODUCT.md",
+        "size": 6062,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/ATLAS_LOCAL_SECTION_20261021.md",
+        "size": 3145,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/ATLAS_WHEEL_ZOOM_20261022.md",
+        "size": 2689,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/CONTEXTUAL_LEARNING_THREAD_20261021.md",
+        "size": 6072,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_categories_before.log",
+        "size": 1827,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_categories_full.log",
+        "size": 23210,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_categories_hook.log",
+        "size": 327,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_before.log",
+        "size": 2666,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_final_full.log",
+        "size": 23211,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_json.log",
+        "size": 100,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_python.log",
+        "size": 103,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_real_hook.log",
+        "size": 327,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_citations_typescript.log",
+        "size": 106,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_actual_core.log",
+        "size": 369,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_after_invalid_test.log",
+        "size": 917,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_after.log",
+        "size": 320,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_before_invalid_test.log",
+        "size": 796,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_before.log",
+        "size": 976,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_diagnostic_local.log",
+        "size": 6082,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_entity_C1_full_tap.log",
+        "size": 55479,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_after.log",
+        "size": 345,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_before.log",
+        "size": 1240,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_CI_python_failure.log",
+        "size": 54702,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_full_tap.log",
+        "size": 55235,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_full.log",
+        "size": 5180,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_profile.log",
+        "size": 9918,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_real_hook.log",
+        "size": 369,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_unicode_actual_core.log",
+        "size": 369,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_unicode_after.log",
+        "size": 220,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_unicode_before.log",
+        "size": 1203,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_legacy_unicode_full_tap.log",
+        "size": 55225,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_unicode_json_perf.log",
+        "size": 4036,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_unicode_python_perf.log",
+        "size": 4098,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_unicode_quality_failure.log",
+        "size": 21372,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/Idle_unicode_typescript_perf.log",
+        "size": 4061,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_actual_core_final.log",
+        "size": 894,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_actual_core.log",
+        "size": 625,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_adjacent_before.log",
+        "size": 2075,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_after.log",
+        "size": 1631,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_approvals_after.log",
+        "size": 1525,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_approvals_before.log",
+        "size": 3080,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_baseline.log",
+        "size": 5810,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_before.log",
+        "size": 5561,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_final.log",
+        "size": 622,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_full_final.log",
+        "size": 24743,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_full.log",
+        "size": 24485,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_linux_35894811674.log.gz.b64",
+        "size": 18369,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_manifest_final.json",
+        "size": 1470,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_manifest.json",
+        "size": 1287,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_windows_35894811674.log.gz.b64",
+        "size": 23657,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004E_before.log",
+        "size": 660,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004E_config_review_before.log",
+        "size": 993,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004E_local.json",
+        "size": 4078,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004G_main_evidence.json",
+        "size": 12152,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004G_PR_evidence.json",
+        "size": 12574,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_actual_initial.log",
+        "size": 631,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_before.log",
+        "size": 1705,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_contract_before.log",
+        "size": 2479,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_dependency_review_before.log",
+        "size": 1713,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_dependency_smoke_before.log",
+        "size": 781,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_initial_PR.json",
+        "size": 5640,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_local.json",
+        "size": 4228,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004H_reviewed_local.json",
+        "size": 3334,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004K_initial_PR_final.json",
+        "size": 12163,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004K_main_evidence.json",
+        "size": 12096,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004K_PR_evidence.json",
+        "size": 15512,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_actual_before.log",
+        "size": 1027,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_actual_first.log",
+        "size": 737,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_actual_rebased.log",
+        "size": 123,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_base_cache.log",
+        "size": 610,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_contract_before.log",
+        "size": 2142,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_initial_PR_evidence.json",
+        "size": 4747,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_local.json",
+        "size": 3488,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_main_evidence.json",
+        "size": 4500,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_pinned_local.json",
+        "size": 4027,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_PR_evidence.json",
+        "size": 4997,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_review_actual_before.log",
+        "size": 678,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_review_delivery_before.log",
+        "size": 614,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_review_explain_before.log",
+        "size": 4211,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004L_reviewed_local.json",
+        "size": 6400,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004MO_main_evidence.json",
+        "size": 12098,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_details_before.log",
+        "size": 2065,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_feature_after.log",
+        "size": 7064,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_feature_before.log",
+        "size": 6508,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_feature_discovery_actual.json",
+        "size": 406,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_final_perf_python.log",
+        "size": 581,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_local.json",
+        "size": 4825,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_mixed_batch_before.log",
+        "size": 2022,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_mixed_review_local.json",
+        "size": 4388,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_publication_local.json",
+        "size": 4653,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_final_perf_json.log",
+        "size": 102,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_final_perf_python.log",
+        "size": 581,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_final_perf_typescript.log",
+        "size": 108,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_js_candidates_before.log",
+        "size": 2077,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_perf_L_baseline_python.log",
+        "size": 572,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_relative_actual_before.log",
+        "size": 678,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_review_relative_before.log",
+        "size": 1975,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_reviewed_local.json",
+        "size": 9056,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_004N_symbol_fingerprint_before.log",
+        "size": 1081,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_actual_smoke_final.log",
+        "size": 432,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_base_core_smoke.log",
+        "size": 432,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_candidate_diagnostic.log",
+        "size": 108,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_candidate_processes.json",
+        "size": 16181,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_fail_before.log",
+        "size": 2518,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_final_full_tests.log",
+        "size": 23016,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_local_evidence.json",
+        "size": 6617,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_parent_diagnostic_configured.log",
+        "size": 572,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_parent_diagnostic.log",
+        "size": 531,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_parent_processes.json",
+        "size": 13073,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_perf_base.log",
+        "size": 90,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_perf_json.log",
+        "size": 102,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_perf_python.log",
+        "size": 103,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_perf_typescript.log",
+        "size": 583,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_005B_quality.log",
+        "size": 359,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_category_evidence.json",
+        "size": 862,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_entity_control_correction.json",
+        "size": 2205,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_legacy_evidence.json",
+        "size": 1394,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_local.json",
+        "size": 1608,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_main.json",
+        "size": 3548,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_pr.json",
+        "size": 3555,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010A_unicode_correction.json",
+        "size": 2281,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-after.log",
+        "size": 1394,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-before.log",
+        "size": 2332,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-cookie-after.log",
+        "size": 1393,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-cookie-before.log",
+        "size": 1138,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-cookie-full.log",
+        "size": 23900,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-cookie-initial-fixture-blindspot.log",
+        "size": 206,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_gitlab-full.log",
+        "size": 23893,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-after.log",
+        "size": 1110,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-before.log",
+        "size": 5614,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-budget-before.log",
+        "size": 2037,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-full.log",
+        "size": 23607,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-real-core.log",
+        "size": 369,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-review-after.log",
+        "size": 1304,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-review-before.log",
+        "size": 3723,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-review-final.log",
+        "size": 1303,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-citations-review-full.log",
+        "size": 23788,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-native-token-after.log",
+        "size": 1304,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-native-token-before.log",
+        "size": 2908,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-native-token-full.log",
+        "size": 23783,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-stack-credentials-after.log",
+        "size": 1395,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-stack-credentials-before.log",
+        "size": 3235,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-stack-credentials-final-full.log",
+        "size": 23900,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-stack-credentials-final.log",
+        "size": 1394,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_idle-stack-credentials-full.log",
+        "size": 23889,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_main-macos-failure.log",
+        "size": 50388,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_actual_optional_core.jsonl.gz.b64",
+        "size": 24936,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_languages_linux.jsonl.gz.b64",
+        "size": 27601,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_local.json",
+        "size": 2556,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_macos_35855627299.json",
+        "size": 1522,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_macos_35855627299.jsonl.gz.b64",
+        "size": 26659,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_missing_command.jsonl.gz.b64",
+        "size": 22906,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_pipeline_shell_regression.json",
+        "size": 441,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_provider-diagnostic-contract.log",
+        "size": 628,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_provider-diagnostic-linux.log",
+        "size": 5245,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_provider-diagnostic-missing.log",
+        "size": 6059,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_unicode-boundary-after.log",
+        "size": 1477,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_unicode-boundary-before.log",
+        "size": 1031,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_unicode-boundary-full.log",
+        "size": 23977,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_word-boundary-after.log",
+        "size": 1478,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_word-boundary-before.log",
+        "size": 1028,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_010B_word-boundary-full.log",
+        "size": 23970,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_012I_main.json",
+        "size": 3548,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_012I_pr.json",
+        "size": 3555,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_013C_fallback_after.jsonl",
+        "size": 2551,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_013C_fallback_before.jsonl",
+        "size": 2807,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PM_013C_windows_incident_108116054851.json",
+        "size": 1505,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PROVENANCE_LOCK_after.log",
+        "size": 535,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PROVENANCE_LOCK_before.log",
+        "size": 3375,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PROVENANCE_LOCK_full.log",
+        "size": 25080,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/evidence/PROVENANCE_LOCK_manifest.json",
+        "size": 1470,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/HANDOFF_PM_004E_2026_09_18.md",
+        "size": 1763,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/HANDOFF_PM_004H_2026_09_19.md",
+        "size": 4355,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/HANDOFF_PM_004L_2026_09_19.md",
+        "size": 4861,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/HANDOFF_PM_004N_2026_09_19.md",
+        "size": 3251,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/HANDOFF_PM_004N_2026_09_20.md",
+        "size": 1459,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/JOURNAL_2026_09_19.md",
+        "size": 11460,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/JOURNAL_2026_09_20.md",
+        "size": 5905,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/LOCAL_PANEL_VISIBILITY.md",
+        "size": 8381,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/NATIVE_PATH_IDENTITY.md",
+        "size": 6868,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/NATIVE_PATH_IDENTITY/owner-marker/idle19-full.log.gz",
+        "size": 9684,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/NATIVE_PATH_IDENTITY/owner-marker/idle19-owner-after.log.gz",
+        "size": 370,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/NATIVE_PATH_IDENTITY/owner-marker/idle19-owner-before.log.gz",
+        "size": 1018,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_120S_REVIEW_20261021.md",
+        "size": 3372,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_ANSWER_FIRST_20261021.md",
+        "size": 8160,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_FORMAT_20261020.md",
+        "size": 6411,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_GROUNDED_REVIEW_20261021.md",
+        "size": 9704,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_HTTP_20261021.md",
+        "size": 8820,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_PLAIN_LANGUAGE_20261021.md",
+        "size": 7317,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_QUALITY_20261020.md",
+        "size": 9985,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/OPENROUTER_REVIEW_TIMEOUT_20261021.md",
+        "size": 6034,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_002C_core_main.json",
+        "size": 9442,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_002C_idleproof_main.json",
+        "size": 3548,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_002C_idleproof_pr.json",
+        "size": 3555,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004_source_main.json",
+        "size": 3548,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004_source_pr_attempt1.json",
+        "size": 3556,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004_source_pr_attempt2.json",
+        "size": 3556,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004_source_pr.json",
+        "size": 3555,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004E.md",
+        "size": 5201,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004H.md",
+        "size": 6360,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004L.md",
+        "size": 8606,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_004N.md",
+        "size": 9443,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005B.md",
+        "size": 4724,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C.md",
+        "size": 6639,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/hashes.json",
+        "size": 767,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-adversarial.log.gz",
+        "size": 770,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-before.log.gz",
+        "size": 609,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-final-full.log.gz",
+        "size": 9847,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-final-targeted.log.gz",
+        "size": 847,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-full.log.gz",
+        "size": 9825,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-initial-after.log.gz",
+        "size": 655,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-installed.log.gz",
+        "size": 365,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/history-perf-json.log.gz",
+        "size": 957,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/legacy-eviction-review/hashes.json",
+        "size": 404,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/legacy-eviction-review/history-legacy-after.log.gz",
+        "size": 538,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/legacy-eviction-review/history-legacy-before.log.gz",
+        "size": 527,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/legacy-eviction-review/history-legacy-full.log.gz",
+        "size": 10296,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/legacy-eviction-review/history-legacy-harness-before.log.gz",
+        "size": 438,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/path-integration/hashes.json",
+        "size": 338,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/path-integration/history-path-integration-full.log.gz",
+        "size": 10253,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/path-integration/history-path-integration-installed-cwd.log.gz",
+        "size": 365,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/path-integration/history-path-integration-installed.log.gz",
+        "size": 877,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/hashes.json",
+        "size": 609,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-after.log.gz",
+        "size": 921,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-before.log.gz",
+        "size": 918,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-final-full.log.gz",
+        "size": 9939,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-final-targeted.log.gz",
+        "size": 924,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-full.log.gz",
+        "size": 9932,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_005C/review/history-review-installed.log.gz",
+        "size": 364,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_010A.md",
+        "size": 7353,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_010B_MACOS_BLOCKER.md",
+        "size": 5795,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_010B_pipeline_languages_local.json",
+        "size": 535,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_010B.md",
+        "size": 4531,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PM_013_CORE_CONSUMER.md",
+        "size": 15653,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_CREDENTIAL_SCREENING.md",
+        "size": 4449,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY.md",
+        "size": 5592,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/c1-review/hashes.json",
+        "size": 291,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/c1-review/longpaths-c1-after.log.gz",
+        "size": 439,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/c1-review/longpaths-c1-before.log.gz",
+        "size": 880,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/c1-review/longpaths-c1-full.log.gz",
+        "size": 9923,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/hashes.json",
+        "size": 556,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/longpaths-component-duplicate-before.log.gz",
+        "size": 828,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/longpaths-component-duplicate-full.log.gz",
+        "size": 10299,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/longpaths-component-valid-after.log.gz",
+        "size": 554,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/longpaths-component-valid-before.log.gz",
+        "size": 652,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/longpaths-component-valid-full.log.gz",
+        "size": 10018,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/duplicate-review/hashes.json",
+        "size": 312,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/duplicate-review/longpaths-duplicate-after.log.gz",
+        "size": 516,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/duplicate-review/longpaths-duplicate-before.log.gz",
+        "size": 1017,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/duplicate-review/longpaths-duplicate-full.log.gz",
+        "size": 9992,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/hashes.json",
+        "size": 853,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/legacy-review/hashes.json",
+        "size": 303,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/legacy-review/longpaths-legacy-after.log.gz",
+        "size": 352,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/legacy-review/longpaths-legacy-before.log.gz",
+        "size": 694,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/legacy-review/longpaths-legacy-full.log.gz",
+        "size": 9847,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-after.log.gz",
+        "size": 1638,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-before.log.gz",
+        "size": 1103,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-full.log.gz",
+        "size": 9817,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-install.log.gz",
+        "size": 124,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-installed-exact-validator.log.gz",
+        "size": 350,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-installed-validator.log.gz",
+        "size": 348,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/longpaths-pack.log.gz",
+        "size": 3122,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/malformed-review/hashes.json",
+        "size": 312,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/malformed-review/longpaths-malformed-after.log.gz",
+        "size": 395,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/malformed-review/longpaths-malformed-before.log.gz",
+        "size": 728,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/malformed-review/longpaths-malformed-full.log.gz",
+        "size": 9880,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/rowcap-review/hashes.json",
+        "size": 303,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/rowcap-review/longpaths-rowcap-after.log.gz",
+        "size": 768,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/rowcap-review/longpaths-rowcap-before.log.gz",
+        "size": 896,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/rowcap-review/longpaths-rowcap-full.log.gz",
+        "size": 9956,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/summary-review/hashes.json",
+        "size": 306,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/summary-review/longpaths-summary-after.log.gz",
+        "size": 438,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/summary-review/longpaths-summary-before.log.gz",
+        "size": 892,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PORTAL_PATH_IDENTITY/summary-review/longpaths-summary-full.log.gz",
+        "size": 9909,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_SCAN_GAP_20261010.md",
+        "size": 11851,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_UNDERSTANDING_20261010.md",
+        "size": 6553,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_UNDERSTANDING_CONFORMITY.csv",
+        "size": 28062,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_UNDERSTANDING_CONFORMITY.json",
+        "size": 43753,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_UNDERSTANDING_HUMAN_CORPUS.json",
+        "size": 15136,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROJECT_UNDERSTANDING_HUMAN_RECIPE.md",
+        "size": 5219,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE.md",
+        "size": 2852,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/async-review/hashes.json",
+        "size": 297,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/async-review/provider-async-after.log.gz",
+        "size": 536,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/async-review/provider-async-before.log.gz",
+        "size": 815,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/async-review/provider-async-full.log.gz",
+        "size": 9778,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/hashes.json",
+        "size": 610,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/history-integration/hashes.json",
+        "size": 114,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/history-integration/provider-history-integration-full.log.gz",
+        "size": 10380,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/idle20-repeat-macos-failure.log.gz",
+        "size": 7786,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/original-windows/hashes.json",
+        "size": 222,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/original-windows/provider-original-windows-failure.log.gz",
+        "size": 37273,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/original-windows/provider-path-integration-full.log.gz",
+        "size": 10121,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/provider-failure-after.log.gz",
+        "size": 502,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/provider-failure-all.log.gz",
+        "size": 246,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/provider-failure-before.log.gz",
+        "size": 641,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/provider-failure-full.log.gz",
+        "size": 9771,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/PROVIDER_FAILURE/provider-failure-languages.log.gz",
+        "size": 127,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/SYNC_IDEMPOTENCE_20261015.md",
+        "size": 9246,
+        "mode": 420
+      },
+      {
+        "path": "docs/qualification/UI_FOLLOWUP_20261014.md",
+        "size": 3192,
+        "mode": 420
+      },
+      {
+        "path": "docs/RESEARCH.md",
+        "size": 5647,
+        "mode": 420
+      },
+      {
+        "path": "docs/THESIS.md",
+        "size": 9312,
+        "mode": 420
+      },
+      {
+        "path": "docs/UI_DESIGN_SYSTEM.md",
+        "size": 12236,
+        "mode": 420
+      },
+      {
+        "path": "examples/github-action.yml",
+        "size": 436,
+        "mode": 420
+      },
+      {
+        "path": "examples/idleproof.policy.json",
+        "size": 652,
+        "mode": 420
+      },
+      {
+        "path": "examples/README.md",
+        "size": 1226,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 1230,
+        "mode": 420
+      },
+      {
+        "path": "public/app.js",
+        "size": 39629,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas-deep.css",
+        "size": 1930,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas-deep.html",
+        "size": 5938,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas-deep.js",
+        "size": 21925,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas-section.css",
+        "size": 879,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas-section.js",
+        "size": 2982,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas.css",
+        "size": 7574,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas.html",
+        "size": 7438,
+        "mode": 420
+      },
+      {
+        "path": "public/atlas.js",
+        "size": 25072,
+        "mode": 420
+      },
+      {
+        "path": "public/byok-thread-ui.js",
+        "size": 9972,
+        "mode": 420
+      },
+      {
+        "path": "public/byok-view.js",
+        "size": 21523,
+        "mode": 420
+      },
+      {
+        "path": "public/favicon.svg",
+        "size": 299,
+        "mode": 420
+      },
+      {
+        "path": "public/feature-review.css",
+        "size": 531,
+        "mode": 420
+      },
+      {
+        "path": "public/feature-review.js",
+        "size": 8379,
+        "mode": 420
+      },
+      {
+        "path": "public/fonts/instrument-serif-latin-400-italic.woff2",
+        "size": 22128,
+        "mode": 420
+      },
+      {
+        "path": "public/fonts/instrument-serif-latin-400-normal.woff2",
+        "size": 21032,
+        "mode": 420
+      },
+      {
+        "path": "public/fonts/jetbrains-mono-latin-wght-normal.woff2",
+        "size": 40404,
+        "mode": 420
+      },
+      {
+        "path": "public/fonts/OFL-InstrumentSerif.txt",
+        "size": 4532,
+        "mode": 420
+      },
+      {
+        "path": "public/fonts/OFL-JetBrainsMono.txt",
+        "size": 4524,
+        "mode": 420
+      },
+      {
+        "path": "public/index.html",
+        "size": 22100,
+        "mode": 420
+      },
+      {
+        "path": "public/project-scan.js",
+        "size": 20164,
+        "mode": 420
+      },
+      {
+        "path": "public/section-nav.js",
+        "size": 3098,
+        "mode": 420
+      },
+      {
+        "path": "public/styles.css",
+        "size": 43364,
+        "mode": 420
+      },
+      {
+        "path": "public/vendor/cytoscape-3.34.4.min.js",
+        "size": 435649,
+        "mode": 420
+      },
+      {
+        "path": "public/vendor/cytoscape-LICENSE.txt",
+        "size": 1082,
+        "mode": 420
+      },
+      {
+        "path": "public/vendor/cytoscape-provenance.json",
+        "size": 539,
+        "mode": 420
+      },
+      {
+        "path": "spec/agentic-development-provenance.schema.json",
+        "size": 2167,
+        "mode": 420
+      },
+      {
+        "path": "spec/capabilities.md",
+        "size": 3257,
+        "mode": 420
+      },
+      {
+        "path": "spec/change-envelope-v1.schema.json",
+        "size": 4360,
+        "mode": 420
+      },
+      {
+        "path": "spec/idleproof-policy.schema.json",
+        "size": 1369,
+        "mode": 420
+      },
+      {
+        "path": "spec/idleproof-portal-ingest-ack-v1.schema.json",
+        "size": 521,
+        "mode": 420
+      },
+      {
+        "path": "spec/idleproof-portal-snapshot-v1.schema.json",
+        "size": 14284,
+        "mode": 420
+      },
+      {
+        "path": "spec/README.md",
+        "size": 2021,
+        "mode": 420
+      },
+      {
+        "path": "src/analyze.mjs",
+        "size": 12559,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-api.mjs",
+        "size": 4943,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-api.mjs",
+        "size": 6037,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-data.py",
+        "size": 10783,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-javascript.mjs",
+        "size": 24093,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-process.mjs",
+        "size": 1939,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-python.py",
+        "size": 39526,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-runtime.mjs",
+        "size": 15908,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-tracer.py",
+        "size": 5225,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep-worker.mjs",
+        "size": 1518,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-deep.mjs",
+        "size": 14515,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-graph.mjs",
+        "size": 11640,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-section.mjs",
+        "size": 2398,
+        "mode": 420
+      },
+      {
+        "path": "src/atlas-store.mjs",
+        "size": 7966,
+        "mode": 420
+      },
+      {
+        "path": "src/attest.mjs",
+        "size": 5853,
+        "mode": 420
+      },
+      {
+        "path": "src/auto-debt.mjs",
+        "size": 50710,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-answer-plan.mjs",
+        "size": 7608,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-cli.mjs",
+        "size": 1901,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-contract.mjs",
+        "size": 4218,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-grounding.mjs",
+        "size": 3895,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-http.mjs",
+        "size": 3999,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-price.mjs",
+        "size": 1610,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-prompt.mjs",
+        "size": 3823,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-review.mjs",
+        "size": 11565,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-storage.mjs",
+        "size": 3022,
+        "mode": 420
+      },
+      {
+        "path": "src/byok-thread.mjs",
+        "size": 8211,
+        "mode": 420
+      },
+      {
+        "path": "src/byok.mjs",
+        "size": 33266,
+        "mode": 420
+      },
+      {
+        "path": "src/capabilities.mjs",
+        "size": 3188,
+        "mode": 420
+      },
+      {
+        "path": "src/catalog.mjs",
+        "size": 13636,
+        "mode": 420
+      },
+      {
+        "path": "src/change-identity.mjs",
+        "size": 6934,
+        "mode": 420
+      },
+      {
+        "path": "src/cli.mjs",
+        "size": 26731,
+        "mode": 420
+      },
+      {
+        "path": "src/codex-bridge.mjs",
+        "size": 9728,
+        "mode": 420
+      },
+      {
+        "path": "src/context.mjs",
+        "size": 13452,
+        "mode": 420
+      },
+      {
+        "path": "src/continuity-contract.mjs",
+        "size": 6094,
+        "mode": 420
+      },
+      {
+        "path": "src/continuity.mjs",
+        "size": 8198,
+        "mode": 420
+      },
+      {
+        "path": "src/cursor-hook-cli.mjs",
+        "size": 6706,
+        "mode": 420
+      },
+      {
+        "path": "src/defitness-cli.mjs",
+        "size": 3536,
+        "mode": 420
+      },
+      {
+        "path": "src/defitness-config.mjs",
+        "size": 426,
+        "mode": 420
+      },
+      {
+        "path": "src/defitness-install.mjs",
+        "size": 485,
+        "mode": 420
+      },
+      {
+        "path": "src/delivery.mjs",
+        "size": 3866,
+        "mode": 420
+      },
+      {
+        "path": "src/demo.mjs",
+        "size": 5761,
+        "mode": 420
+      },
+      {
+        "path": "src/diagnostic.mjs",
+        "size": 6843,
+        "mode": 420
+      },
+      {
+        "path": "src/diffwitness-bridge.mjs",
+        "size": 7565,
+        "mode": 420
+      },
+      {
+        "path": "src/diffwitness-integration-config.mjs",
+        "size": 3727,
+        "mode": 420
+      },
+      {
+        "path": "src/diffwitness-integration-install.mjs",
+        "size": 6208,
+        "mode": 420
+      },
+      {
+        "path": "src/edition.mjs",
+        "size": 922,
+        "mode": 420
+      },
+      {
+        "path": "src/evidence.mjs",
+        "size": 1378,
+        "mode": 420
+      },
+      {
+        "path": "src/explain.mjs",
+        "size": 16901,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-history.mjs",
+        "size": 8062,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-lineage.mjs",
+        "size": 11249,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-memory.mjs",
+        "size": 8691,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-model.mjs",
+        "size": 19565,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-observations.mjs",
+        "size": 4575,
+        "mode": 420
+      },
+      {
+        "path": "src/feature-review.mjs",
+        "size": 10091,
+        "mode": 420
+      },
+      {
+        "path": "src/hook-input.mjs",
+        "size": 398,
+        "mode": 420
+      },
+      {
+        "path": "src/hook.mjs",
+        "size": 18137,
+        "mode": 420
+      },
+      {
+        "path": "src/ide-assurance.mjs",
+        "size": 4143,
+        "mode": 420
+      },
+      {
+        "path": "src/install-codex.mjs",
+        "size": 4533,
+        "mode": 420
+      },
+      {
+        "path": "src/install-cursor.mjs",
+        "size": 6515,
+        "mode": 420
+      },
+      {
+        "path": "src/install.mjs",
+        "size": 3973,
+        "mode": 420
+      },
+      {
+        "path": "src/learning-cli.mjs",
+        "size": 6025,
+        "mode": 420
+      },
+      {
+        "path": "src/learning.mjs",
+        "size": 21149,
+        "mode": 420
+      },
+      {
+        "path": "src/local-http-security.mjs",
+        "size": 2386,
+        "mode": 420
+      },
+      {
+        "path": "src/ownership.mjs",
+        "size": 8519,
+        "mode": 420
+      },
+      {
+        "path": "src/paths.mjs",
+        "size": 2688,
+        "mode": 420
+      },
+      {
+        "path": "src/policy.mjs",
+        "size": 12328,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-assurance.mjs",
+        "size": 14076,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-cli.mjs",
+        "size": 14836,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-client.mjs",
+        "size": 30336,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-ingest-ack.mjs",
+        "size": 1675,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-memory-lock.mjs",
+        "size": 12661,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-memory-sync.mjs",
+        "size": 46210,
+        "mode": 420
+      },
+      {
+        "path": "src/portal-snapshot.mjs",
+        "size": 29772,
+        "mode": 420
+      },
+      {
+        "path": "src/presentation.mjs",
+        "size": 7703,
+        "mode": 420
+      },
+      {
+        "path": "src/project-model.mjs",
+        "size": 6959,
+        "mode": 420
+      },
+      {
+        "path": "src/project-navigation.mjs",
+        "size": 4145,
+        "mode": 420
+      },
+      {
+        "path": "src/project-path.mjs",
+        "size": 307,
+        "mode": 420
+      },
+      {
+        "path": "src/project-scan.mjs",
+        "size": 28697,
+        "mode": 420
+      },
+      {
+        "path": "src/project-source.mjs",
+        "size": 3329,
+        "mode": 420
+      },
+      {
+        "path": "src/provenance.mjs",
+        "size": 15162,
+        "mode": 420
+      },
+      {
+        "path": "src/recovery.mjs",
+        "size": 4071,
+        "mode": 420
+      },
+      {
+        "path": "src/replay.mjs",
+        "size": 2690,
+        "mode": 420
+      },
+      {
+        "path": "src/semantics.mjs",
+        "size": 6170,
+        "mode": 420
+      },
+      {
+        "path": "src/server.mjs",
+        "size": 27330,
+        "mode": 420
+      },
+      {
+        "path": "src/shell-read-context.mjs",
+        "size": 3650,
+        "mode": 420
+      },
+      {
+        "path": "src/snooze.mjs",
+        "size": 1108,
+        "mode": 420
+      },
+      {
+        "path": "src/state.mjs",
+        "size": 11959,
+        "mode": 420
+      },
+      {
+        "path": "src/structure-provider.mjs",
+        "size": 9670,
+        "mode": 420
+      },
+      {
+        "path": "src/symbol-provenance.mjs",
+        "size": 575,
+        "mode": 420
+      },
+      {
+        "path": "src/task.mjs",
+        "size": 6315,
+        "mode": 420
+      },
+      {
+        "path": "src/vendor/typescript-5.9.3/LICENSE.txt",
+        "size": 9197,
+        "mode": 420
+      },
+      {
+        "path": "src/vendor/typescript-5.9.3/PROVENANCE.md",
+        "size": 3436,
+        "mode": 420
+      },
+      {
+        "path": "src/vendor/typescript-5.9.3/ThirdPartyNoticeText.txt",
+        "size": 37824,
+        "mode": 420
+      },
+      {
+        "path": "src/vendor/typescript-5.9.3/typescript.cjs",
+        "size": 9112572,
+        "mode": 420
+      }
+    ],
+    "entryCount": 466,
+    "bundled": []
+  }
+]

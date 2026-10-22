@@ -1,0 +1,116 @@
+✔ deep adversarial: a producer cannot substitute another source authority (9.081905ms)
+✔ deep adversarial: exact source ranges cannot contain impossible columns (0.269027ms)
+✔ deep adversarial: positive columns outside the captured line are refused (0.193823ms)
+✔ deep adversarial: one result cannot borrow another producer provenance (0.246564ms)
+✔ deep adversarial: absent producer versions cannot become the string undefined (0.213924ms)
+✔ deep adversarial: CALLS evidence must refer to its actual call-site source (0.329469ms)
+✔ deep adversarial: unavailable producer output is not a successful empty graph (0.185361ms)
+✔ deep adversarial: uppercase extensions are analyzed or explicitly counted unsupported (34.735821ms)
+✔ deep adversarial: cache identity changes when captured tree changes (132.126462ms)
+✔ deep adversarial: missing promisor blobs never launch a configured fetch helper (44.109497ms)
+✔ deep adversarial: group timeout still kills a descendant after parent closes (1812.674233ms)
+✔ deep reference corpus: every certain target matches independent source-span annotations; V1 and source stay unchanged (446.258455ms)
+✔ deep captured HEAD ignores modified worktree bytes and rejects forged captured hashes (147.802928ms)
+✔ deep bounds and unsupported selection are explicit and never erase reference denominators (1036.692159ms)
+✔ external CPython 3.12.0 colorsys: whole-module syntax inventory and separately annotated local targets (130.834937ms)
+✔ real pinned Core: canonical capture feeds Deep, retains all name-call sites and preserves V1 and exclusions (712.202531ms)
+✔ data provider parses complete JSON, inventories names, and never retains values (36.891312ms)
+✔ JSON keys use unambiguous pointers including escaped and Unicode names (36.660773ms)
+✔ TOML parses tables and dotted keys without pretending to locate headers (30.905583ms)
+✔ SQL and YAML remain explicitly unsupported and do not acquire inferred links (33.270543ms)
+✔ malformed and trailing JSON cannot contribute partial facts or diagnostic source text (32.422337ms)
+✔ duplicate JSON keys including escaped equivalents and nested duplicates are rejected (97.119692ms)
+✔ non-standard JSON constants are not accepted as valid JSON documents (96.048693ms)
+✔ duplicate and malformed TOML is rejected without leaking parser snippets (62.985598ms)
+✔ source digest mismatch invalidates a document before any parsing claim (28.145722ms)
+✔ unsafe or duplicate paths and invalid snapshot identity fail the whole request (204.46434ms)
+✔ node identity is deterministic, order-independent and bound to snapshot/path/bytes (175.152508ms)
+✔ per-file byte limits and file count limits are explicit (57.469706ms)
+✔ node admission limits disclose omissions instead of claiming a complete inventory (111.948885ms)
+✔ depth and oversized names produce explicit incomplete projection (30.211643ms)
+✔ bounded malformed envelopes fail without source echo or traceback (115.461671ms)
+✔ JS: ESM aliases, named re-export, namespace and default import preserve exact target provenance (19.548704ms)
+✔ JS: recursion, nested lexical function, const closure, const alias and direct IIFE (2.300582ms)
+✔ JS: parameter, block, catch and loop shadowing prevent outer target substitution (7.336173ms)
+✔ JS: parameter initializers cannot see declarations in function body (1.709577ms)
+✔ JS: all captured assignments and mutable initializers withhold certain relations (6.051008ms)
+✔ JS: import live binding mutation invalidates imported target (1.07654ms)
+✔ JS: type-only imports and exports never become runtime dependency or call edges (1.792703ms)
+✔ JS: computed dispatch, methods, callbacks and returned functions remain unknown (1.740824ms)
+✔ JS: ambiguous extension candidates and missing dependencies stay in denominator (4.337114ms)
+✔ JS: simple class construction qualified, inheritance and decorators withheld (1.4606ms)
+✔ JS: malformed sources retain parse diagnostics and emit no semantic relations (1.441141ms)
+✔ JS: direct eval disables lexical resolution without executing it (0.609132ms)
+✔ JS: shared scripts do not acquire assumed module/global semantics (0.468309ms)
+✔ JS: namespace declarations cannot leak unqualified functions into outer scope (0.74023ms)
+✔ JS: preinitialization and cyclic aliases do not get certain targets (0.663104ms)
+✔ JS: identical snapshots are deterministic; source hashes and snapshot IDs change identity (3.253605ms)
+✔ JS: syntax observations do not claim runtime event, branch or value coverage (0.919552ms)
+✔ JS: bounds, invalid hashes, unsafe paths and duplicates are rejected (1.236952ms)
+✔ JS: malicious target program and package scripts are only parsed, not executed (1.007234ms)
+✔ Python manually specified sixteen-site synthetic reference: every site and exact target, no hidden denominator (59.396182ms)
+✔ Python direct aliases, explicit module imports, relative imports and recursive lexical targets (41.494162ms)
+✔ Python closures resolve unique nested defs and preserve shadowing, free references and parameters (35.205931ms)
+✔ Python conditional, duplicate and reassigned bindings never receive certain CALLS (38.067232ms)
+✔ Python unknown decorators, dynamic imports/getattr, monkey patches and higher-order functions stay uncertain (114.051858ms)
+✔ Python plain class direct methods resolved; constructors labeled binding only; instance/inherited dispatch uncertain (42.229465ms)
+✔ Python comprehension/exception/match/local binders shadow same-named functions (37.57006ms)
+✔ Python no sibling-method lookup, no name similarity lookup, no source-root guessing or external resolution (40.934241ms)
+✖ Python syntactic branch, loop, return and argument flow preserve exact scopes and disclose gaps (43.415625ms)
+✔ Python source identities deterministic, same-name scopes distinct, UTF-8 byte spans admitted (79.738083ms)
+✔ Python malformed source remains explicitly unsupported while other files still analyzed (32.4273ms)
+✔ Python never imports or executes source even when statements would write files (33.230973ms)
+✔ Python provider rejects mismatched content identity, duplicate paths and oversized files (103.138568ms)
+✔ runtime fixture is fixed and deterministic with no caller-supplied entrypoint (3.680485ms)
+✔ admissible fabricated records preserve exact call order and unknown Proof (1.114247ms)
+✔ reconciliation matches immutable identities and callsite, preserves unobserved relations (0.69381ms)
+✔ possible static target observed in one session retains its possible static meaning (0.319764ms)
+✔ dynamic target not resolved statically is kept distinct (0.333024ms)
+✔ same-line duplicate callsites and function identities cannot be guessed (0.334566ms)
+✔ mismatched snapshot, tree, repository, hash and node snapshot are rejected (2.283726ms)
+✔ trace cannot inject raw values in events or nested source references (0.743164ms)
+✔ malformed sequence, monotonic time, invocation, source path, oversized record rejected (3.835965ms)
+✔ synthetic examples and asserted Proof cannot enter observed reconciliation (0.377792ms)
+✔ exception event and return event do not claim a successful return value (0.378202ms)
+✔ cancelled qualification never launches a fixture and cleans temporary files (3.166192ms)
+✔ real isolation probe is explicit; no fixture execution is part of this test (5010.274009ms)
+ℹ {"status":"UNAVAILABLE","reason":"ISOLATION_TIMEOUT"}
+✔ definition on module first line is distinct from the module frame (0.483902ms)
+✔ completed session cannot omit final returns (0.292122ms)
+✔ end-to-end demo cancelled before isolation produces no graph or observation (0.939412ms)
+✔ deep boundary: only admitted immutable regular Git blobs, worktree changes ignored (46.811704ms)
+✔ deep boundary: excluded names and symlinks cannot be promoted by tampered scan rows (37.659672ms)
+✔ deep admission: wrong provenance, dangling targets and authority inflation are refused (41.517491ms)
+✔ deep worker boundary: output cap, timeout and cancellation stop the analyzer (162.162001ms)
+✔ deep server: disabled bytes stay exact; enabled reads do not start analysis and foreign writes fail (78.256271ms)
+ℹ tests 84
+ℹ suites 0
+ℹ pass 83
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12652.750743
+
+✖ failing tests:
+
+test at test/atlas-deep-python.test.mjs:71:1
+✖ Python syntactic branch, loop, return and argument flow preserve exact scopes and disclose gaps (43.415625ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(r.edges.some(e=>e.kind==='CONTROL_FLOW'&&e.authority==='POSSIBLE'))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/a9dbe8632828/idleproof/test/atlas-deep-python.test.mjs:75:65)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
