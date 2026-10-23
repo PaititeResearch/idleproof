@@ -83,6 +83,46 @@ if(browser){
         assert.equal((await api('graph')).graphDigest,digest,'Layout must not modify the semantic graph digest');
         assert.equal(requests.filter(r=>r.method==='POST').length,posts,'All layout operations must remain read-only');
       });
+      await check(`${width}: global all-relations overview keeps every returned link and groups by captured module`,async()=>{
+        const posts=requests.filter(r=>r.method==='POST').length;
+        const full=await api('graph',{view:'focused'});
+        assert.ok(full.nodes.length>=8&&full.edges.length>=8,'Global fixture needs diverse source relations');
+        assert.ok(full.edges.some(e=>!['CALLS','MAY_CALL'].includes(e.kind)),'Need more than call edges');
+        await page.locator('#view').selectOption('all');
+        await page.waitForFunction(()=>!document.getElementById('globalOverview').hidden&&document.getElementById('notice').textContent.includes('All relationships'));
+        const picture=()=>page.evaluate(()=>window.__deepLayout());
+        const initial=await picture();
+        assert.deepEqual(new Set(initial.nodes.map(n=>n.id)),new Set(full.nodes.map(n=>n.id)),'Every returned node appears in the global canvas');
+        assert.deepEqual(new Set(initial.edges.map(e=>e.from+'>'+e.to+':'+e.kind)),
+          new Set(full.edges.map(e=>e.from+'>'+e.to+':'+e.kind)),'Every original source relation is drawn');
+        assert.match(await page.locator('#globalStatus').innerText(),new RegExp(full.edges.length+' of '+full.edges.length+' captured relations'));
+        assert.ok(await page.locator('#globalModules button').count()>=3,'Module grouping navigator must exist');
+        const map=new Map(full.nodes.map(n=>[n.id,n]));
+        const clusters=new Map();for(const n of initial.nodes){const file=map.get(n.id)?.path||'unmapped';const ids=clusters.get(file)||[];ids.push(n);clusters.set(file,ids);}
+        assert.ok(clusters.size>=3,'Several source modules must be distinguishable');
+        for(const list of clusters.values())if(list.length>1)
+          assert.ok(Math.max(...list.map(n=>n.x))-Math.min(...list.map(n=>n.x))<=650,'Module source facts remain in a compact lane');
+        await page.locator('#globalModules button').first().click();
+        assert.match(await page.locator('#globalStatus').innerText(),/Spotlight:/);
+        await page.locator('#globalBright').click();
+        assert.equal(await page.locator('#globalBright').getAttribute('aria-pressed'),'true');
+        await page.locator('#globalReset').click();
+        assert.doesNotMatch(await page.locator('#globalStatus').innerText(),/Spotlight:/);
+        const calls=full.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind));
+        await page.locator('#globalKind').selectOption('calls');
+        assert.equal((await picture()).edges.length,calls.length,'Category filter only hides visual non-call relations');
+        assert.ok(await page.locator('#elementList button').count()>full.nodes.length,'All original relation entries remain inspectable');
+        await page.locator('#globalKind').selectOption('all');
+        assert.equal((await picture()).edges.length,full.edges.length,'All original links return on reset');
+        await page.locator('#fit').click();
+        assert.deepEqual((await picture()).nodes,initial.nodes,'Fit cannot mutate global graph coordinates');
+        await page.locator('#layout').click();
+        assert.deepEqual((await picture()).nodes,initial.nodes,'Arrange remains deterministic for module groups');
+        assert.equal((await api('graph',{view:'focused'})).graphDigest,full.graphDigest,'Global presentation never modifies the graph digest');
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'Global exploration never triggers network generation or scan mutation');
+        await page.locator('#view').selectOption('calls');
+        await page.waitForFunction(()=>document.getElementById('globalOverview').hidden&&document.getElementById('notice').textContent.includes('Function call graph'));
+      });
       await check(`${width}: Focused function requires a target and draws only direct callers/callees`,async()=>{
         const raw=await api('graph');
         const fn=raw.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process');
