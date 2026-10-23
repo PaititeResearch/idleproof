@@ -160,3 +160,51 @@ test('text colours meet WCAG AA and --faint is never used for text', () => {
   }
   assert.doesNotMatch(css, /(^|[^-\w])color:var\(--faint\)/);
 });
+
+test('a completed coding turn never implies native Proof acceptance', async () => {
+  const original = await demoState();
+  const changeId = 'dwchg_' + 'a'.repeat(24);
+  const base = { ...original,
+    session: { ...(original.session || {}), source:'codex', status:'complete',
+      proof: { changeId, diffSha256:'c'.repeat(64) } } };
+
+  for (const [status, expected] of [
+    ['blocked', /Proof was not accepted/],
+    ['terminal', /Proof was not accepted/],
+    ['unavailable', /Proof was not accepted/],
+    ['pending', /Proof is still being checked/],
+    ['unverified', /Verification is not confirmed/],
+    ['no-change', /Verification is not confirmed/],
+    ['not-configured', /Verification is not confirmed/]
+  ]) {
+    const state = structuredClone(base);
+    state.session.nativeStop = { status, changeId, reasonCode:'stable-fail' };
+    const ui = harness([state]);
+    await ui.settle();
+    assert.match(ui.get('headline').innerHTML, expected, status);
+    assert.equal(ui.get('proofId').textContent, 'not verified', status);
+    assert.doesNotMatch(ui.get('status').textContent, /Proof accepted/, status);
+  }
+
+  // Older cached states and a native Stop for a foreign exact change cannot be treated as verified.
+  for (const nativeStop of [null, {
+    status:'accepted', changeId:'dwchg_' + 'b'.repeat(24), certificateId:'dw2_abcdef123456'
+  }]) {
+    const state = structuredClone(base);
+    state.session.nativeStop = nativeStop;
+    const ui = harness([state]);
+    await ui.settle();
+    assert.match(ui.get('headline').innerHTML, /Verification is not confirmed/);
+    assert.equal(ui.get('proofId').textContent, 'not verified');
+  }
+
+  const verified = structuredClone(base);
+  verified.session.nativeStop = {
+    status:'accepted', changeId, certificateId:'dw2_abcdef123456'
+  };
+  const ui = harness([verified]);
+  await ui.settle();
+  assert.match(ui.get('headline').innerHTML, /DiffWitness accepted this change/);
+  assert.match(ui.get('status').textContent, /Proof accepted/);
+  assert.equal(ui.get('proofId').textContent, 'dw2_abcdef123456');
+});
