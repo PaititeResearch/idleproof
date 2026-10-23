@@ -412,21 +412,31 @@ function renderControlPlane(state) {
 function render(state) {
   const session = state.session; const active = session?.status === 'active'; const complete = session?.status === 'complete';
   const agentName = session?.source === 'codex' ? 'Codex' : session?.source === 'claude' ? 'Claude Code' : session?.source ? session.source : 'Agent';
+  // Observing a diff or finishing an IDE turn never establishes a DiffWitness Proof.
+  // Historical/unknown/mismatched Stop results are deliberately not upgraded to VERIFIED.
+  const nativeStop = complete && session?.nativeStop && session.nativeStop.changeId === (session.proof?.changeId || null) ? session.nativeStop : null;
+  const proven = nativeStop?.status === 'accepted' && typeof nativeStop.certificateId === 'string' &&
+    /^dw2_[a-z0-9]+$/.test(nativeStop.certificateId) && Boolean(nativeStop.changeId);
+  const refused = ['blocked', 'terminal', 'unavailable'].includes(nativeStop?.status);
+  const pending = nativeStop?.status === 'pending';
+  const proofLabel = proven ? 'Proof accepted' : refused ? 'Proof not accepted' : pending ? 'Proof checking' :
+    nativeStop?.status === 'no-change' ? 'No change to prove' :
+    nativeStop?.status === 'not-configured' ? 'Proof not configured' : 'Proof not confirmed';
   const learning = state.learning || {};
   $('project').textContent = state.project; $('debt').textContent = state.metrics.conceptsChecked ? state.metrics.debt : 'Not assessed'; $('coverage').textContent = state.metrics.conceptsChecked ? `${state.metrics.coverage}%` : 'Not assessed';
   $('coverage').nextElementSibling.textContent = `${state.metrics.conceptsChecked||0} checked / ${state.metrics.conceptsSeen||0} observed concepts`;
   document.body.classList.toggle('completed', complete); $('statusDot').classList.toggle('active', active);
-  $('status').textContent = active ? `${agentName} working · ${learning.paused ? 'learning snoozed' : 'live lesson ready'}` : complete ? `${agentName} turn complete · mental-model review ready` : 'Waiting for a coding agent';
-  $('window').textContent = active ? `≈ ${session.estimatedWindow || 20} sec learning window` : complete ? 'handoff review' : 'no learning window';
-  $('currentTool').textContent = session?.currentTool || (complete ? 'Task complete · review what changed' : 'No active tool');
-  $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : complete ? 'The code is ready.<br><em>Make sure the understanding is too.</em>' : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
+  $('status').textContent = active ? `${agentName} working · ${learning.paused ? 'learning snoozed' : 'live lesson ready'}` : complete ? `${agentName} turn complete · ${proofLabel}` : 'Waiting for a coding agent';
+  $('window').textContent = active ? `≈ ${session.estimatedWindow || 20} sec learning window` : complete ? 'handoff review · ' + proofLabel.toLowerCase() : 'no learning window';
+  $('currentTool').textContent = complete ? (proven ? `Native Proof accepted · ${nativeStop.certificateId}` : refused ? `Proof not accepted · ${nativeStop.reasonCode || 'see IDE handoff'}` : pending ? 'Native Proof is being checked' : 'Coding turn finished · verification not confirmed') : (session?.currentTool || 'No active tool');
+  $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : proven ? 'DiffWitness accepted this change.<br><em>Review the exact evidence.</em>' : refused ? 'The coding turn ended.<br><em>Proof was not accepted.</em>' : pending ? 'The coding turn ended.<br><em>Proof is still being checked.</em>' : complete ? 'The coding turn ended.<br><em>Verification is not confirmed.</em>' : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
   $('task').textContent = session?.prompt || 'Run `idleproof on`, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and feature understanding.';
   if (active && learning.file) $('currentTool').textContent = `${session.currentTool || 'Working'} · ${learning.file}`;
   renderControlPlane(state);
   // Feedback may pause its own card, never the rest of the live state or safety controls.
   if (!feedbackLock) renderLearning(state);
   if (!featureFeedbackLock) renderFeatureModel(state);
-  renderProjectModel(state); renderFiles(session); renderFindings(session); renderLedger(state.ledger); $('proofId').textContent = shortHash(session?.proof?.diffSha256, 20);
+  renderProjectModel(state); renderFiles(session); renderFindings(session); renderLedger(state.ledger); $('proofId').textContent = proven ? nativeStop.certificateId : 'not verified';
   markAssessed('runtimeRisk', 'featureFluency', 'debt', 'coverage', 'currentFeatureFluency', 'responsibilityCoverage', 'policyProfile', 'agentCount');
 }
 

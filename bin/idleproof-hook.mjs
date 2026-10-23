@@ -4,6 +4,7 @@ import { queueMatchingDiffWitnessAssurance } from '../src/ide-assurance.mjs';
 import { diffWitnessGateConfigured, diffWitnessRequiredFailure, runDiffWitnessIdeHook, stopAllowsCompletion } from '../src/diffwitness-bridge.mjs';
 import { readHookPayload } from '../src/hook-input.mjs';
 import { scheduleAutoDebt } from '../src/auto-debt.mjs';
+import { recordNativeStopStatus } from '../src/native-stop-status.mjs';
 
 function combinePromptOutput(idleOutput,diffOutput){
   if(!diffOutput)return idleOutput;
@@ -75,6 +76,12 @@ async function run() {
     }
     if(eventName==='Stop'){
       output=combineStopOutput(output,diffResult);
+      // An IDE turn may be finished while Proof was blocked, unavailable or not required.
+      // Persist the exact native result for Local without changing the provider's decision.
+      if (lifecycle) {
+        try { recordNativeStopStatus(cwd,event,lifecycle.completedIdentity,diffResult,output); }
+        catch { console.error('[idleproof-hook] Native Stop status could not be persisted; Local must not assume Proof passed.'); }
+      }
       const accepted=stopAllowsCompletion(output);
       queueAssurance(cwd,accepted?lifecycle?.completedIdentity??null:null);
       if(accepted) autoDebt();
