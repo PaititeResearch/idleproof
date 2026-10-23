@@ -65,27 +65,87 @@ function graphStyle(){return [
   {selector:':selected',style:{'border-width':3,'border-color':CSS('--accent'),'line-color':CSS('--accent'),'target-arrow-color':CSS('--accent')}}
 ];}
 const name=id=>graph?.nodes.find(n=>n.id===id)?.qualifiedName||graph?.nodes.find(n=>n.id===id)?.label||id;
+// UI layout only: group connected semantic facts into readable islands,
+// and pack unrelated islands into rows. No extracted graph data is changed.
+function arrangeDeepNodes(nodes,edges,canvasWidth){
+  const lookup=new Map(nodes.map(n=>[n.id,n])),adj=new Map(nodes.map(n=>[n.id,new Set()])),out=new Map(nodes.map(n=>[n.id,new Set()]));
+  const sortId=(a,b)=>String(lookup.get(a)?.qualifiedName||lookup.get(a)?.label||a).localeCompare(String(lookup.get(b)?.qualifiedName||lookup.get(b)?.label||b),'en')||a.localeCompare(b);
+  for(const e of edges){
+    if(!lookup.has(e.from)||!lookup.has(e.to)||e.from===e.to)continue;
+    adj.get(e.from).add(e.to);adj.get(e.to).add(e.from);out.get(e.from).add(e.to);
+  }
+  const groups=[],seen=new Set();
+  for(const seed of [...lookup.keys()].sort(sortId)){
+    if(seen.has(seed))continue;
+    const group=[],queue=[seed];seen.add(seed);
+    for(let i=0;i<queue.length;i++){
+      const id=queue[i];group.push(id);
+      for(const next of [...adj.get(id)].sort(sortId))if(!seen.has(next)){seen.add(next);queue.push(next);}
+    }
+    groups.push(group.sort(sortId));
+  }
+  groups.sort((a,b)=>b.length-a.length||sortId(a[0],b[0]));
+  const positions=new Map(),cellX=250,cellY=148,gapX=65,gapY=75;
+  // The working map may extend past the viewport; Fit remains an overview.
+  // Do not crush many graph labels just to fill a narrow inspector split-pane.
+  const shelfWidth=Math.max(825,Math.min(1370,canvasWidth*1.65));
+  let shelfX=0,shelfY=0,shelfHeight=0;
+  for(const group of groups){
+    const members=new Set(group),degree=new Map(group.map(id=>[id,0])),rank=new Map();
+    for(const from of group)for(const to of out.get(from))if(members.has(to))degree.set(to,degree.get(to)+1);
+    const ready=group.filter(id=>degree.get(id)===0).sort(sortId);
+    for(const id of ready)rank.set(id,0);
+    for(let i=0;i<ready.length;i++){
+      const from=ready[i];
+      for(const to of [...out.get(from)].filter(id=>members.has(id)).sort(sortId)){
+        rank.set(to,Math.max(rank.get(to)||0,(rank.get(from)||0)+1));
+        degree.set(to,degree.get(to)-1);
+        if(degree.get(to)===0)ready.push(to);
+      }
+    }
+    // Cycles are placed, not interpreted as proof of execution order.
+    for(const id of group)if(!rank.has(id))rank.set(id,0);
+    const layers=new Map();
+    for(const id of group){const depth=rank.get(id),list=layers.get(depth)||[];list.push(id);layers.set(depth,list);}
+    const widest=Math.max(...[...layers.values()].map(layer=>Math.min(4,layer.length)));
+    const width=widest*cellX,local=new Map();let height=0;
+    for(const depth of [...layers.keys()].sort((a,b)=>a-b)){
+      const layer=layers.get(depth).sort(sortId);
+      for(let i=0;i<layer.length;i++){
+        const row=Math.floor(i/4),count=Math.min(4,layer.length-row*4),column=i%4;
+        local.set(layer[i],{x:(width-count*cellX)/2+(column+.5)*cellX,y:height+(row+.5)*cellY});
+      }
+      height+=Math.ceil(layer.length/4)*cellY;
+    }
+    if(shelfX>0&&shelfX+width>shelfWidth){shelfY+=shelfHeight+gapY;shelfX=0;shelfHeight=0;}
+    for(const id of group){const p=local.get(id);positions.set(id,{x:shelfX+p.x,y:shelfY+p.y});}
+    shelfX+=width+gapX;shelfHeight=Math.max(shelfHeight,height);
+  }
+  return {positions,anchor:groups[0]?.[0]||null};
+}
 function draw({fit=true}={}){
   if(!graph)return;
   const view=$('view').value,runtime=['runtime','sequence'].includes(view);$('canvas').hidden=runtime;$('runtimeView').hidden=!runtime;
   const legends={calls:['— CALLS: statically resolved','┄ MAY_CALL: possible target','◇ UNKNOWN: target not established'],focused:['CALLS / MAY_CALL: static target status','Other labels: source-derived relations','No runtime execution established'],control:['Control relations: source-derived','Branch labels do not prove reachability','No runtime branch coverage'],data:['READS / WRITES: lexical dependencies','PASSES_ARGUMENT: explicit syntax','No observed values'],runtime:['Identified session events only','One scenario is not complete coverage'],sequence:['Recorded event order only','Static edges are not execution sequences']};
   document.querySelector('.legend').replaceChildren(...legends[view].map(text=>element('span',text)));
   if(runtime){cy?.destroy();cy=null;renderRuntime();return;}
-  const nodes=ARRAY(graph.nodes),edges=ARRAY(graph.edges),columns=$('canvas').clientWidth<600?1:4,elements=[];
-  for(let i=0;i<nodes.length;i++){const node=nodes[i];elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:{x:135+(i%columns)*260,y:90+Math.floor(i/columns)*150}});}
+  const nodes=ARRAY(graph.nodes),edges=ARRAY(graph.edges),layout=arrangeDeepNodes(nodes,edges,$('canvas').clientWidth),elements=[];
+  for(const node of nodes)elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:layout.positions.get(node.id)});
   for(const edge of edges)elements.push({group:'edges',data:{...edge,source:edge.from,target:edge.to,label:edge.kind+(edge.branch?' · '+edge.branch:'')}});
   const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;cy?.destroy();
   cy=window.cytoscape({container:$('canvas'),elements,style:graphStyle(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
   cy.on('tap','node,edge',event=>inspect(event.target.id()));
   if(fit){
     cy.fit(undefined,40);
-    // A tall single-column page must not become microscopic on initial display.
-    // Keep the full graph and existing zoom bounds; Fit remains an explicit overview.
-    if(columns===1&&cy.nodes().length&&cy.zoom()<1){
-      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):cy.nodes().first(),position=anchor.position();
-      cy.viewport({zoom:1,pan:{x:cy.width()/2-position.x,y:80-position.y}});
+    // Initial/Arrange favors legibility over a microscopic complete overview.
+    // Explicit Fit remains the user's full-map camera, without moving any node.
+    if(cy.nodes().length&&cy.zoom()<.9){
+      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):layout.anchor&&cy.$id(layout.anchor).length?cy.$id(layout.anchor):cy.nodes().first();
+      const position=anchor.position(),zoom=1;
+      cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:Math.min(110,cy.height()/4)-position.y*zoom}});
     }
   }else if(camera)cy.viewport(camera);
+  if(selected?.id&&cy.$id(selected.id).length)cy.$id(selected.id).select();
 }
 function renderRuntime(){
   const runtime=graph?.runtime||state?.runtime||{},sessions=ARRAY(runtime.sessions);

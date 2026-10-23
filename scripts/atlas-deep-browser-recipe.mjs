@@ -42,7 +42,7 @@ if(browser){
     page.on('request',r=>requests.push({url:r.url(),method:r.method(),body:r.postData()}));page.on('pageerror',e=>errors.push(e.message));
     // Read actual Cytoscape geometry in the browser; no production debug API.
     const js=fs.readFileSync(new URL('../public/atlas-deep.js',import.meta.url),'utf8');
-    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;'}));
+    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;\nwindow.__deepLayout=()=>cy?({nodes:cy.nodes().map(n=>({id:n.id(),x:n.position("x"),y:n.position("y")})),edges:cy.edges().map(e=>({from:e.source().id(),to:e.target().id()}))}):null;'}));
     const api=async(action='status',extra={})=>page.evaluate(async ({action,extra})=>await (await fetch('/api/atlas-deep?'+new URLSearchParams({action,source:'HEAD',...extra}))).json(),{action,extra});
     try{
       await page.goto(app.url+'/atlas-deep.html');await page.waitForFunction(()=>!document.getElementById('analyze').disabled);
@@ -54,6 +54,33 @@ if(browser){
       await check(`${width}: explicit analysis produces real captured semantic graph and preserves unknown targets`,async()=>{
         const g=await api('graph');assert.equal(g.status,'READY');assert.ok(g.edges.some(e=>e.kind==='CALLS'));assert.ok(g.callSites.some(c=>c.status==='UNKNOWN'));assert.ok(g.callSites.some(c=>c.status==='RESOLVED'));assert.ok(await page.locator('#canvas canvas').count());assert.equal(fs.existsSync(path.join(f.cwd,'MUST_NOT_EXECUTE')),false);
         assert.equal(requests.filter(r=>r.method==='POST'&&r.body?.includes('"analyze"')).length,1);assert.ok(await page.locator('#callSites [data-state=UNKNOWN]').count());
+      });
+      await check(`${width}: Deep layout arranges linked islands, and Fit/Arrange preserve facts and positions`,async()=>{
+        const read=()=>page.evaluate(()=>window.__deepLayout());
+        const before=await read();assert.ok(before?.nodes.length>=4,'Expected synthetic semantic nodes');
+        assert.ok(new Set(before.nodes.map(n=>Math.round(n.x))).size>=2,'Graph must not stack all nodes in one vertical column');
+        assert.ok(new Set(before.nodes.map(n=>Math.round(n.y))).size>=2,'Graph must expose more than one readable row');
+        const byId=new Map(before.nodes.map(n=>[n.id,n]));
+        for(const e of before.edges){
+          const a=byId.get(e.from),b=byId.get(e.to);assert.ok(a&&b);
+          assert.ok(Math.hypot(a.x-b.x,a.y-b.y)<1000,'Linked nodes must share a local island: '+e.from+' -> '+e.to);
+        }
+        const digest=(await api('graph')).graphDigest,posts=requests.filter(r=>r.method==='POST').length;
+        await page.locator('#fit').click();
+        assert.deepEqual((await read()).nodes,before.nodes,'Fit must not change graph facts or coordinates');
+        await page.locator('#layout').click();
+        assert.deepEqual((await read()).nodes,before.nodes,'Arrange must reproduce stable coordinates');
+        // Reproduce an operator-reported flaw: disconnected module/callsite facts
+        // in a narrow split-pane formerly formed a long vertical column.
+        await page.locator('#query').fill('danger.py');
+        await page.locator('#search').click();
+        await page.waitForFunction(total=>window.__deepLayout()?.nodes.length<total,before.nodes.length);
+        const filtered=await read();assert.ok(filtered.nodes.length>=2,'Expected multiple facts in filtered file');
+        assert.ok(new Set(filtered.nodes.map(n=>Math.round(n.x))).size>=2,'Filtered islands must not stack vertically');
+        await page.locator('#query').fill('');await page.locator('#search').click();
+        await page.waitForFunction(total=>window.__deepLayout()?.nodes.length===total,before.nodes.length);
+        assert.equal((await api('graph')).graphDigest,digest,'Layout must not modify the semantic graph digest');
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'All layout operations must remain read-only');
       });
       await check(`${width}: function inspector provides incoming/outgoing, resolution and exact source`,async()=>{
         const g=await api('graph'),fn=g.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process'||n.label==='process');assert.ok(fn,'service.process is present');
