@@ -4,6 +4,7 @@ import { queueMatchingDiffWitnessAssurance } from '../src/ide-assurance.mjs';
 import { diffWitnessGateConfigured, diffWitnessRequiredFailure, runDiffWitnessIdeHook, stopAllowsCompletion } from '../src/diffwitness-bridge.mjs';
 import { readHookPayload } from '../src/hook-input.mjs';
 import { scheduleAutoDebt } from '../src/auto-debt.mjs';
+import { recordNativeStopStatus } from '../src/native-stop-status.mjs';
 
 function combinePromptOutput(idleOutput,diffOutput){
   if(!diffOutput)return idleOutput;
