@@ -110,8 +110,13 @@ if(browser){
           const result=await page.evaluate(async()=>await (await fetch('/api/atlas-deep?action=status&source=HEAD')).json());
           assert.equal(result.status,'IDLE');
           assert.equal(requests.some(r=>r.method==='POST'&&r.url.includes('atlas-deep')),false);
-          const embedded=await page.evaluate(async()=>await fetch('/atlas-deep.html?embedded=1'));
-          assert.equal(embedded.headers.get('x-frame-options'),'SAMEORIGIN');
+          const embedded=await page.evaluate(async()=>{
+            const r=await fetch('/atlas-deep.html?embedded=1');
+            return {status:r.status,xfo:r.headers.get('x-frame-options'),csp:r.headers.get('content-security-policy')};
+          });
+          assert.equal(embedded.status,200);
+          assert.equal(embedded.xfo,'SAMEORIGIN');
+          assert.match(embedded.csp,/frame-ancestors 'self'/);
         });
         await ui().locator('#analyze').click();
         await page.waitForFunction(()=>document.getElementById('atlasUnifiedDeepFrame')?.contentDocument?.querySelector('#notice')?.textContent.includes('Analysis loaded'),{},{timeout:90000});
