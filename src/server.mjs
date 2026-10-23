@@ -169,12 +169,22 @@ async function serveStatic(req, res, experimentalAtlas = false, experimentalAtla
       data = injectAtlasSection(data.toString('utf8'));
     }
     if (experimentalAtlasDeep && file === path.join(publicRoot, 'atlas.html')) {
-      data = data.toString('utf8').replace('<footer>', '<footer><a href="/atlas-deep.html" target="_blank" rel="noopener">Open experimental Deep Understanding ↗</a> · ');
+      // Unify the user-facing workspace only when both experimental engines are
+      // enabled. Disabled-mode V1 continues serving byte-for-byte unchanged.
+      const {injectUnifiedAtlas}=await import('./atlas-unified.mjs');
+      data=injectUnifiedAtlas(data.toString('utf8'));
     }
-    // Only this opt-in Atlas document may be framed by this same Local origin.
-    // The cockpit, standalone Atlas and all APIs retain DENY / frame-ancestors none.
-    if (experimentalAtlas && url.pathname === '/atlas.html' && url.searchParams.get('embedded') === '1') {
-      headers = {...SECURITY_HEADERS, 'x-frame-options':'SAMEORIGIN',
+    if (experimentalAtlasDeep && url.pathname === '/atlas-deep.html' && url.searchParams.get('embedded') === '1') {
+      // The internal read-only Deep frame is a SAME-ORIGIN Atlas subview;
+      // standalone Deep still denies framing and keeps its original HTML.
+      const {injectEmbeddedDeep}=await import('./atlas-unified.mjs');
+      data=injectEmbeddedDeep(data.toString('utf8'));
+    }
+    const embeddedAtlas=experimentalAtlas && url.pathname === '/atlas.html' && url.searchParams.get('embedded') === '1';
+    const embeddedDeep=experimentalAtlasDeep && url.pathname === '/atlas-deep.html' && url.searchParams.get('embedded') === '1';
+    // Never relax the cockpit, arbitrary assets or API framing boundary.
+    if (embeddedAtlas||embeddedDeep) {
+      headers={...SECURITY_HEADERS, 'x-frame-options':'SAMEORIGIN',
         'content-security-policy':SECURITY_HEADERS['content-security-policy'].replace("frame-ancestors 'none'", "frame-ancestors 'self'")};
     }
     res.writeHead(200, { ...headers, 'content-type':mime(file), 'cache-control':'no-cache' }); res.end(data);
@@ -203,7 +213,8 @@ export function createServer({ cwd = process.cwd(), port = DEFAULT_PORT, experim
       if (!boundary.ok) return json(res, boundary.status, { error:boundary.error });
       const url = new URL(req.url, 'http://127.0.0.1');
       const paths = projectPaths(cwd);
-      if (url.pathname.startsWith('/atlas-deep.') && !experimentalAtlasDeep) return json(res,404,{error:'Experimental deep understanding is disabled.'});
+      if ((url.pathname.startsWith('/atlas-deep.')||url.pathname.startsWith('/atlas-unified')) && !experimentalAtlasDeep)
+        return json(res,404,{error:'Experimental deep understanding is disabled.'});
       if (url.pathname === '/api/atlas-deep') {
         if (!experimentalAtlasDeep) return json(res,404,{error:'Experimental deep understanding is disabled.'});
         const {atlasDeepApi,deepErrorStatus,cancelAtlasDeep}=await import('./atlas-deep-api.mjs');

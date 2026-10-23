@@ -74,9 +74,11 @@ jobs:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/deep-browser/node_modules/playwright/index.mjs
           ATLAS_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas
           ATLAS_DEEP_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas-deep/browser
+          ATLAS_UNIFIED_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas-unified/browser
         run: |
           node scripts/atlas-browser-recipe.mjs
           node scripts/atlas-deep-browser-recipe.mjs
+          node scripts/atlas-unified-browser-recipe.mjs
       - name: Report isolated runtime fixture availability and observation
         shell: bash
         run: |
