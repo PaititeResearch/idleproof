@@ -249,6 +249,11 @@ export function processHookLifecycle(event = {}, { deferAutoDebt = false } = {})
         capturedAt: now(),
         changeId: session.changeIdentity?.available ? session.changeIdentity.changeId : null
       };
+      // This is an unverified transition: the native Core Stop has not run yet.
+      // Preserve prior verdicts for historical changes, but never carry them to this boundary.
+      if (deferAutoDebt && eventName === 'Stop') {
+        session.nativeStop = { status: 'pending', changeId: session.proof.changeId, checkedAt: null };
+      }
       session.findings = analyzeDiff(snapshot.diff);
       session.status = 'complete';
       session.currentTool = null;
