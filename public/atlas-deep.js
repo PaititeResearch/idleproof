@@ -121,7 +121,7 @@ function arrangeDeepNodes(nodes,edges,canvasWidth){
     for(const id of group){const p=local.get(id);positions.set(id,{x:shelfX+p.x,y:shelfY+p.y});}
     shelfX+=width+gapX;shelfHeight=Math.max(shelfHeight,height);
   }
-  return {positions,anchor:groups[0]?.[0]||null};
+  return {positions};
 }
 function draw({fit=true}={}){
   if(!graph)return;
@@ -130,7 +130,13 @@ function draw({fit=true}={}){
   document.querySelector('.legend').replaceChildren(...legends[view].map(text=>element('span',text)));
   if(runtime){cy?.destroy();cy=null;renderRuntime();return;}
   const nodes=ARRAY(graph.nodes),edges=ARRAY(graph.edges),layout=arrangeDeepNodes(nodes,edges,$('canvas').clientWidth),elements=[];
-  for(const node of nodes)elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:layout.positions.get(node.id)});
+  // Cytoscape's first element is the initial readable anchor on narrow screens.
+  // Render in visual reading order without reordering the semantic response.
+  const ordered=[...nodes].sort((a,b)=>{
+    const left=layout.positions.get(a.id),right=layout.positions.get(b.id);
+    return left.y-right.y||left.x-right.x||a.id.localeCompare(b.id);
+  });
+  for(const node of ordered)elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:layout.positions.get(node.id)});
   for(const edge of edges)elements.push({group:'edges',data:{...edge,source:edge.from,target:edge.to,label:edge.kind+(edge.branch?' · '+edge.branch:'')}});
   const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;cy?.destroy();
   cy=window.cytoscape({container:$('canvas'),elements,style:graphStyle(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
@@ -140,7 +146,7 @@ function draw({fit=true}={}){
     // Initial/Arrange favors legibility over a microscopic complete overview.
     // Explicit Fit remains the user's full-map camera, without moving any node.
     if(cy.nodes().length&&cy.zoom()<.9){
-      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):layout.anchor&&cy.$id(layout.anchor).length?cy.$id(layout.anchor):cy.nodes().first();
+      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):cy.nodes().first();
       const position=anchor.position(),zoom=1;
       cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:Math.min(110,cy.height()/4)-position.y*zoom}});
     }
