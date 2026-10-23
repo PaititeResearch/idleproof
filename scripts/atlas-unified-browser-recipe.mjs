@@ -162,6 +162,33 @@ if(browser){
           assert.equal(requests.some(r=>!r.url.startsWith(url)),false);
           assert.equal(requests.some(r=>r.method==='POST'&&!r.url.includes('/api/atlas')),false);
         });
+        await check(width+': single Atlas works when nested inside IdleProof Local',async()=>{
+          const cockpit=await context.newPage(),other=[];
+          cockpit.on('pageerror',e=>other.push(e.message));
+          try{
+            await cockpit.goto(url+'/');
+            await cockpit.locator('#atlasSectionOpen').click();
+            const workspace=cockpit.frameLocator('#atlasSectionFrame');
+            await workspace.locator('#atlasUnifiedStructureTab').waitFor({state:'visible'});
+            assert.match(await workspace.locator('#revision').innerText(),/User revision 1/);
+            const notes=await cockpit.evaluate(async()=>{
+              const result=await fetch('/api/atlas?source=HEAD');
+              return (await result.json()).overlay.notes;
+            });
+            assert.equal(notes[0].text,phrase);
+            await workspace.locator('#atlasUnifiedDeepTab').click();
+            const nestedDeep=workspace.frameLocator('#atlasUnifiedDeepFrame');
+            await nestedDeep.locator('#analyze').waitFor({state:'visible'});
+            assert.equal(await nestedDeep.locator('.mast').isHidden(),true);
+            assert.match(await workspace.locator('#atlasUnifiedStatus').innerText(),/Deep understanding is read-only/);
+            await workspace.locator('#atlasUnifiedStructureTab').click();
+            assert.match(await workspace.locator('#revision').innerText(),/User revision 1/);
+            await cockpit.locator('#atlasSectionClose').click();
+            await cockpit.locator('#atlasSectionOpen').click();
+            assert.equal(await workspace.locator('#atlasUnifiedStructure').isVisible(),true);
+            assert.deepEqual(other,[]);
+          }finally{await cockpit.close();}
+        });
         await page.screenshot({path:path.join(dest,'atlas-unified-'+width+'.png'),fullPage:true});
       }catch(e){
         checks.push({name:width+': unified recipe setup or prerequisite',status:'FAIL',error:e.stack});
