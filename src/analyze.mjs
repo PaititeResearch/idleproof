@@ -294,6 +294,8 @@ export function publicSession(session) {
     touchedFiles: session.touchedFiles || [],
     changed: session.changed || { added: 0, deleted: 0 },
     proof: session.proof || null,
+    // Local diff hashes are observations, not accepted Proof. Native Stop is recorded separately.
+    nativeStop: session.nativeStop?.changeId === (session.proof?.changeId || null) ? session.nativeStop : null,
     findings: session.findings || [],
     concepts: session.concepts || {},
     events: (session.events || []).slice(-20)
