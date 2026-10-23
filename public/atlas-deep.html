@@ -12,12 +12,26 @@
 </section>
 <section class="tools" aria-label="Analysis view controls">
 <label>Capture<select id="source"><option value="HEAD">Committed snapshot</option><option value="WORKTREE">Working-tree snapshot</option></select></label>
-<label>View<select id="view"><option value="calls">Function call graph</option><option value="focused">Focused function</option><option value="control">Control flow</option><option value="data">Data flow</option><option value="runtime">Runtime trace</option><option value="sequence">Observed sequence</option></select></label>
+<label>View<select id="view"><option value="calls">Function call graph</option><option value="all">All relationships · global</option><option value="focused">Focused function</option><option value="control">Control flow</option><option value="data">Data flow</option><option value="runtime">Runtime trace</option><option value="sequence">Observed sequence</option></select></label>
 <label class="search">Find in analysis<input id="query" type="search" maxlength="200" placeholder="Path or function…"></label><button id="search" type="button">Find</button>
 </section>
 <div class="workspace">
 <section class="map-panel" aria-label="Read-only semantic graph">
 <div class="map-toolbar"><div><button id="fit" type="button">Fit</button><button id="layout" type="button">Arrange</button><button id="whole" type="button">Clear focus</button><button id="zoomOut" type="button" aria-label="Zoom out">−</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button></div><span class="read-only">Read-only analysis · no user-model changes</span></div>
+<section id="globalOverview" class="global-overview" aria-label="All captured relationships controls" hidden>
+<div class="global-overview-tools"><strong>All captured relationships</strong><label>Show link types <select id="globalKind">
+<option value="all">All relation types</option><option value="calls">CALLS / MAY_CALL</option>
+<option value="control">Control / branches</option><option value="data">Data dependencies</option>
+<option value="structure">Definitions / imports / other</option>
+</select></label><button id="globalBright" type="button" aria-pressed="false">Emphasize all links</button><button id="globalReset" type="button">Clear spotlight</button></div>
+<p id="globalStatus" role="status" aria-live="polite">Module grouping changes only the presentation. All admitted relations remain in the evidence list.</p>
+<div id="globalModules" class="global-modules" aria-label="Spotlight a module"></div>
+</section>
+<section id="focusChooser" class="focus-chooser" aria-label="Choose a function to focus" hidden>
+<h2>Choose a function to focus</h2><p>This view needs a central function. Select one of the captured functions below, or use <strong>Find in analysis</strong> to narrow the list. No full-project diagram or runtime execution starts here.</p>
+<p id="focusChooserCount" class="focus-chooser-count"></p><div id="focusCandidates" class="focus-candidates"></div>
+</section>
+<p id="focusStatus" class="focus-status" role="status" aria-live="polite" hidden></p>
 <div id="canvas" role="img" aria-label="Semantic diagram. Use the accessible element and relation list below to inspect with a keyboard." tabindex="0"></div>
 <div id="runtimeView" hidden><h2 id="runtimeTitle">Runtime observations</h2><p id="runtimeStatus">No runtime session loaded.</p><div class="surface"><h3>Isolated synthetic example</h3><p>This separate, built-in example is not your repository. It executes only after the isolation checks succeed. No network, credentials, argument values or returned values are collected. Opening this view never runs it.</p><button id="runtimeDemo" type="button">Run isolated synthetic example</button><p id="runtimeDemoStatus" role="status" aria-live="polite">Not requested.</p></div><ol id="runtimeEvents"></ol><pre id="reconciliation" hidden tabindex="0"></pre></div>
 <div class="legend"><span>— CALLS: statically resolved</span><span>┄ MAY_CALL: possible target</span><span>◇ UNKNOWN: target not established</span></div>

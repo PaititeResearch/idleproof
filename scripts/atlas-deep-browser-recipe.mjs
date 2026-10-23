@@ -18,6 +18,7 @@ function fixture(){
   const contents={
     'rules.py':'def adjusted(value):\n    if value >= 100:\n        return value * 0.9\n    return value\n',
     'service.py':'from rules import adjusted as apply\ndef process(value):\n    result = apply(value)\n    return result\ndef dispatch(callback, value):\n    return callback(value)\n',
+    'controller.py':'from service import process\ndef handle(value):\n    return process(value)\n',
     'danger.py':'from pathlib import Path\nPath("MUST_NOT_EXECUTE").write_text("bad")\n',
     'settings.json':'{"threshold": 100, "label": "<img src=x onerror=alert(1)>"}\n'
   };
@@ -42,7 +43,7 @@ if(browser){
     page.on('request',r=>requests.push({url:r.url(),method:r.method(),body:r.postData()}));page.on('pageerror',e=>errors.push(e.message));
     // Read actual Cytoscape geometry in the browser; no production debug API.
     const js=fs.readFileSync(new URL('../public/atlas-deep.js',import.meta.url),'utf8');
-    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;'}));
+    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;\nwindow.__deepLayout=()=>cy?({nodes:cy.nodes().map(n=>({id:n.id(),x:n.position("x"),y:n.position("y")})),edges:cy.edges().map(e=>({from:e.source().id(),to:e.target().id(),kind:e.data("kind")}))}):null;'}));
     const api=async(action='status',extra={})=>page.evaluate(async ({action,extra})=>await (await fetch('/api/atlas-deep?'+new URLSearchParams({action,source:'HEAD',...extra}))).json(),{action,extra});
     try{
       await page.goto(app.url+'/atlas-deep.html');await page.waitForFunction(()=>!document.getElementById('analyze').disabled);
@@ -54,6 +55,120 @@ if(browser){
       await check(`${width}: explicit analysis produces real captured semantic graph and preserves unknown targets`,async()=>{
         const g=await api('graph');assert.equal(g.status,'READY');assert.ok(g.edges.some(e=>e.kind==='CALLS'));assert.ok(g.callSites.some(c=>c.status==='UNKNOWN'));assert.ok(g.callSites.some(c=>c.status==='RESOLVED'));assert.ok(await page.locator('#canvas canvas').count());assert.equal(fs.existsSync(path.join(f.cwd,'MUST_NOT_EXECUTE')),false);
         assert.equal(requests.filter(r=>r.method==='POST'&&r.body?.includes('"analyze"')).length,1);assert.ok(await page.locator('#callSites [data-state=UNKNOWN]').count());
+      });
+      await check(`${width}: Deep layout arranges linked islands, and Fit/Arrange preserve facts and positions`,async()=>{
+        const read=()=>page.evaluate(()=>window.__deepLayout());
+        const before=await read();assert.ok(before?.nodes.length>=4,'Expected synthetic semantic nodes');
+        assert.ok(new Set(before.nodes.map(n=>Math.round(n.x))).size>=2,'Graph must not stack all nodes in one vertical column');
+        assert.ok(new Set(before.nodes.map(n=>Math.round(n.y))).size>=2,'Graph must expose more than one readable row');
+        const byId=new Map(before.nodes.map(n=>[n.id,n]));
+        for(const e of before.edges){
+          const a=byId.get(e.from),b=byId.get(e.to);assert.ok(a&&b);
+          assert.ok(Math.hypot(a.x-b.x,a.y-b.y)<1000,'Linked nodes must share a local island: '+e.from+' -> '+e.to);
+        }
+        const digest=(await api('graph')).graphDigest,posts=requests.filter(r=>r.method==='POST').length;
+        await page.locator('#fit').click();
+        assert.deepEqual((await read()).nodes,before.nodes,'Fit must not change graph facts or coordinates');
+        await page.locator('#layout').click();
+        assert.deepEqual((await read()).nodes,before.nodes,'Arrange must reproduce stable coordinates');
+        // Reproduce an operator-reported flaw: disconnected module/callsite facts
+        // in a narrow split-pane formerly formed a long vertical column.
+        await page.locator('#query').fill('danger.py');
+        await page.locator('#search').click();
+        await page.waitForFunction(total=>window.__deepLayout()?.nodes.length<total,before.nodes.length);
+        const filtered=await read();assert.ok(filtered.nodes.length>=2,'Expected multiple facts in filtered file');
+        assert.ok(new Set(filtered.nodes.map(n=>Math.round(n.x))).size>=2,'Filtered islands must not stack vertically');
+        await page.locator('#query').fill('');await page.locator('#search').click();
+        await page.waitForFunction(total=>window.__deepLayout()?.nodes.length===total,before.nodes.length);
+        assert.equal((await api('graph')).graphDigest,digest,'Layout must not modify the semantic graph digest');
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'All layout operations must remain read-only');
+      });
+      await check(`${width}: global all-relations overview keeps every returned link and groups by captured module`,async()=>{
+        const posts=requests.filter(r=>r.method==='POST').length;
+        const full=await api('graph',{view:'focused'});
+        assert.ok(full.nodes.length>=8&&full.edges.length>=8,'Global fixture needs diverse source relations');
+        assert.ok(full.edges.some(e=>!['CALLS','MAY_CALL'].includes(e.kind)),'Need more than call edges');
+        await page.locator('#view').selectOption('all');
+        await page.waitForFunction(()=>!document.getElementById('globalOverview').hidden&&document.getElementById('notice').textContent.includes('All relationships'));
+        const picture=()=>page.evaluate(()=>window.__deepLayout());
+        const initial=await picture();
+        assert.deepEqual(new Set(initial.nodes.map(n=>n.id)),new Set(full.nodes.map(n=>n.id)),'Every returned node appears in the global canvas');
+        assert.deepEqual(new Set(initial.edges.map(e=>e.from+'>'+e.to+':'+e.kind)),
+          new Set(full.edges.map(e=>e.from+'>'+e.to+':'+e.kind)),'Every original source relation is drawn');
+        assert.match(await page.locator('#globalStatus').innerText(),new RegExp(full.edges.length+' of '+full.edges.length+' captured relations'));
+        assert.ok(await page.locator('#globalModules button').count()>=3,'Module grouping navigator must exist');
+        const map=new Map(full.nodes.map(n=>[n.id,n]));
+        const clusters=new Map();for(const n of initial.nodes){const file=map.get(n.id)?.path||'unmapped';const ids=clusters.get(file)||[];ids.push(n);clusters.set(file,ids);}
+        assert.ok(clusters.size>=3,'Several source modules must be distinguishable');
+        for(const list of clusters.values())if(list.length>1)
+          assert.ok(Math.max(...list.map(n=>n.x))-Math.min(...list.map(n=>n.x))<=650,'Module source facts remain in a compact lane');
+        await page.locator('#globalModules button').first().click();
+        assert.match(await page.locator('#globalStatus').innerText(),/Spotlight:/);
+        await page.locator('#globalBright').click();
+        assert.equal(await page.locator('#globalBright').getAttribute('aria-pressed'),'true');
+        await page.locator('#globalReset').click();
+        assert.doesNotMatch(await page.locator('#globalStatus').innerText(),/Spotlight:/);
+        const calls=full.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind));
+        await page.locator('#globalKind').selectOption('calls');
+        assert.equal((await picture()).edges.length,calls.length,'Category filter only hides visual non-call relations');
+        assert.ok(await page.locator('#elementList button').count()>full.nodes.length,'All original relation entries remain inspectable');
+        await page.locator('#globalKind').selectOption('all');
+        assert.equal((await picture()).edges.length,full.edges.length,'All original links return on reset');
+        await page.locator('#fit').click();
+        assert.deepEqual((await picture()).nodes,initial.nodes,'Fit cannot mutate global graph coordinates');
+        await page.locator('#layout').click();
+        assert.deepEqual((await picture()).nodes,initial.nodes,'Arrange remains deterministic for module groups');
+        assert.equal((await api('graph',{view:'focused'})).graphDigest,full.graphDigest,'Global presentation never modifies the graph digest');
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'Global exploration never triggers network generation or scan mutation');
+        await page.locator('#view').selectOption('calls');
+        await page.waitForFunction(()=>document.getElementById('globalOverview').hidden&&document.getElementById('notice').textContent.includes('Function call graph'));
+      });
+      await check(`${width}: Focused function requires a target and draws only direct callers/callees`,async()=>{
+        const raw=await api('graph');
+        const fn=raw.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process');
+        assert.ok(fn,'Expected captured service.process for focus');
+        const posts=requests.filter(r=>r.method==='POST').length;
+        await page.locator('#view').selectOption('focused');
+        await page.waitForFunction(()=>!document.getElementById('focusChooser').hidden);
+        assert.equal(await page.locator('#canvas').isHidden(),true,'No full-graph spaghetti before selecting a function');
+        assert.ok(await page.locator('#focusCandidates button').count(),'Accessible chooser must have captured functions');
+        assert.match(await page.locator('#focusChooser').innerText(),/Choose a function to focus/);
+        await page.locator('#query').fill('process');await page.locator('#search').click();
+        await page.waitForFunction(()=>[...document.querySelectorAll('#focusCandidates button')].some(n=>n.textContent.includes('service.process')));
+        await page.locator('#focusCandidates button').filter({hasText:'service.process'}).first().click();
+        await page.waitForFunction(()=>!document.getElementById('focusStatus').hidden && document.getElementById('focusStatus').textContent.includes('service.process'));
+        assert.equal(await page.locator('#view').inputValue(),'focused');
+        assert.equal(await page.locator('#query').inputValue(),'','Previous Find must not silently erase focused neighbors');
+        const details=await api('graph',{view:'focused',focus:fn.id});
+        assert.equal(details.graphDigest,raw.graphDigest,'Focus must preserve analyzed graph identity');
+        const expected=details.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind)&&(e.from===fn.id||e.to===fn.id));
+        const rendered=await page.evaluate(()=>window.__deepLayout());
+        assert.equal(rendered.edges.length,expected.length,'Only direct graph call relations are drawn');
+        assert.ok(rendered.nodes.length<=details.nodes.length,'Focused canvas cannot add fake nodes');
+        assert.ok(rendered.nodes.some(n=>n.id===fn.id),'Selected function remains in the visual graph');
+        const points=new Map(rendered.nodes.map(n=>[n.id,n]));
+        const center=points.get(fn.id);
+        let incoming=0,outgoing=0;
+        for(const e of rendered.edges){
+          assert.ok(['CALLS','MAY_CALL'].includes(e.kind),'No source-structure spaghetti on focused canvas');
+          assert.ok(e.from===fn.id||e.to===fn.id,'Only chosen function one-hop calls can be drawn');
+          if(e.to===fn.id&&e.from!==fn.id){incoming++;assert.ok(points.get(e.from).x<center.x,'Caller belongs on the left');}
+          if(e.from===fn.id&&e.to!==fn.id){outgoing++;assert.ok(points.get(e.to).x>center.x,'Callee belongs on the right');}
+        }
+        assert.ok(incoming>0&&outgoing>0,'Fixture must qualify both incoming and outgoing call lanes');
+        assert.match(await page.locator('#focusStatus').innerText(),/other captured relations remain in the accessible list/);
+        assert.ok(await page.locator('#elementList button').count()>rendered.nodes.length,'Nonvisual evidence must remain inspectable');
+        await page.locator('#fit').click();
+        assert.deepEqual((await page.evaluate(()=>window.__deepLayout())).nodes,rendered.nodes,'Fit does not change semantics or focused positions');
+        await page.locator('#layout').click();
+        assert.deepEqual((await page.evaluate(()=>window.__deepLayout())).nodes,rendered.nodes,'Arrange remains deterministic');
+        await page.locator('#query').fill('rules');await page.locator('#search').click();
+        await page.waitForFunction(()=>!document.getElementById('focusChooser').hidden);
+        assert.equal(await page.locator('#canvas').isHidden(),true,'Find chooses a new focus rather than filtering out relations');
+        await page.locator('#query').fill('');
+        await page.locator('#view').selectOption('calls');
+        await page.waitForFunction(()=>document.getElementById('canvas').hidden===false&&document.getElementById('notice').textContent.includes('Function call graph'));
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'Focused UI never starts analysis or paid work');
       });
       await check(`${width}: function inspector provides incoming/outgoing, resolution and exact source`,async()=>{
         const g=await api('graph'),fn=g.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process'||n.label==='process');assert.ok(fn,'service.process is present');
