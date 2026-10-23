@@ -18,6 +18,11 @@
 <div class="workspace">
 <section class="map-panel" aria-label="Read-only semantic graph">
 <div class="map-toolbar"><div><button id="fit" type="button">Fit</button><button id="layout" type="button">Arrange</button><button id="whole" type="button">Clear focus</button><button id="zoomOut" type="button" aria-label="Zoom out">−</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button></div><span class="read-only">Read-only analysis · no user-model changes</span></div>
+<section id="focusChooser" class="focus-chooser" aria-label="Choose a function to focus" hidden>
+<h2>Choose a function to focus</h2><p>This view needs a central function. Select one of the captured functions below, or use <strong>Find in analysis</strong> to narrow the list. No full-project diagram or runtime execution starts here.</p>
+<p id="focusChooserCount" class="focus-chooser-count"></p><div id="focusCandidates" class="focus-candidates"></div>
+</section>
+<p id="focusStatus" class="focus-status" role="status" aria-live="polite" hidden></p>
 <div id="canvas" role="img" aria-label="Semantic diagram. Use the accessible element and relation list below to inspect with a keyboard." tabindex="0"></div>
 <div id="runtimeView" hidden><h2 id="runtimeTitle">Runtime observations</h2><p id="runtimeStatus">No runtime session loaded.</p><div class="surface"><h3>Isolated synthetic example</h3><p>This separate, built-in example is not your repository. It executes only after the isolation checks succeed. No network, credentials, argument values or returned values are collected. Opening this view never runs it.</p><button id="runtimeDemo" type="button">Run isolated synthetic example</button><p id="runtimeDemoStatus" role="status" aria-live="polite">Not requested.</p></div><ol id="runtimeEvents"></ol><pre id="reconciliation" hidden tabindex="0"></pre></div>
 <div class="legend"><span>— CALLS: statically resolved</span><span>┄ MAY_CALL: possible target</span><span>◇ UNKNOWN: target not established</span></div>

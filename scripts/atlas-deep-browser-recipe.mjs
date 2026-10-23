@@ -18,6 +18,7 @@ function fixture(){
   const contents={
     'rules.py':'def adjusted(value):\n    if value >= 100:\n        return value * 0.9\n    return value\n',
     'service.py':'from rules import adjusted as apply\ndef process(value):\n    result = apply(value)\n    return result\ndef dispatch(callback, value):\n    return callback(value)\n',
+    'controller.py':'from service import process\ndef handle(value):\n    return process(value)\n',
     'danger.py':'from pathlib import Path\nPath("MUST_NOT_EXECUTE").write_text("bad")\n',
     'settings.json':'{"threshold": 100, "label": "<img src=x onerror=alert(1)>"}\n'
   };
@@ -42,7 +43,7 @@ if(browser){
     page.on('request',r=>requests.push({url:r.url(),method:r.method(),body:r.postData()}));page.on('pageerror',e=>errors.push(e.message));
     // Read actual Cytoscape geometry in the browser; no production debug API.
     const js=fs.readFileSync(new URL('../public/atlas-deep.js',import.meta.url),'utf8');
-    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;\nwindow.__deepLayout=()=>cy?({nodes:cy.nodes().map(n=>({id:n.id(),x:n.position("x"),y:n.position("y")})),edges:cy.edges().map(e=>({from:e.source().id(),to:e.target().id()}))}):null;'}));
+    await page.route('**/atlas-deep.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:js+'\nwindow.__deepProbe=()=>cy&&cy.nodes().length?({zoom:cy.zoom(),pan:{...cy.pan()},width:cy.width(),height:cy.height(),fontPx:parseFloat(cy.nodes().first().style("font-size"))*cy.zoom(),first:cy.nodes().first().renderedBoundingBox({includeLabels:false,includeOverlays:false}),all:cy.nodes().renderedBoundingBox({includeLabels:false,includeOverlays:false})}):null;\nwindow.__deepLayout=()=>cy?({nodes:cy.nodes().map(n=>({id:n.id(),x:n.position("x"),y:n.position("y")})),edges:cy.edges().map(e=>({from:e.source().id(),to:e.target().id(),kind:e.data('kind')}))}):null;'}));
     const api=async(action='status',extra={})=>page.evaluate(async ({action,extra})=>await (await fetch('/api/atlas-deep?'+new URLSearchParams({action,source:'HEAD',...extra}))).json(),{action,extra});
     try{
       await page.goto(app.url+'/atlas-deep.html');await page.waitForFunction(()=>!document.getElementById('analyze').disabled);
@@ -81,6 +82,53 @@ if(browser){
         await page.waitForFunction(total=>window.__deepLayout()?.nodes.length===total,before.nodes.length);
         assert.equal((await api('graph')).graphDigest,digest,'Layout must not modify the semantic graph digest');
         assert.equal(requests.filter(r=>r.method==='POST').length,posts,'All layout operations must remain read-only');
+      });
+      await check(`${width}: Focused function requires a target and draws only direct callers/callees`,async()=>{
+        const raw=await api('graph');
+        const fn=raw.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process');
+        assert.ok(fn,'Expected captured service.process for focus');
+        const posts=requests.filter(r=>r.method==='POST').length;
+        await page.locator('#view').selectOption('focused');
+        await page.waitForFunction(()=>!document.getElementById('focusChooser').hidden);
+        assert.equal(await page.locator('#canvas').isHidden(),true,'No full-graph spaghetti before selecting a function');
+        assert.ok(await page.locator('#focusCandidates button').count(),'Accessible chooser must have captured functions');
+        assert.match(await page.locator('#focusChooser').innerText(),/Choose a function to focus/);
+        await page.locator('#query').fill('process');await page.locator('#search').click();
+        await page.waitForFunction(()=>[...document.querySelectorAll('#focusCandidates button')].some(n=>n.textContent.includes('service.process')));
+        await page.locator('#focusCandidates button').filter({hasText:'service.process'}).first().click();
+        await page.waitForFunction(()=>!document.getElementById('focusStatus').hidden && document.getElementById('focusStatus').textContent.includes('service.process'));
+        assert.equal(await page.locator('#view').inputValue(),'focused');
+        assert.equal(await page.locator('#query').inputValue(),'','Previous Find must not silently erase focused neighbors');
+        const details=await api('graph',{view:'focused',focus:fn.id});
+        assert.equal(details.graphDigest,raw.graphDigest,'Focus must preserve analyzed graph identity');
+        const expected=details.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind)&&(e.from===fn.id||e.to===fn.id));
+        const rendered=await page.evaluate(()=>window.__deepLayout());
+        assert.equal(rendered.edges.length,expected.length,'Only direct graph call relations are drawn');
+        assert.ok(rendered.nodes.length<=details.nodes.length,'Focused canvas cannot add fake nodes');
+        assert.ok(rendered.nodes.some(n=>n.id===fn.id),'Selected function remains in the visual graph');
+        const points=new Map(rendered.nodes.map(n=>[n.id,n]));
+        const center=points.get(fn.id);
+        let incoming=0,outgoing=0;
+        for(const e of rendered.edges){
+          assert.ok(['CALLS','MAY_CALL'].includes(e.kind),'No source-structure spaghetti on focused canvas');
+          assert.ok(e.from===fn.id||e.to===fn.id,'Only chosen function one-hop calls can be drawn');
+          if(e.to===fn.id&&e.from!==fn.id){incoming++;assert.ok(points.get(e.from).x<center.x,'Caller belongs on the left');}
+          if(e.from===fn.id&&e.to!==fn.id){outgoing++;assert.ok(points.get(e.to).x>center.x,'Callee belongs on the right');}
+        }
+        assert.ok(incoming>0&&outgoing>0,'Fixture must qualify both incoming and outgoing call lanes');
+        assert.match(await page.locator('#focusStatus').innerText(),/other captured relations remain in the accessible list/);
+        assert.ok(await page.locator('#elementList button').count()>rendered.nodes.length,'Nonvisual evidence must remain inspectable');
+        await page.locator('#fit').click();
+        assert.deepEqual((await page.evaluate(()=>window.__deepLayout())).nodes,rendered.nodes,'Fit does not change semantics or focused positions');
+        await page.locator('#layout').click();
+        assert.deepEqual((await page.evaluate(()=>window.__deepLayout())).nodes,rendered.nodes,'Arrange remains deterministic');
+        await page.locator('#query').fill('rules');await page.locator('#search').click();
+        await page.waitForFunction(()=>!document.getElementById('focusChooser').hidden);
+        assert.equal(await page.locator('#canvas').isHidden(),true,'Find chooses a new focus rather than filtering out relations');
+        await page.locator('#query').fill('');
+        await page.locator('#view').selectOption('calls');
+        await page.waitForFunction(()=>document.getElementById('canvas').hidden===false&&document.getElementById('notice').textContent.includes('Function call graph'));
+        assert.equal(requests.filter(r=>r.method==='POST').length,posts,'Focused UI never starts analysis or paid work');
       });
       await check(`${width}: function inspector provides incoming/outgoing, resolution and exact source`,async()=>{
         const g=await api('graph'),fn=g.nodes.find(n=>n.qualifiedName==='service.process'||n.label==='service.process'||n.label==='process');assert.ok(fn,'service.process is present');

@@ -123,13 +123,75 @@ function arrangeDeepNodes(nodes,edges,canvasWidth){
   }
   return {positions};
 }
+const FUNCTION_KINDS=new Set(['function','async-function','method','constructor','closure','lambda']);
+const callable=node=>Boolean(node&&FUNCTION_KINDS.has(node.kind));
+const functionLabel=node=>node?.qualifiedName||node?.label||node?.id||'unknown';
+function selectFocusedFunction(id){
+  if(!callable(graph?.nodes.find(node=>node.id===id)))return;
+  focus=id;offset=0;$('view').value='focused';$('query').value='';
+  loadGraph();
+}
+// On the focused canvas, draw ONLY the chosen function and its directly
+// linked static CALLS/MAY_CALL neighbors. Full facts remain in the API,
+// accessible evidence list, source inspection and other graph views.
+function focusedPicture(){
+  const center=graph?.nodes.find(node=>node.id===focus);if(!center)return null;
+  const lookup=new Map(graph.nodes.map(node=>[node.id,node]));
+  const edges=graph.edges.filter(edge=>['CALLS','MAY_CALL'].includes(edge.kind)
+    &&(edge.from===focus||edge.to===focus)&&lookup.has(edge.from)&&lookup.has(edge.to));
+  const order=(a,b)=>functionLabel(lookup.get(a)).localeCompare(functionLabel(lookup.get(b)),'en')||a.localeCompare(b);
+  const incoming=[...new Set(edges.filter(e=>e.to===focus&&e.from!==focus).map(e=>e.from))].sort(order);
+  const incomingSet=new Set(incoming);
+  const outgoing=[...new Set(edges.filter(e=>e.from===focus&&e.to!==focus&&!incomingSet.has(e.to)).map(e=>e.to))].sort(order);
+  const count=Math.max(incoming.length,outgoing.length,1),height=Math.max(155,(count-1)*146/2+110);
+  const positions=new Map([[focus,{x:465,y:height}]]);
+  incoming.forEach((id,i)=>positions.set(id,{x:150,y:110+i*146}));
+  outgoing.forEach((id,i)=>positions.set(id,{x:780,y:110+i*146}));
+  const nodes=[center,...incoming.map(id=>lookup.get(id)),...outgoing.map(id=>lookup.get(id))];
+  return {nodes,edges,positions,incoming:incoming.length,outgoing:outgoing.length};
+}
+function showFocusPicker(){
+  const picker=$('focusChooser'),targets=$('focusCandidates');targets.replaceChildren();
+  const options=graph.nodes.filter(callable);
+  const sorted=[...options].sort((a,b)=>functionLabel(a).localeCompare(functionLabel(b),'en')||a.id.localeCompare(b.id));
+  for(const node of sorted.slice(0,100)){
+    const button=element('button',functionLabel(node));button.type='button';
+    button.setAttribute('aria-label','Focus '+functionLabel(node));
+    button.onclick=()=>selectFocusedFunction(node.id);targets.append(button);
+  }
+  $('focusChooserCount').textContent=sorted.length?
+    String(sorted.length)+' captured function candidates on this page'+(sorted.length>100?' · first 100 shown; refine Find in analysis':'')+'.':
+    'No function in this page; clear the search or use Next.';
+  picker.hidden=false;
+}
 function draw({fit=true}={}){
   if(!graph)return;
-  const view=$('view').value,runtime=['runtime','sequence'].includes(view);$('canvas').hidden=runtime;$('runtimeView').hidden=!runtime;
+  const view=$('view').value,runtime=['runtime','sequence'].includes(view),choosing=view==='focused'&&!focus;
+  $('focusChooser').hidden=!choosing;$('focusStatus').hidden=!(view==='focused'&&focus);
+  $('canvas').hidden=runtime||choosing;$('runtimeView').hidden=!runtime;
+  for(const id of ['fit','layout','zoomIn','zoomOut'])$(id).disabled=runtime||choosing;
   const legends={calls:['— CALLS: statically resolved','┄ MAY_CALL: possible target','◇ UNKNOWN: target not established'],focused:['CALLS / MAY_CALL: static target status','Other labels: source-derived relations','No runtime execution established'],control:['Control relations: source-derived','Branch labels do not prove reachability','No runtime branch coverage'],data:['READS / WRITES: lexical dependencies','PASSES_ARGUMENT: explicit syntax','No observed values'],runtime:['Identified session events only','One scenario is not complete coverage'],sequence:['Recorded event order only','Static edges are not execution sequences']};
   document.querySelector('.legend').replaceChildren(...legends[view].map(text=>element('span',text)));
   if(runtime){cy?.destroy();cy=null;renderRuntime();return;}
-  const nodes=ARRAY(graph.nodes),edges=ARRAY(graph.edges),layout=arrangeDeepNodes(nodes,edges,$('canvas').clientWidth),elements=[];
+  if(choosing){
+    cy?.destroy();cy=null;showFocusPicker();
+    $('coverage').textContent='Choose a function to focus. This is a bounded call-graph index, not a 133-node focused diagram.';
+    return;
+  }
+  const focused=view==='focused'&&focus?focusedPicture():null;
+  const nodes=focused?.nodes||ARRAY(graph.nodes),edges=focused?.edges||ARRAY(graph.edges);
+  const layout=focused?{positions:focused.positions}:arrangeDeepNodes(nodes,edges,$('canvas').clientWidth),elements=[];
+  if(focused){
+    const other=Math.max(0,graph.edges.length-edges.length);
+    $('focusStatus').textContent='Focused on '+functionLabel(graph.nodes.find(n=>n.id===focus))
+      +' · '+focused.incoming+' direct callers · '+focused.outgoing+' direct callees. '
+      +edges.length+' CALLS/MAY_CALL relations drawn; '+other
+      +' other captured relations remain in the accessible list, Control flow and Data flow views. '
+      +'This is a one-hop static view, not runtime execution.';
+    $('coverage').textContent=nodes.length+' of '+graph.nodes.length+' returned nodes visualized · '
+      +edges.length+' of '+graph.edges.length+' relations drawn (direct CALLS/MAY_CALL only). '
+      +'Other evidence is not deleted; use the accessible list for source details.';
+  }
   // Cytoscape's first element is the initial readable anchor on narrow screens.
   // Render in visual reading order without reordering the semantic response.
   const ordered=[...nodes].sort((a,b)=>{
@@ -143,11 +205,13 @@ function draw({fit=true}={}){
   cy.on('tap','node,edge',event=>inspect(event.target.id()));
   if(fit){
     cy.fit(undefined,40);
-    // Initial/Arrange favors legibility over a microscopic complete overview.
-    // Explicit Fit remains the user's full-map camera, without moving any node.
-    if(cy.nodes().length&&cy.zoom()<.9){
-      const anchor=focus&&cy.$id(focus).length?cy.$id(focus):cy.nodes().first();
-      const position=anchor.position(),zoom=1;
+    // Focused view centers the actual selected function, not the first
+    // lexical or unrelated source node, and keeps labels at working scale.
+    if(focused&&cy.$id(focus).length){
+      const position=cy.$id(focus).position(),zoom=Math.min(1.05,cy.maxZoom());
+      cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:cy.height()/2-position.y*zoom}});
+    }else if(cy.nodes().length&&cy.zoom()<.9){
+      const anchor=cy.nodes().first(),position=anchor.position(),zoom=1;
       cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:Math.min(110,cy.height()/4)-position.y*zoom}});
     }
   }else if(camera)cy.viewport(camera);
@@ -193,7 +257,7 @@ function inspect(id){
   const dl=element('dl');row(dl,'Kind',item.kind||'callsite');row(dl,'Source path',item.source?.path);row(dl,'Source span',item.source?`${item.source.line}–${item.source.endLine??item.source.line}${item.source.column!==undefined?' · column '+item.source.column:''}`:null);row(dl,'Snapshot',item.source?.snapshotId);row(dl,'Content hash',item.source?.sourceSha256);row(dl,'Provider',item.source?.provider);row(dl,'Provider version',item.source?.providerVersion);row(dl,'Resolution method',item.resolution);row(dl,'Limitations',item.limitations);
   if(edge){row(dl,'From',name(edge.from));row(dl,'To',name(edge.to));row(dl,'Authority',edge.authority);row(dl,'Call site',edge.callSiteId);row(dl,'Branch',edge.branch);row(dl,'Meaning',edge.kind==='CALLS'?'Target resolved under the stated static contract. Execution and reachability are not established.':edge.kind==='MAY_CALL'?'Possible target; not a uniquely established call.':'Source-derived relation within the provider contract. Not runtime execution.');}
   if(call){row(dl,'Call expression',call.expression);row(dl,'Target status',call.status);row(dl,'Resolution basis',call.reason);row(dl,'Targets',call.targetIds.map(name).join(', ')||'Not established');}
-  $('details').replaceChildren(dl);$('focus').disabled=Boolean(edge)||!node;$('openSource').disabled=!item.source;
+  $('details').replaceChildren(dl);$('focus').disabled=!callable(node);$('openSource').disabled=!item.source;
   $('connections').hidden=Boolean(edge)||!node;
   if(node){renderConnections(node);}
   cy?.$id(id).select();
@@ -226,8 +290,14 @@ async function loadGraph(){
   graphController?.abort();graphController=new AbortController();const my=graphController;
   notice('Reading the bounded analysis projection. No project execution.');
   try{
-    const next=await request({action:'graph',view:$('view').value,focus,query:$('query').value.trim(),offset:String(offset)},null,my.signal);if(my!==graphController)return;
-    graph=next;identity(next);clearInspector();renderLists();draw();notice(`Analysis loaded · ${$('view').selectedOptions[0].textContent}. Unknowns and coverage limits remain explicit.`);
+    const seeking=$('view').value==='focused'&&!focus;
+    const requestedView=seeking?'calls':$('view').value;
+    const query=$('view').value==='focused'&&focus?'':$('query').value.trim();
+    const next=await request({action:'graph',view:requestedView,focus:seeking?'':focus,query,offset:String(offset)},null,my.signal);if(my!==graphController)return;
+    graph=next;identity(next);clearInspector();renderLists();draw();
+    if($('view').value==='focused'&&focus&&graph.nodes.some(n=>n.id===focus))inspect(focus);
+    notice(seeking?'Choose a function from the list to open a readable one-hop focused graph. No source was executed.':
+      `Analysis loaded · ${$('view').selectedOptions[0].textContent}. Unknowns and coverage limits remain explicit.`);
   }catch(error){if(error.name!=='AbortError'&&my===graphController)notice(error.message,true);}
 }
 async function source(){
@@ -247,9 +317,13 @@ $('canvas').addEventListener('wheel',zoomAtPointer,{capture:true,passive:false})
 $('analyze').onclick=()=>action('analyze');$('cancel').onclick=()=>action('cancel');$('reload').onclick=()=>refresh(true);
 $('runtimeDemo').onclick=runRuntimeExample;
 $('source').onchange=()=>{operation++;sourceOperation++;graphController?.abort();clearTimeout(pollTimer);state=null;focus='';offset=0;clearGraph();controls();refresh();};
-$('view').onchange=()=>{offset=0;loadGraph();};$('search').onclick=()=>{offset=0;loadGraph();};$('query').onkeydown=e=>{if(e.key==='Enter'){$('search').click();}};
+$('view').onchange=()=>{offset=0;if($('view').value==='calls')focus='';
+  if($('view').value==='focused'&&!focus&&callable(graph?.nodes.find(n=>n.id===selected?.id))){focus=selected.id;$('query').value='';}
+  loadGraph();};
+$('search').onclick=()=>{offset=0;if($('view').value==='focused'&&$('query').value.trim())focus='';loadGraph();};
+$('query').onkeydown=e=>{if(e.key==='Enter'){$('search').click();}};
 $('whole').onclick=()=>{focus='';offset=0;loadGraph();};$('previous').onclick=()=>{offset=Math.max(0,offset-150);loadGraph();};$('next').onclick=()=>{offset+=150;loadGraph();};
-$('focus').onclick=()=>{if(selected&&!selected.edge){focus=selected.id;offset=0;$('view').value='focused';loadGraph();}};$('openSource').onclick=source;
+$('focus').onclick=()=>{if(callable(graph?.nodes.find(n=>n.id===selected?.id)))selectFocusedFunction(selected.id);};$('openSource').onclick=source;
 $('fit').onclick=()=>cy?.fit(undefined,40);$('layout').onclick=()=>draw();$('zoomIn').onclick=()=>{if(cy)cy.zoom({level:Math.min(cy.maxZoom(),cy.zoom()*1.6),renderedPosition:{x:cy.width()/2,y:cy.height()/2}});};$('zoomOut').onclick=()=>{if(cy)cy.zoom({level:Math.max(cy.minZoom(),cy.zoom()/1.6),renderedPosition:{x:cy.width()/2,y:cy.height()/2}});};
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';if(cy)cy.style(graphStyle());};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(pollTimer);pollTimer=null;}else if(state?.status==='RUNNING')refresh(false);});
