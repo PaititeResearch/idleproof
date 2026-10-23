@@ -1,0 +1,15 @@
+{
+  "head": "4189354684662f84c3cbe10e4b1df4ce40a2bcb9",
+  "workflow": "https://github.com/PaititeResearch/idleproof/actions/runs/39803274565",
+  "job": 119909632605,
+  "platform": "windows-latest",
+  "tests": 149,
+  "pass": 145,
+  "fail": 1,
+  "skipped": 3,
+  "failedTest": "external CPython 3.12.0 colorsys: whole-module syntax inventory and separately annotated local targets",
+  "error": "External reference identity mismatch",
+  "cause": "Windows checkout changed upstream text to CRLF before exact SHA-256 verification.",
+  "repair": "Scoped Git attributes disable text conversion for SHA-pinned upstream source/license bytes. Hash checks and expected bytes are unchanged.",
+  "qualification": "First run remains FAIL; a new head requires fresh CI."
+}

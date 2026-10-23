@@ -1,0 +1,18 @@
+{
+  "status": "UNAVAILABLE",
+  "reason": "ISOLATION_TIMEOUT",
+  "executed": false,
+  "kind": "NO_OBSERVATION",
+  "limits": {
+    "wallMs": 5000,
+    "cpuSeconds": 3,
+    "memoryBytes": 268435456,
+    "processes": 16,
+    "fileBytes": 1048576,
+    "outputBytes": 1048576,
+    "events": 1000
+  },
+  "limitations": [
+    "No target was executed. Runtime observation requires verified isolation; a subprocess alone is insufficient."
+  ]
+}

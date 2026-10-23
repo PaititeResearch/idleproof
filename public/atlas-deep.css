@@ -1,0 +1,26 @@
+.analysis-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}.analysis-controls>div:first-child{flex:1;min-width:220px}.analysis-controls h2{margin:0 0 4px}.analysis-controls p{margin:0;max-width:800px}.analysis-controls .job{flex-basis:100%;font:11px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}.read-only{font-size:11px;color:var(--muted);align-self:center}.scroll-list{max-height:330px;overflow:auto;display:grid;gap:7px}.call-row{border:1px solid var(--line);border-radius:5px;padding:10px;text-align:left;font-size:12px;overflow-wrap:anywhere}.call-row strong,.call-row small{display:block;line-height:1.6}.call-row .call-state{font:10px/1.8 ui-monospace,monospace;color:var(--unknown)}.call-row[data-state=RESOLVED] .call-state{color:var(--observed)}#limitations{padding-left:18px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.inspector h3{font-size:12px;margin:18px 0 7px}#connections button{font-size:11px;display:block;text-align:left;margin:5px 0;width:100%;overflow-wrap:anywhere}#connections p{font-size:11px;line-height:1.6}#runtimeView{min-height:360px;padding:25px;overflow-wrap:anywhere}#runtimeView p{font-size:13px;color:var(--muted)}#runtimeEvents{padding-left:25px;max-height:440px;overflow:auto}#runtimeEvents li{font:12px/1.8 ui-monospace,monospace;margin-bottom:10px}#canvas{height:520px}#capabilities{max-height:350px}#sourceCode{tab-size:4}.map-footer #coverage{overflow-wrap:anywhere}.authority.possible{color:var(--unknown);border-style:dashed;border-color:var(--unknown)}.authority.inferred{color:var(--accent);border-color:var(--accent)}
+@media(max-width:730px){.analysis-controls{align-items:flex-start}.analysis-controls .actions{width:100%}.analysis-controls .actions button{flex:1;min-width:100px}.read-only{font-size:10px}#canvas{height:380px}#runtimeView{min-height:260px;padding:16px}.scroll-list{max-height:250px}}
+
+/* Focused function is an intentional one-hop inspection, not the full 133-node map. */
+#focusChooser[hidden],#focusStatus[hidden]{display:none}
+.focus-chooser{min-height:270px;display:flex;flex-direction:column;justify-content:flex-start;gap:11px;padding:25px 22px;overflow-wrap:anywhere;background:var(--panel)}
+.focus-chooser h2{font-size:19px;line-height:1.3;margin:0}
+.focus-chooser p{font-size:12px;line-height:1.6;color:var(--muted);margin:0;max-width:650px}
+.focus-chooser .focus-chooser-count{font:11px/1.6 ui-monospace,monospace}
+.focus-candidates{display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow:auto;align-content:flex-start}
+.focus-candidates button{min-width:0;max-width:100%;overflow-wrap:anywhere;text-align:left;padding:7px 10px}
+.focus-status{padding:9px 14px;margin:0;line-height:1.5;font-size:11px;color:var(--muted);overflow-wrap:anywhere;border-bottom:1px solid var(--line)}
+
+/* Global evidence overview: module spotlight affects only presentation. */
+#globalOverview[hidden]{display:none}
+.global-overview{padding:14px 16px;border-bottom:1px solid var(--line);display:grid;gap:9px;background:var(--panel)}
+.global-overview-tools{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.global-overview-tools strong{font-size:12px;margin-right:auto}
+.global-overview-tools label{font-size:11px;display:flex;gap:6px;align-items:center}
+.global-overview-tools select{max-width:185px;font-size:11px}
+.global-overview-tools button{font-size:11px}
+.global-overview p{font-size:11px;line-height:1.6;color:var(--muted);margin:0;overflow-wrap:anywhere}
+.global-modules{display:flex;flex-wrap:wrap;gap:5px;max-height:142px;overflow:auto;align-content:flex-start}
+.global-modules button{padding:5px 8px;font-size:10px;text-align:left;max-width:100%;overflow-wrap:anywhere}
+.global-modules button[aria-pressed="true"]{outline:2px solid var(--accent)}
+@media(max-width:730px){.global-overview{padding:10px}.global-overview-tools{gap:6px}.global-overview-tools strong{width:100%}.global-overview-tools label{flex:1 1 160px}}

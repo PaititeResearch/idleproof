@@ -1,0 +1,7 @@
+/* The Deep engine is embedded inside the single Atlas page, not a second product bar. */
+:root[data-atlas-unified-embedded=true] .mast{display:none!important}
+:root[data-atlas-unified-embedded=true] main{padding:14px;max-width:none;margin:0}
+:root[data-atlas-unified-embedded=true] footer{display:none!important}
+:root[data-atlas-unified-embedded=true] .intro h1{font-size:30px}
+:root[data-atlas-unified-embedded=true] #canvas{height:490px}
+@media(max-width:730px){:root[data-atlas-unified-embedded=true] main{padding:8px}:root[data-atlas-unified-embedded=true] #canvas{height:380px}}

@@ -1,0 +1,2959 @@
+{
+  "schema": "idleproof.atlas-deep-real-repository-qualification.v1",
+  "measuredAt": "2026-10-22T15:08:25.861Z",
+  "corpus": {
+    "kind": "REAL_REPOSITORY",
+    "name": "IdleProof baseline",
+    "commit": "b8f03f9e7b98d6ae44ba1401ff0afa76f2f06cae",
+    "tree": "ba507dd133c479325929c6c279b546d2253cf8e9",
+    "detached": true,
+    "source": "HEAD",
+    "checkout": "NO_CHECKOUT: immutable Git blobs only",
+    "commitUnchanged": true
+  },
+  "execution": {
+    "targetCodeExecuted": false,
+    "targetScriptsExecuted": false,
+    "installedDependencies": false,
+    "paidApis": false,
+    "networkRequested": false
+  },
+  "analyzer": {
+    "schema": "idleproof.atlas-deep.v1",
+    "profile": "atlas-deep-static-1",
+    "coreCommit": "7f043a3cbaf1b2c3e59d48bc6509a1ae627f8a23",
+    "coreCommandSha256": "ee45bb94136b28ac7cc384862741c7787303550c76ef1f665db59dd081fad0e5",
+    "nodeVersion": "v24.19.0",
+    "sourceHashes": {
+      "atlas-deep.mjs": "fc61cdb703273a632d44303504c4a90343532d674270808b3505b8a1c7754a31",
+      "atlas-deep-worker.mjs": "eedff2773c084444b08ced6e5115940b395e4d7571780471a66de8020d86dca3",
+      "atlas-deep-process.mjs": "b4c4f5165c64023bbf43f00703f9bc70b786c341448d031ba9466cf843aaf931",
+      "atlas-deep-python.py": "675076865ba8a03cd472619d9aaeeb9b0844328f43a766af3cc4af4e626351e3",
+      "atlas-deep-javascript.mjs": "10aa1a5979c6bd01c61a4cc15e4c44c59bfc3d8e4daf92bc9e7bdd81b6a63f5f",
+      "atlas-deep-data.py": "7df9925a7046d06758e41f7a847c248daaa7d5099aa8165e86faccc3691b62b7"
+    },
+    "candidateCommit": "2192496526b228187c391dc1262326130f67208a"
+  },
+  "accuracy": {
+    "status": "NOT_MEASURED",
+    "oracle": "NONE",
+    "reason": "No independently annotated semantic target oracle for this repository. Counts and successful admission do not establish precision, recall or absence of false targets."
+  },
+  "runtime": {
+    "status": "NOT_RUN",
+    "reason": "Static corpus measurement only."
+  },
+  "limits": {
+    "files": 256,
+    "fileBytes": 262144,
+    "totalBytes": 4194304,
+    "nodes": 30000,
+    "edges": 60000,
+    "calls": 20000,
+    "viewNodes": 150,
+    "viewEdges": 600,
+    "timeoutMs": 60000
+  },
+  "capture": {
+    "status": "COMPLETED",
+    "wallMs": 3828.878103,
+    "identity": {
+      "snapshotId": "dwscan_bca75e938bc9eb5097c6c2604b660d756a23376adc06d3e0d46a9c337e1a25a3",
+      "tree": "ba507dd133c479325929c6c279b546d2253cf8e9",
+      "source": "HEAD"
+    },
+    "profile": {
+      "inventory": "project-inventory-5",
+      "limits": [
+        20000,
+        1048576,
+        33554432
+      ],
+      "providers": {
+        "optional": {
+          "tree-sitter": null,
+          "tree-sitter-c-sharp": null,
+          "tree-sitter-go": null,
+          "tree-sitter-java": null,
+          "tree-sitter-javascript": null,
+          "tree-sitter-json": null,
+          "tree-sitter-kotlin": null,
+          "tree-sitter-php": null,
+          "tree-sitter-ruby": null,
+          "tree-sitter-rust": null,
+          "tree-sitter-sql": null,
+          "tree-sitter-toml": null,
+          "tree-sitter-typescript": null,
+          "tree-sitter-yaml": null
+        },
+        "python": "python-ast",
+        "schema": "structure-providers-9a"
+      },
+      "python": [
+        3,
+        12,
+        14
+      ]
+    },
+    "selection": {
+      "ci": false,
+      "documents": [],
+      "maxFiles": 2000
+    },
+    "coverage": {
+      "inventoryEntries": 588,
+      "inventoryComplete": true,
+      "eligible": 504,
+      "read": 504,
+      "capturedSources": 435,
+      "bytesRead": 3681738,
+      "reused": 0,
+      "statuses": {
+        "excluded": 153,
+        "unsupported": 129,
+        "unparsed": 305,
+        "parsed": 1
+      },
+      "reasons": {
+        "excluded-directory": 6,
+        "hidden-or-generated": 1,
+        "document-not-selected": 68,
+        "binary-or-encoding": 69,
+        "sensitive-name": 9
+      },
+      "complete": false,
+      "excludedDirectoryContents": "not enumerated in WORKTREE",
+      "inventoryBudgetIncludesDirectories": false,
+      "limits": {
+        "inventoryEntries": 20000,
+        "files": 2000,
+        "fileBytes": 1048576,
+        "totalBytes": 33554432
+      }
+    },
+    "counts": {
+      "inventoryFiles": 588,
+      "filesWithExtraction": 435,
+      "filesWithSourceHash": 435,
+      "filesByStatus": {
+        "excluded": 153,
+        "parsed": 1,
+        "unparsed": 305,
+        "unsupported": 129
+      },
+      "coreRelations": 8
+    }
+  },
+  "status": "INCOMPLETE",
+  "failure": {
+    "stage": "analysis",
+    "code": "ATLAS_DEEP_PROCESS_FAILED",
+    "detail": "The bounded TypeScript provider exceeded its 19000-callsite budget; the worker reported the generic process failure. The limit was not raised and no partial aggregate graph was published."
+  },
+  "loaderAfterFailure": {
+    "status": "COMPLETED",
+    "wallMs": 1022.1374050000004,
+    "identity": {
+      "repositoryId": "32547859719a0d2c5324cbe5fcfec3029faed246182ec09ca79fa1043602d467",
+      "snapshotId": "dwscan_bca75e938bc9eb5097c6c2604b660d756a23376adc06d3e0d46a9c337e1a25a3",
+      "tree": "ba507dd133c479325929c6c279b546d2253cf8e9",
+      "source": "HEAD",
+      "profile": "atlas-deep-static-1",
+      "captureProfile": {
+        "inventory": "project-inventory-5",
+        "limits": [
+          20000,
+          1048576,
+          33554432
+        ],
+        "providers": {
+          "optional": {
+            "tree-sitter": null,
+            "tree-sitter-c-sharp": null,
+            "tree-sitter-go": null,
+            "tree-sitter-java": null,
+            "tree-sitter-javascript": null,
+            "tree-sitter-json": null,
+            "tree-sitter-kotlin": null,
+            "tree-sitter-php": null,
+            "tree-sitter-ruby": null,
+            "tree-sitter-rust": null,
+            "tree-sitter-sql": null,
+            "tree-sitter-toml": null,
+            "tree-sitter-typescript": null,
+            "tree-sitter-yaml": null
+          },
+          "python": "python-ast",
+          "schema": "structure-providers-9a"
+        },
+        "python": [
+          3,
+          12,
+          14
+        ]
+      },
+      "syntheticFixture": false
+    },
+    "coverage": {
+      "inventory": {
+        "inventoryEntries": 588,
+        "inventoryComplete": true,
+        "eligible": 504,
+        "read": 504,
+        "capturedSources": 435,
+        "bytesRead": 3681738,
+        "reused": 0,
+        "statuses": {
+          "excluded": 153,
+          "unsupported": 129,
+          "unparsed": 305,
+          "parsed": 1
+        },
+        "reasons": {
+          "excluded-directory": 6,
+          "hidden-or-generated": 1,
+          "document-not-selected": 68,
+          "binary-or-encoding": 69,
+          "sensitive-name": 9
+        },
+        "complete": false,
+        "excludedDirectoryContents": "not enumerated in WORKTREE",
+        "inventoryBudgetIncludesDirectories": false,
+        "limits": {
+          "inventoryEntries": 20000,
+          "files": 2000,
+          "fileBytes": 1048576,
+          "totalBytes": 33554432
+        }
+      },
+      "admittedFiles": 435,
+      "analyzedFiles": 256,
+      "unsupportedFiles": 129,
+      "omittedByLimit": 50,
+      "bytes": 1984216,
+      "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+      "complete": false,
+      "semanticCompleteness": "UNKNOWN"
+    },
+    "fileCount": 256
+  },
+  "totalWallMs": 7253.729756000001,
+  "cleanup": {
+    "temporaryWorktreeRemoved": true
+  },
+  "diagnostic": {
+    "measuredAt": "2026-10-22T15:10:23.915Z",
+    "purpose": "Bounded diagnosis of original process failure; the failed aggregate run remains the qualification outcome.",
+    "targetCodeExecuted": false,
+    "sourceHashes": {
+      "atlas-deep-worker.mjs": "eedff2773c084444b08ced6e5115940b395e4d7571780471a66de8020d86dca3",
+      "atlas-deep-python.py": "675076865ba8a03cd472619d9aaeeb9b0844328f43a766af3cc4af4e626351e3",
+      "atlas-deep-javascript.mjs": "10aa1a5979c6bd01c61a4cc15e4c44c59bfc3d8e4daf92bc9e7bdd81b6a63f5f",
+      "atlas-deep-data.py": "7df9925a7046d06758e41f7a847c248daaa7d5099aa8165e86faccc3691b62b7"
+    },
+    "providers": [
+      {
+        "name": "python-ast",
+        "exitCode": 0,
+        "signal": null,
+        "wallMs": 86.35518899999988,
+        "provider": {
+          "name": "python-ast",
+          "version": "1",
+          "runtime": "3.12.14"
+        },
+        "status": "READY",
+        "error": null,
+        "counts": {
+          "nodes": 155,
+          "edges": 211,
+          "callSites": 78
+        },
+        "coverage": {
+          "files": 1,
+          "parsedFiles": 1,
+          "syntaxErrors": [],
+          "astNodes": 1259,
+          "unresolvedCalls": 24,
+          "resolvedCalls": 27,
+          "ambiguousCalls": 0,
+          "externalCalls": 27,
+          "unsupportedControlStatements": 1,
+          "truncated": false,
+          "semanticCompleteness": "UNKNOWN",
+          "callSites": 78,
+          "complete": false
+        },
+        "metrics": {
+          "wallMs": 12.88616199963144,
+          "cpuMs": 12.878995000000003,
+          "peakRssBytes": 25616384,
+          "measurement": "provider process wall/CPU; RSS unavailable on some platforms"
+        },
+        "encodedResultBytes": 280462
+      },
+      {
+        "name": "typescript",
+        "exitCode": 0,
+        "signal": null,
+        "wallMs": 1398.8495359999997,
+        "error": "ATLAS_DEEP_JS_CALL_LIMIT"
+      },
+      {
+        "name": "data-stdlib",
+        "exitCode": 0,
+        "signal": null,
+        "wallMs": 214.59687600000052,
+        "provider": {
+          "name": "data-stdlib",
+          "version": "1"
+        },
+        "status": "UNSPECIFIED",
+        "error": null,
+        "counts": {
+          "nodes": 3504,
+          "edges": 0,
+          "callSites": 0
+        },
+        "coverage": {
+          "complete": false,
+          "files": [
+            {
+              "language": "yaml",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "action.yml",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "bin/idleproof-hook.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "bin/idleproof-support.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "bin/idleproof.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_002C_core_main.json",
+              "retainedNodes": 209,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_002C_idleproof_main.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_002C_idleproof_pr.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_004_source_main.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_004_source_pr.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_004_source_pr_attempt1.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_004_source_pr_attempt2.json",
+              "retainedNodes": 83,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_005C/hashes.json",
+              "retainedNodes": 8,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_005C/legacy-eviction-review/hashes.json",
+              "retainedNodes": 4,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_005C/path-integration/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_005C/review/hashes.json",
+              "retainedNodes": 6,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PM_010B_pipeline_languages_local.json",
+              "retainedNodes": 15,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/c1-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/component-duplicate-review/hashes.json",
+              "retainedNodes": 5,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/duplicate-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/hashes.json",
+              "retainedNodes": 9,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/legacy-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/malformed-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/rowcap-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PORTAL_PATH_IDENTITY/summary-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROJECT_UNDERSTANDING_CONFORMITY.json",
+              "retainedNodes": 731,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROJECT_UNDERSTANDING_HUMAN_CORPUS.json",
+              "retainedNodes": 384,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROVIDER_FAILURE/async-review/hashes.json",
+              "retainedNodes": 3,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROVIDER_FAILURE/hashes.json",
+              "retainedNodes": 6,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROVIDER_FAILURE/history-integration/hashes.json",
+              "retainedNodes": 1,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/PROVIDER_FAILURE/original-windows/hashes.json",
+              "retainedNodes": 2,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_manifest.json",
+              "retainedNodes": 16,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/NATIVE_PATH_IDENTITY_manifest_final.json",
+              "retainedNodes": 18,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004E_local.json",
+              "retainedNodes": 57,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004G_PR_evidence.json",
+              "retainedNodes": 237,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004G_main_evidence.json",
+              "retainedNodes": 232,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004H_initial_PR.json",
+              "retainedNodes": 86,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004H_local.json",
+              "retainedNodes": 52,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004H_reviewed_local.json",
+              "retainedNodes": 46,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004K_PR_evidence.json",
+              "retainedNodes": 267,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004K_initial_PR_final.json",
+              "retainedNodes": 231,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004K_main_evidence.json",
+              "retainedNodes": 231,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "docs/qualification/evidence/PM_004L_PR_evidence.json",
+              "retainedNodes": 88,
+              "status": "PARSED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 44,
+              "path": "docs/qualification/evidence/PM_004L_initial_PR_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 41,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 52,
+              "path": "docs/qualification/evidence/PM_004L_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 80,
+              "path": "docs/qualification/evidence/PM_004L_main_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 58,
+              "path": "docs/qualification/evidence/PM_004L_pinned_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 88,
+              "path": "docs/qualification/evidence/PM_004L_reviewed_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 231,
+              "path": "docs/qualification/evidence/PM_004MO_main_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 12,
+              "path": "docs/qualification/evidence/PM_004N_feature_discovery_actual.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 69,
+              "path": "docs/qualification/evidence/PM_004N_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 49,
+              "path": "docs/qualification/evidence/PM_004N_mixed_review_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 48,
+              "path": "docs/qualification/evidence/PM_004N_publication_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 109,
+              "path": "docs/qualification/evidence/PM_004N_reviewed_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 343,
+              "path": "docs/qualification/evidence/PM_005B_candidate_processes.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 104,
+              "path": "docs/qualification/evidence/PM_005B_local_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 278,
+              "path": "docs/qualification/evidence/PM_005B_parent_processes.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 17,
+              "path": "docs/qualification/evidence/PM_010A_category_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 41,
+              "path": "docs/qualification/evidence/PM_010A_entity_control_correction.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 22,
+              "path": "docs/qualification/evidence/PM_010A_legacy_evidence.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 29,
+              "path": "docs/qualification/evidence/PM_010A_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 83,
+              "path": "docs/qualification/evidence/PM_010A_main.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 83,
+              "path": "docs/qualification/evidence/PM_010A_pr.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 46,
+              "path": "docs/qualification/evidence/PM_010A_unicode_correction.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 54,
+              "path": "docs/qualification/evidence/PM_010B_pipeline_local.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 33,
+              "path": "docs/qualification/evidence/PM_010B_pipeline_macos_35855627299.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 12,
+              "path": "docs/qualification/evidence/PM_010B_pipeline_shell_regression.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 83,
+              "path": "docs/qualification/evidence/PM_012I_main.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 83,
+              "path": "docs/qualification/evidence/PM_012I_pr.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 55,
+              "path": "docs/qualification/evidence/PM_013C_windows_incident_108116054851.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 18,
+              "path": "docs/qualification/evidence/PROVENANCE_LOCK_manifest.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "yaml",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "examples/github-action.yml",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 16,
+              "path": "examples/idleproof.policy.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 26,
+              "path": "package.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/app.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/atlas-section.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/atlas.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/byok-thread-ui.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/byok-view.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/feature-review.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/project-scan.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "public/section-nav.js",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/atlas-browser-recipe.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/atlas-demo.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/atlas-fixture.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/atlas-section-browser-recipe.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/atlas-zoom-browser-recipe.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/continuity-core-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/explain-torturebench.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/explainbench.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/feature-canonical-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/feature-history-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/feature-lineage-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/golden-contract.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/golden-core-journey.py",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/human-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/idlebench-corpus.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/idlebench.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/local-ui-browser-recipe.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/package-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/perf-diagnostics.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/perf-gate.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/portal-memory-core-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/portal-package-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/portal-paths-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/project-browser-recipe.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/project-ui-fixture.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-all-providers-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-cold-start-diagnostics.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-core-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-dependencies-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-languages-smoke.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-pipeline-diagnostics.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "scripts/structure-provider-diagnostics.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 74,
+              "path": "spec/agentic-development-provenance.schema.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 163,
+              "path": "spec/change-envelope-v1.schema.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 47,
+              "path": "spec/idleproof-policy.schema.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 14,
+              "path": "spec/idleproof-portal-ingest-ack-v1.schema.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 330,
+              "path": "spec/idleproof-portal-snapshot-v1.schema.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/analyze.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/atlas-api.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/atlas-graph.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/atlas-section.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/atlas-store.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/attest.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/auto-debt.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-answer-plan.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-contract.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-grounding.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-http.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-price.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-prompt.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-review.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-storage.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok-thread.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/byok.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/capabilities.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/catalog.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/change-identity.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/codex-bridge.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/context.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/continuity-contract.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/continuity.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/cursor-hook-cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/defitness-cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/defitness-config.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/defitness-install.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/delivery.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/demo.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/diagnostic.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/diffwitness-bridge.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/diffwitness-integration-config.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/diffwitness-integration-install.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/edition.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/evidence.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/explain.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-history.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-lineage.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-memory.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-model.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-observations.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/feature-review.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/hook-input.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/hook.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/ide-assurance.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/install-codex.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/install-cursor.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/install.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/learning-cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/learning.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/local-http-security.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/ownership.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/paths.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/policy.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-assurance.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-cli.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-client.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-ingest-ack.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-memory-lock.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-memory-sync.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/portal-snapshot.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/presentation.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/project-model.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/project-navigation.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/project-path.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/project-scan.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/project-source.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/provenance.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/recovery.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/replay.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/semantics.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/server.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/shell-read-context.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/snooze.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/state.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/structure-provider.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/symbol-provenance.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "src/task.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/alpha-human-pure-python-lesson.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/analyze.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/atlas-core-contract.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/atlas-provenance.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/atlas-section.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/atlas.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/attest.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/auto-debt.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/background.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-contract.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-http.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-human-answer.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-output-format.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-plain-language.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-price.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-quality.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-reviewed.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-thread.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-timeout.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-ui.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok-view-messages.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/byok.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/change-identity.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/codex-bridge.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/concurrent-sessions.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/context-degraded-extraction.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/context-generic.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/context-prompt-boundary.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/context-source-boundaries.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/context.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/continuity.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/control-plane.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/crash-recovery.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/cursor-adapter.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/defitness-install.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/delivery.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/demo.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/diffwitness-bridge.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/explain.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-canonical.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-history.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-lineage.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-memory.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-model-python.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-model.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-review-provenance.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-review.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/feature-source-boundaries.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "json",
+              "omittedContainers": 0,
+              "omittedNodes": 62,
+              "path": "test/fixtures/byok-legacy-render.json",
+              "reason": "KEY_PROJECTION_LIMIT",
+              "retainedNodes": 0,
+              "status": "TRUNCATED",
+              "syntaxValidated": true
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/git-snapshot-efficiency.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/hook.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/human-readonly.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/install-codex.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/install.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/large-input.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/learning-cli.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            },
+            {
+              "language": "unknown",
+              "omittedContainers": 0,
+              "omittedNodes": 0,
+              "path": "test/learning.test.mjs",
+              "reason": "NO_QUALIFIED_STDLIB_PARSER",
+              "retainedNodes": 0,
+              "status": "UNSUPPORTED",
+              "syntaxValidated": false
+            }
+          ],
+          "inputFiles": 256,
+          "invalidFiles": 0,
+          "keyProjectionComplete": false,
+          "omittedContainers": 0,
+          "omittedNodes": 2956,
+          "parsedFiles": 74,
+          "retainedNodes": 3504,
+          "semanticCompleteness": "UNKNOWN",
+          "syntaxValidationComplete": false,
+          "truncatedFiles": 36,
+          "unsupportedFiles": 182
+        },
+        "encodedResultBytes": 2152772
+      }
+    ],
+    "identity": {
+      "repositoryId": "32547859719a0d2c5324cbe5fcfec3029faed246182ec09ca79fa1043602d467",
+      "snapshotId": "dwscan_bca75e938bc9eb5097c6c2604b660d756a23376adc06d3e0d46a9c337e1a25a3",
+      "tree": "ba507dd133c479325929c6c279b546d2253cf8e9",
+      "source": "HEAD",
+      "profile": "atlas-deep-static-1",
+      "captureProfile": {
+        "inventory": "project-inventory-5",
+        "limits": [
+          20000,
+          1048576,
+          33554432
+        ],
+        "providers": {
+          "optional": {
+            "tree-sitter": null,
+            "tree-sitter-c-sharp": null,
+            "tree-sitter-go": null,
+            "tree-sitter-java": null,
+            "tree-sitter-javascript": null,
+            "tree-sitter-json": null,
+            "tree-sitter-kotlin": null,
+            "tree-sitter-php": null,
+            "tree-sitter-ruby": null,
+            "tree-sitter-rust": null,
+            "tree-sitter-sql": null,
+            "tree-sitter-toml": null,
+            "tree-sitter-typescript": null,
+            "tree-sitter-yaml": null
+          },
+          "python": "python-ast",
+          "schema": "structure-providers-9a"
+        },
+        "python": [
+          3,
+          12,
+          14
+        ]
+      },
+      "syntheticFixture": false
+    },
+    "coverage": {
+      "inventory": {
+        "inventoryEntries": 588,
+        "inventoryComplete": true,
+        "eligible": 504,
+        "read": 504,
+        "capturedSources": 435,
+        "bytesRead": 3681738,
+        "reused": 0,
+        "statuses": {
+          "excluded": 153,
+          "unsupported": 129,
+          "unparsed": 305,
+          "parsed": 1
+        },
+        "reasons": {
+          "excluded-directory": 6,
+          "hidden-or-generated": 1,
+          "document-not-selected": 68,
+          "binary-or-encoding": 69,
+          "sensitive-name": 9
+        },
+        "complete": false,
+        "excludedDirectoryContents": "not enumerated in WORKTREE",
+        "inventoryBudgetIncludesDirectories": false,
+        "limits": {
+          "inventoryEntries": 20000,
+          "files": 2000,
+          "fileBytes": 1048576,
+          "totalBytes": 33554432
+        }
+      },
+      "admittedFiles": 435,
+      "analyzedFiles": 256,
+      "unsupportedFiles": 129,
+      "omittedByLimit": 50,
+      "bytes": 1984216,
+      "scope": "Existing Core selection only; immutable HEAD blobs; no Markdown/context expansion.",
+      "complete": false,
+      "semanticCompleteness": "UNKNOWN"
+    },
+    "serializedInputBytes": 2082087,
+    "classification": "PROVIDER_CALLSITE_BUDGET_EXCEEDED",
+    "wallMs": 6438.3070880000005,
+    "temporaryWorktreeRemoved": true,
+    "conclusion": {
+      "status": "INCOMPLETE_RESOURCE_BOUND",
+      "provider": {
+        "name": "typescript",
+        "version": "5.9.3"
+      },
+      "code": "ATLAS_DEEP_JS_CALL_LIMIT",
+      "configuredCallsiteLimit": 19000,
+      "attemptedCallsiteLowerBound": 19001,
+      "measurement": "The trusted provider throws immediately after pendingCalls exceeds 19000. Exact total beyond that bound was not measured.",
+      "aggregateGraphPublished": false,
+      "qualification": "Resource-bound rejection observed; semantic accuracy remains NOT_MEASURED."
+    }
+  }
+}

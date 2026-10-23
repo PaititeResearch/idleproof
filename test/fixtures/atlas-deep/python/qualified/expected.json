@@ -1,0 +1,22 @@
+{
+  "classification": "TEAM_AUTHORED_MANUAL_REFERENCE_NOT_INDEPENDENT_HUMAN_ANNOTATION",
+  "description": "Sixteen synthetic call sites. This is not Thomas's unavailable projet-multicouche snapshot.",
+  "calls": [
+    ["rules.py", 3, "ValueError", "EXTERNAL", null],
+    ["rules.py", 7, "isinstance", "EXTERNAL", null],
+    ["service.py", 4, "float", "EXTERNAL", null],
+    ["service.py", 7, "normalize", "RESOLVED", "service.normalize"],
+    ["service.py", 8, "valid", "RESOLVED", "rules.valid"],
+    ["service.py", 9, "ValueError", "EXTERNAL", null],
+    ["service.py", 10, "tune", "RESOLVED", "rules.adjusted"],
+    ["service.py", 13, "process", "RESOLVED", "service.process"],
+    ["callbacks.py", 6, "inner", "RESOLVED", "callbacks.inner"],
+    ["callbacks.py", 10, "callback", "UNKNOWN", null],
+    ["callbacks.py", 13, "make()", "UNKNOWN", null],
+    ["callbacks.py", 13, "make", "RESOLVED", "callbacks.make"],
+    ["main.py", 5, "process", "RESOLVED", "service.process"],
+    ["main.py", 6, "print", "EXTERNAL", null],
+    ["main.py", 7, "batch", "RESOLVED", "service.batch"],
+    ["main.py", 8, "invoke", "RESOLVED", "callbacks.invoke"]
+  ]
+}

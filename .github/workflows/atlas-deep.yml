@@ -1,0 +1,98 @@
+name: atlas-deep-experimental
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: atlas-deep-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: PaititeResearch/diffwitness
+          ref: 7f043a3cbaf1b2c3e59d48bc6509a1ae627f8a23
+          path: producer-core
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Install pinned Core outside synthetic targets
+        run: python -m pip install './producer-core[structure]'
+      - name: Source identity, providers, runtime boundaries and V1 regression
+        env:
+          IDLEPROOF_TEST_CORE: '1'
+          IDLEPROOF_DEEP_PYTHON: python
+        run: node --test --test-concurrency=1 test/atlas*.test.mjs
+      - name: Independent expected-edge benchmark
+        env:
+          IDLEPROOF_DEEP_PYTHON: python
+        run: node scripts/atlas-deep-benchmark.mjs --output qualification-evidence/atlas-deep/benchmark.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: atlas-deep-contracts-${{ matrix.os }}
+          path: qualification-evidence/atlas-deep/
+          if-no-files-found: warn
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Install isolated browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/deep-browser" --no-save --package-lock=false --ignore-scripts playwright@1.63.0
+          node "$RUNNER_TEMP/deep-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Install explicit runtime isolation prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y bubblewrap
+      - name: Real Deep UI and preserved Atlas journeys
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/deep-browser/node_modules/playwright/index.mjs
+          ATLAS_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas
+          ATLAS_DEEP_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas-deep/browser
+          ATLAS_UNIFIED_RECIPE_OUT: ${{ github.workspace }}/qualification-evidence/atlas-unified/browser
+        run: |
+          node scripts/atlas-browser-recipe.mjs
+          node scripts/atlas-deep-browser-recipe.mjs
+          node scripts/atlas-unified-browser-recipe.mjs
+      - name: Report isolated runtime fixture availability and observation
+        shell: bash
+        run: |
+          mkdir -p qualification-evidence/atlas-deep/runtime
+          result=0
+          node scripts/atlas-deep-runtime-demo.mjs --run-fixed-synthetic-fixture > qualification-evidence/atlas-deep/runtime/result.json || result=$?
+          if [ "$result" = 3 ]; then
+            echo 'Runtime observation: NOT_RUN — isolation unavailable; inspect result.json.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$result" != 0 ]; then
+            exit "$result"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: atlas-deep-browser
+          path: qualification-evidence/
+          if-no-files-found: error

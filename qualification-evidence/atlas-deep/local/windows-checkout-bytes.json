@@ -1,0 +1,7 @@
+{
+  "classification": "MACHINE",
+  "test": "Git checkout with core.autocrlf=true preserves all five SHA-pinned upstream files exactly",
+  "status": "PASS",
+  "commit": "25aefd1",
+  "runtimeExecuted": false
+}

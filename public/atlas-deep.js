@@ -1,0 +1,428 @@
+// Read-only experimental views. Only the explicit Analyze button starts analysis.
+const $=id=>document.getElementById(id);
+const element=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=String(text);return el;};
+const ARRAY=v=>Array.isArray(v)?v:[];
+let state=null,graph=null,cy=null,selected=null,focus='',offset=0,operation=0,sourceOperation=0,busy=false,pollTimer=null,graphController=null,runtimeExample=null,runtimeBusy=false;
+let globalBright=false,globalSpotlight=[],globalSpotlightLabel='';
+const notice=(text,error=false)=>{$('notice').textContent=text;$('notice').classList.toggle('error',error);};
+const params=extra=>new URLSearchParams({source:$('source').value,...extra});
+async function request(extra={},body=null,signal){
+  const response=await fetch('/api/atlas-deep?'+params(extra),{...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);return data;
+}
+function controls(){
+  const running=state?.status==='RUNNING';
+  $('analyze').disabled=busy||running||!state?.identity?.snapshotId||$('source').value!=='HEAD';
+  $('cancel').disabled=busy||!running;$('source').disabled=busy||running;$('reload').disabled=busy;
+}
+function identity(data){
+  const id=data?.identity;
+  $('identity').textContent=id?`${id.syntheticFixture||id.captureProfile?.syntheticFixture?'SYNTHETIC FIXTURE — not your repository\n':''}${id.source||$('source').value} · ${id.snapshotId}\nTree ${id.tree||'not available'}`:'No captured snapshot available.';
+}
+function clearInspector(){
+  selected=null;sourceOperation++;$('selectedTitle').textContent='Select a function';$('authority').replaceChildren();$('details').textContent='Inspect the exact source and method of a function, call site or relation.';
+  $('nodeActions').hidden=true;$('connections').hidden=true;$('sourceCode').hidden=true;
+}
+function clearGraph(){
+  graph=null;cy?.destroy();cy=null;clearInspector();$('elementList').replaceChildren();$('callSites').replaceChildren();$('callSummary').textContent='No call sites loaded.';
+  $('coverage').textContent='No analysis loaded.';$('previous').disabled=true;$('next').disabled=true;$('limitations').replaceChildren();$('capabilities').textContent='No analysis loaded.';
+  $('runtimeEvents').replaceChildren();$('reconciliation').hidden=true;$('runtimeView').hidden=true;$('canvas').hidden=false;
+}
+function schedule(){
+  clearTimeout(pollTimer);pollTimer=null;
+  if(state?.status==='RUNNING'&&!document.hidden)pollTimer=setTimeout(()=>refresh(false),800);
+}
+function describeState(data){
+  state=data;identity(data);controls();
+  $('job').textContent=data.job?`Analysis ${data.job.status||data.status}${data.job.stale?' · capture changed; this job belongs to an earlier identity':''}${data.job.startedAt?' · started '+data.job.startedAt:''}`:'';
+  const text={IDLE:'Ready to analyze this captured snapshot. Analysis starts only when you choose Analyze captured source.',RUNNING:'Static analysis is running. You can stop it; the original Module atlas remains available.',READY:'Captured analysis is available. Static relations do not establish runtime execution.',CANCELLED:'Analysis stopped. No project code was executed.',FAILED:'Analysis failed. The original Module atlas and saved annotations remain available.',NO_SCAN:'No captured snapshot available. Create an explicit scan in Local first.'}[data.status]||'Analysis status unavailable.';
+  notice(data.error?`${text} ${data.error}`:data.message||text,data.status==='FAILED');
+  if(data.support==='WORKTREE_UNSUPPORTED')notice('Deep analysis currently supports committed snapshots only. Working-tree Atlas V1 remains available.');
+  schedule();
+}
+async function refresh(load=true){
+  const seq=++operation;try{
+    const next=await request({action:'status'});if(seq!==operation)return;
+    const changed=state?.identity?.snapshotId!==next.identity?.snapshotId,wasRunning=state?.status==='RUNNING';
+    describeState(next);if(changed||next.status==='NO_SCAN')clearGraph();
+    if(next.status==='READY'&&(load||wasRunning||!graph))await loadGraph();
+  }catch(error){if(seq===operation){notice(error.message,true);clearTimeout(pollTimer);}}
+}
+async function action(name){
+  if(busy||!state?.identity?.snapshotId)return;busy=true;controls();const seq=++operation;clearTimeout(pollTimer);
+  try{
+    const next=await request({}, {action:name,source:$('source').value,snapshotId:state.identity.snapshotId,...(name==='cancel'&&state.job?.id?{jobId:state.job.id}:{})});
+    if(seq!==operation)return;describeState(next);if(next.status==='READY')await loadGraph();
+  }catch(error){if(seq===operation)notice(error.message,true);}finally{if(seq===operation){busy=false;controls();schedule();}}
+}
+const CSS=name=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function graphStyle(){return [
+  {selector:'node',style:{'background-color':CSS('--panel'),'border-color':CSS('--observed'),'border-width':1.7,'color':CSS('--ink'),'label':'data(label)','font-size':11,'text-wrap':'wrap','text-max-width':170,'text-valign':'center','shape':'round-rectangle','width':190,'height':65,'padding':8}},
+  {selector:'node[kind="callsite"],node[kind="call_site"],node[kind="call-site"]',style:{'shape':'diamond','width':165,'height':65,'border-color':CSS('--unknown')}},
+  {selector:'node[kind="condition"]',style:{'shape':'diamond','border-color':CSS('--accent')}},
+  {selector:'edge',style:{'width':1.3,'line-color':CSS('--muted'),'target-arrow-color':CSS('--muted'),'target-arrow-shape':'triangle','curve-style':'bezier','line-style':'dashed','label':'data(label)','font-size':9,'color':CSS('--muted'),'text-background-color':CSS('--panel'),'text-background-opacity':.95,'text-background-padding':2,'text-rotation':'autorotate'}},
+  {selector:'edge[kind="CALLS"]',style:{'line-style':'solid','line-color':CSS('--accent'),'target-arrow-color':CSS('--accent')}},
+  {selector:'edge[kind="MAY_CALL"]',style:{'line-style':'dashed','line-color':CSS('--unknown'),'target-arrow-color':CSS('--unknown')}},
+  // Global overview retains every returned relation, with softer default lines.
+  {selector:'edge.ui-global',style:{'opacity':.18,'text-opacity':0,'width':1}},
+  {selector:'edge.ui-global.ui-bright',style:{'opacity':.70,'text-opacity':.7}},
+  {selector:'edge.ui-global.ui-muted',style:{'opacity':.045,'text-opacity':0}},
+  {selector:'edge.ui-global.ui-active',style:{'opacity':1,'text-opacity':1,'width':2}},
+  {selector:'node.ui-global-selected',style:{'border-width':3,'border-color':CSS('--accent')}},
+  {selector:':selected',style:{'border-width':3,'border-color':CSS('--accent'),'line-color':CSS('--accent'),'target-arrow-color':CSS('--accent')}}
+];}
+const name=id=>graph?.nodes.find(n=>n.id===id)?.qualifiedName||graph?.nodes.find(n=>n.id===id)?.label||id;
+// UI layout only: group connected semantic facts into readable islands,
+// and pack unrelated islands into rows. No extracted graph data is changed.
+function arrangeDeepNodes(nodes,edges,canvasWidth){
+  const lookup=new Map(nodes.map(n=>[n.id,n])),adj=new Map(nodes.map(n=>[n.id,new Set()])),out=new Map(nodes.map(n=>[n.id,new Set()]));
+  const sortId=(a,b)=>String(lookup.get(a)?.qualifiedName||lookup.get(a)?.label||a).localeCompare(String(lookup.get(b)?.qualifiedName||lookup.get(b)?.label||b),'en')||a.localeCompare(b);
+  for(const e of edges){
+    if(!lookup.has(e.from)||!lookup.has(e.to)||e.from===e.to)continue;
+    adj.get(e.from).add(e.to);adj.get(e.to).add(e.from);out.get(e.from).add(e.to);
+  }
+  const groups=[],seen=new Set();
+  for(const seed of [...lookup.keys()].sort(sortId)){
+    if(seen.has(seed))continue;
+    const group=[],queue=[seed];seen.add(seed);
+    for(let i=0;i<queue.length;i++){
+      const id=queue[i];group.push(id);
+      for(const next of [...adj.get(id)].sort(sortId))if(!seen.has(next)){seen.add(next);queue.push(next);}
+    }
+    groups.push(group.sort(sortId));
+  }
+  groups.sort((a,b)=>b.length-a.length||sortId(a[0],b[0]));
+  const positions=new Map(),cellX=250,cellY=148,gapX=65,gapY=75;
+  // The working map may extend past the viewport; Fit remains an overview.
+  // Do not crush many graph labels just to fill a narrow inspector split-pane.
+  const shelfWidth=Math.max(825,Math.min(1370,canvasWidth*1.65));
+  let shelfX=0,shelfY=0,shelfHeight=0;
+  for(const group of groups){
+    const members=new Set(group),degree=new Map(group.map(id=>[id,0])),rank=new Map();
+    for(const from of group)for(const to of out.get(from))if(members.has(to))degree.set(to,degree.get(to)+1);
+    const ready=group.filter(id=>degree.get(id)===0).sort(sortId);
+    for(const id of ready)rank.set(id,0);
+    for(let i=0;i<ready.length;i++){
+      const from=ready[i];
+      for(const to of [...out.get(from)].filter(id=>members.has(id)).sort(sortId)){
+        rank.set(to,Math.max(rank.get(to)||0,(rank.get(from)||0)+1));
+        degree.set(to,degree.get(to)-1);
+        if(degree.get(to)===0)ready.push(to);
+      }
+    }
+    // Cycles are placed, not interpreted as proof of execution order.
+    for(const id of group)if(!rank.has(id))rank.set(id,0);
+    const layers=new Map();
+    for(const id of group){const depth=rank.get(id),list=layers.get(depth)||[];list.push(id);layers.set(depth,list);}
+    const widest=Math.max(...[...layers.values()].map(layer=>Math.min(4,layer.length)));
+    const width=widest*cellX,local=new Map();let height=0;
+    for(const depth of [...layers.keys()].sort((a,b)=>a-b)){
+      const layer=layers.get(depth).sort(sortId);
+      for(let i=0;i<layer.length;i++){
+        const row=Math.floor(i/4),count=Math.min(4,layer.length-row*4),column=i%4;
+        local.set(layer[i],{x:(width-count*cellX)/2+(column+.5)*cellX,y:height+(row+.5)*cellY});
+      }
+      height+=Math.ceil(layer.length/4)*cellY;
+    }
+    if(shelfX>0&&shelfX+width>shelfWidth){shelfY+=shelfHeight+gapY;shelfX=0;shelfHeight=0;}
+    for(const id of group){const p=local.get(id);positions.set(id,{x:shelfX+p.x,y:shelfY+p.y});}
+    shelfX+=width+gapX;shelfHeight=Math.max(shelfHeight,height);
+  }
+  return {positions};
+}
+const FUNCTION_KINDS=new Set(['function','async-function','method','constructor','closure','lambda']);
+const GLOBAL_CALLS=new Set(['CALLS','MAY_CALL']);
+const GLOBAL_CONTROL=new Set(['CONTROL_FLOW','BRANCH','HANDLES','THROWS','AWAITS']);
+const GLOBAL_DATA=new Set(['READS','WRITES','PASSES_ARGUMENT','RETURNS_TO','CAPTURES','DEPENDS_ON','REFERENCES']);
+const globalModule=node=>String(node?.path||node?.source?.path||'unmapped source');
+const globalCategory=kind=>GLOBAL_CALLS.has(kind)?'calls':GLOBAL_CONTROL.has(kind)?'control':GLOBAL_DATA.has(kind)?'data':'structure';
+// Global graph layout is only a reading aid: cluster immutable facts by
+// captured file, without creating module-to-module edges or inferred targets.
+function arrangeGlobalModules(nodes,canvasWidth){
+  const groups=new Map();
+  for(const node of nodes){
+    const key=globalModule(node),items=groups.get(key)||[];
+    items.push(node);groups.set(key,items);
+  }
+  const kinds={module:0,class:1,interface:1,function:2,'async-function':2,method:2,constructor:2,closure:2,lambda:2};
+  const positions=new Map(),columns=canvasWidth>=930?3:2,cellX=255,cellY=146,gapX=115,gapY=115;
+  let x=0,y=0,rowHeight=0,column=0;
+  for(const [path,members] of [...groups].sort((a,b)=>a[0].localeCompare(b[0],'en'))){
+    members.sort((a,b)=>(kinds[a.kind]??4)-(kinds[b.kind]??4)||
+      functionLabel(a).localeCompare(functionLabel(b),'en')||a.id.localeCompare(b.id));
+    const innerColumns=Math.max(2,Math.min(3,Math.ceil(Math.sqrt(members.length/1.6))));
+    const width=innerColumns*cellX,height=Math.ceil(members.length/innerColumns)*cellY;
+    if(column>=columns){x=0;y+=rowHeight+gapY;rowHeight=0;column=0;}
+    for(let i=0;i<members.length;i++)positions.set(members[i].id,{
+      x:x+(i%innerColumns+.5)*cellX,y:y+(Math.floor(i/innerColumns)+.5)*cellY
+    });
+    x+=width+gapX;rowHeight=Math.max(rowHeight,height);column++;
+  }
+  return {positions,groups};
+}
+function updateGlobalSpotlight(){
+  if($('view').value!=='all'||!cy)return;
+  const ids=new Set(globalSpotlight);
+  for(const n of cy.nodes()){
+    n.removeClass('ui-global-selected');
+    if(ids.has(n.id()))n.addClass('ui-global-selected');
+  }
+  for(const edge of cy.edges()){
+    edge.removeClass('ui-active ui-muted ui-bright');
+    if(globalBright)edge.addClass('ui-bright');
+    if(ids.size){
+      if(ids.has(edge.source().id())||ids.has(edge.target().id()))edge.addClass('ui-active');
+      else edge.addClass('ui-muted');
+    }
+  }
+  const shown=cy.edges().length,all=graph.edges.length,kind=$('globalKind').value;
+  const partial=graph.projection?.hasMore||graph.projection?.matchedNodes>graph.nodes.length;
+  $('globalStatus').textContent=graph.nodes.length+' returned source nodes · '+shown+' of '+all+
+    ' captured relations drawn'+(kind==='all'?'':' (visual filter: '+kind+')')+
+    (partial?' · PARTIAL paginated projection: additional evidence outside this page.':' · All relations in this returned page remain inspectable.')+
+    (globalSpotlightLabel?' Spotlight: '+globalSpotlightLabel+'.':'')+
+    ' File grouping, link opacity and spotlight are visual only; evidence and source hashes are unchanged.';
+  $('globalBright').setAttribute('aria-pressed',String(globalBright));
+  $('globalBright').textContent=globalBright?'Soften all links':'Emphasize all links';
+  for(const button of $('globalModules').querySelectorAll('button'))button.setAttribute('aria-pressed',
+    String(button.dataset.path===globalSpotlightLabel));
+}
+function renderGlobalModules(layout){
+  const wrap=$('globalModules');wrap.replaceChildren();
+  for(const [path,items] of [...layout.groups].sort((a,b)=>a[0].localeCompare(b[0],'en')).slice(0,90)){
+    const button=element('button',path+' · '+items.length+' facts');button.type='button';button.dataset.path=path;
+    button.title='Spotlight relationships involving '+path+' (all facts remain available)';
+    button.onclick=()=>{
+      globalSpotlight=items.map(n=>n.id);globalSpotlightLabel=path;
+      updateGlobalSpotlight();
+      if(cy){
+        const targets=cy.nodes().filter(n=>globalSpotlight.includes(n.id()));
+        if(targets.length)cy.fit(targets,50);
+      }
+    };
+    wrap.append(button);
+  }
+  updateGlobalSpotlight();
+}
+
+const callable=node=>Boolean(node&&FUNCTION_KINDS.has(node.kind));
+const functionLabel=node=>node?.qualifiedName||node?.label||node?.id||'unknown';
+function selectFocusedFunction(id){
+  if(!callable(graph?.nodes.find(node=>node.id===id)))return;
+  focus=id;offset=0;$('view').value='focused';$('query').value='';
+  loadGraph();
+}
+// On the focused canvas, draw ONLY the chosen function and its directly
+// linked static CALLS/MAY_CALL neighbors. Full facts remain in the API,
+// accessible evidence list, source inspection and other graph views.
+function focusedPicture(){
+  const center=graph?.nodes.find(node=>node.id===focus);if(!center)return null;
+  const lookup=new Map(graph.nodes.map(node=>[node.id,node]));
+  const edges=graph.edges.filter(edge=>['CALLS','MAY_CALL'].includes(edge.kind)
+    &&(edge.from===focus||edge.to===focus)&&lookup.has(edge.from)&&lookup.has(edge.to));
+  const order=(a,b)=>functionLabel(lookup.get(a)).localeCompare(functionLabel(lookup.get(b)),'en')||a.localeCompare(b);
+  const incoming=[...new Set(edges.filter(e=>e.to===focus&&e.from!==focus).map(e=>e.from))].sort(order);
+  const incomingSet=new Set(incoming);
+  const outgoing=[...new Set(edges.filter(e=>e.from===focus&&e.to!==focus&&!incomingSet.has(e.to)).map(e=>e.to))].sort(order);
+  const count=Math.max(incoming.length,outgoing.length,1),height=Math.max(155,(count-1)*146/2+110);
+  const positions=new Map([[focus,{x:465,y:height}]]);
+  incoming.forEach((id,i)=>positions.set(id,{x:150,y:110+i*146}));
+  outgoing.forEach((id,i)=>positions.set(id,{x:780,y:110+i*146}));
+  const nodes=[center,...incoming.map(id=>lookup.get(id)),...outgoing.map(id=>lookup.get(id))];
+  return {nodes,edges,positions,incoming:incoming.length,outgoing:outgoing.length};
+}
+function showFocusPicker(){
+  const picker=$('focusChooser'),targets=$('focusCandidates');targets.replaceChildren();
+  const options=graph.nodes.filter(callable);
+  const sorted=[...options].sort((a,b)=>functionLabel(a).localeCompare(functionLabel(b),'en')||a.id.localeCompare(b.id));
+  for(const node of sorted.slice(0,100)){
+    const button=element('button',functionLabel(node));button.type='button';
+    button.setAttribute('aria-label','Focus '+functionLabel(node));
+    button.onclick=()=>selectFocusedFunction(node.id);targets.append(button);
+  }
+  $('focusChooserCount').textContent=sorted.length?
+    String(sorted.length)+' captured function candidates on this page'+(sorted.length>100?' · first 100 shown; refine Find in analysis':'')+'.':
+    'No function in this page; clear the search or use Next.';
+  picker.hidden=false;
+}
+function draw({fit=true}={}){
+  if(!graph)return;
+  const view=$('view').value,runtime=['runtime','sequence'].includes(view),choosing=view==='focused'&&!focus,isGlobal=view==='all';
+  $('globalOverview').hidden=!isGlobal;
+  $('focusChooser').hidden=!choosing;$('focusStatus').hidden=!(view==='focused'&&focus);
+  $('canvas').hidden=runtime||choosing;$('runtimeView').hidden=!runtime;
+  for(const id of ['fit','layout','zoomIn','zoomOut'])$(id).disabled=runtime||choosing;
+  const legends={all:['All admitted source relations in this page','Select a module to spotlight its links','No runtime execution or additional semantic claims'],calls:['— CALLS: statically resolved','┄ MAY_CALL: possible target','◇ UNKNOWN: target not established'],focused:['CALLS / MAY_CALL: static target status','Other labels: source-derived relations','No runtime execution established'],control:['Control relations: source-derived','Branch labels do not prove reachability','No runtime branch coverage'],data:['READS / WRITES: lexical dependencies','PASSES_ARGUMENT: explicit syntax','No observed values'],runtime:['Identified session events only','One scenario is not complete coverage'],sequence:['Recorded event order only','Static edges are not execution sequences']};
+  document.querySelector('.legend').replaceChildren(...legends[view].map(text=>element('span',text)));
+  if(runtime){cy?.destroy();cy=null;renderRuntime();return;}
+  if(choosing){
+    cy?.destroy();cy=null;showFocusPicker();
+    $('coverage').textContent='Choose a function to focus. This is a bounded call-graph index, not a 133-node focused diagram.';
+    return;
+  }
+  const focused=view==='focused'&&focus?focusedPicture():null;
+  const nodes=focused?.nodes||ARRAY(graph.nodes),allEdges=focused?.edges||ARRAY(graph.edges);
+  const edges=isGlobal&&$('globalKind').value!=='all'?
+    allEdges.filter(edge=>globalCategory(edge.kind)===$('globalKind').value):allEdges;
+  const layout=focused?{positions:focused.positions}:isGlobal?
+    arrangeGlobalModules(nodes,$('canvas').clientWidth):arrangeDeepNodes(nodes,edges,$('canvas').clientWidth),elements=[];
+  if(focused){
+    const other=Math.max(0,graph.edges.length-edges.length);
+    $('focusStatus').textContent='Focused on '+functionLabel(graph.nodes.find(n=>n.id===focus))
+      +' · '+focused.incoming+' direct callers · '+focused.outgoing+' direct callees. '
+      +edges.length+' CALLS/MAY_CALL relations drawn; '+other
+      +' other captured relations remain in the accessible list, Control flow and Data flow views. '
+      +'This is a one-hop static view, not runtime execution.';
+    $('coverage').textContent=nodes.length+' of '+graph.nodes.length+' returned nodes visualized · '
+      +edges.length+' of '+graph.edges.length+' relations drawn (direct CALLS/MAY_CALL only). '
+      +'Other evidence is not deleted; use the accessible list for source details.';
+  }
+  // Cytoscape's first element is the initial readable anchor on narrow screens.
+  // Render in visual reading order without reordering the semantic response.
+  const ordered=[...nodes].sort((a,b)=>{
+    const left=layout.positions.get(a.id),right=layout.positions.get(b.id);
+    return left.y-right.y||left.x-right.x||a.id.localeCompare(b.id);
+  });
+  for(const node of ordered)elements.push({group:'nodes',data:{...node,label:`«${node.kind}»\n${node.label||node.qualifiedName||node.id}`},position:layout.positions.get(node.id)});
+  for(const edge of edges)elements.push({group:'edges',classes:isGlobal?'ui-global':'',data:{...edge,source:edge.from,target:edge.to,label:edge.kind+(edge.branch?' · '+edge.branch:'')}});
+  const camera=cy?{zoom:cy.zoom(),pan:{...cy.pan()}}:null;cy?.destroy();
+  cy=window.cytoscape({container:$('canvas'),elements,style:graphStyle(),layout:{name:'preset',fit},minZoom:.12,maxZoom:2.5,boxSelectionEnabled:false,pixelRatio:Math.min(window.devicePixelRatio||1,2)});
+  cy.on('tap','node,edge',event=>inspect(event.target.id()));
+  if(fit){
+    cy.fit(undefined,40);
+    // Focused view centers the actual selected function, not the first
+    // lexical or unrelated source node, and keeps labels at working scale.
+    if(focused&&cy.$id(focus).length){
+      const position=cy.$id(focus).position(),zoom=Math.min(1.05,cy.maxZoom());
+      cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:cy.height()/2-position.y*zoom}});
+    }else if(cy.nodes().length&&cy.zoom()<.9){
+      const anchor=cy.nodes().first(),position=anchor.position(),zoom=1;
+      cy.viewport({zoom,pan:{x:cy.width()/2-position.x*zoom,y:Math.min(110,cy.height()/4)-position.y*zoom}});
+    }
+  }else if(camera)cy.viewport(camera);
+  if(selected?.id&&cy.$id(selected.id).length)cy.$id(selected.id).select();
+  if(isGlobal)renderGlobalModules(layout);
+}
+function renderRuntime(){
+  const runtime=graph?.runtime||state?.runtime||{},sessions=ARRAY(runtime.sessions);
+  $('runtimeTitle').textContent=$('view').value==='sequence'?'Observed sequence':'Runtime observations';
+  $('runtimeStatus').textContent=runtime.reason||(!sessions.length?'No qualified runtime observation is attached to this capture.':'Events belong to the identified sessions below; they do not establish every possible execution.');
+  $('runtimeEvents').replaceChildren();$('reconciliation').hidden=true;
+  if(runtimeExample?.status==='READY'&&runtimeExample.syntheticFixture===true&&runtimeExample.trace?.syntheticFixture===true&&runtimeExample.trace?.kind==='OBSERVED_RUNTIME'){
+    const trace=runtimeExample.trace,id=trace.identity,exampleId=runtimeExample.graph?.identity;
+    if(id?.snapshotId!==exampleId?.snapshotId||id?.repositoryId!==exampleId?.repositoryId||id?.tree!==exampleId?.tree){$('runtimeDemoStatus').textContent='Synthetic example identity mismatch. Observation withheld.';return;}
+    $('runtimeDemoStatus').textContent=`SYNTHETIC FIXTURE · ${trace.sessionId} · ${trace.status} · ${trace.events.length} observed events. This is not an execution of the captured repository.`;
+    for(const event of trace.events.slice(0,200))$('runtimeEvents').append(element('li',`${event.sequence} · ${event.event} · ${event.function?.qualifiedName||'?'} · ${event.function?.path||'?'}:${event.function?.line||'?'}${event.caller?' · caller '+event.caller.qualifiedName:''}${event.durationNs!==undefined?' · '+(event.durationNs/1e6).toFixed(3)+' ms':''}`));
+    $('reconciliation').hidden=false;$('reconciliation').textContent=JSON.stringify({syntheticFixture:true,identity:trace.identity,sessionId:trace.sessionId,proof:'UNKNOWN',coverage:trace.coverage,reconciliation:runtimeExample.reconciliation,limitations:trace.limitations},null,2);
+    return;
+  }
+  for(const session of sessions){
+    const item=element('li');item.append(element('strong',`Session ${session.id||session.sessionId||'unidentified'} · ${session.status||'UNKNOWN'}`));
+    // A session with mismatching identity is never rendered as observed here.
+    const id=session.identity||session;
+    if(id.snapshotId!==graph.identity.snapshotId||id.tree!==graph.identity.tree){item.append(element('p','STALE / identity not matched. Events withheld.'));$('runtimeEvents').append(item);continue;}
+    const events=ARRAY(session.events),list=element('ol');
+    for(const event of events.slice(0,200))list.append(element('li',`${event.sequence??event.index??'?'} · ${event.kind||event.type||'event'} · ${event.path||event.source?.path||''}:${event.line||event.source?.line||'?'} · ${event.functionName||event.function||event.targetId||''}`));
+    item.append(list,element('p',`${Math.min(events.length,200)} of ${events.length} retained events shown. Values and secrets are not displayed.`));$('runtimeEvents').append(item);
+  }
+}
+async function runRuntimeExample(){
+  if(runtimeBusy||!state?.identity?.snapshotId)return;runtimeBusy=true;$('runtimeDemo').disabled=true;$('runtimeDemoStatus').textContent='Checking isolation for the built-in synthetic example. Your repository is not executed.';
+  try{
+    const result=await request({}, {action:'runtime-demo',source:$('source').value,snapshotId:state.identity.snapshotId});runtimeExample=result;
+    if(result.status==='READY')renderRuntime();
+    else {$('runtimeDemoStatus').textContent=`${result.status||'UNAVAILABLE'} · ${result.reason||result.error||'No admissible runtime observation.'} · ${result.executed===false?'Nothing was executed.':'No complete observation is claimed.'}`;$('runtimeEvents').replaceChildren();$('reconciliation').hidden=true;}
+  }catch(error){$('runtimeDemoStatus').textContent=error.message;}finally{runtimeBusy=false;$('runtimeDemo').disabled=false;}
+}
+function row(dl,key,value){if(value===undefined||value===null||value==='')return;dl.append(element('dt',key),element('dd',typeof value==='string'?value:JSON.stringify(value)));}
+function inspect(id){
+  if(!graph)return;const node=graph.nodes.find(n=>n.id===id),edge=graph.edges.find(e=>e.id===id),call=graph.callSites.find(c=>c.id===id),item=node||edge||call;if(!item)return;
+  sourceOperation++;selected={...item,edge:Boolean(edge),call};$('sourceCode').hidden=true;$('nodeActions').hidden=false;
+  $('selectedTitle').textContent=edge?`${edge.kind} · ${name(edge.from)} → ${name(edge.to)}`:item.qualifiedName||item.label||call?.expression||item.id;
+  const authority=element('span',`${item.authority||'UNKNOWN'} · ${edge?'static relation':call?'call syntax':'source observation'}`);authority.className='authority '+(item.authority==='INFERRED'?'inferred':['POSSIBLE','UNKNOWN'].includes(item.authority)?'possible':'');$('authority').replaceChildren(authority);
+  const dl=element('dl');row(dl,'Kind',item.kind||'callsite');row(dl,'Source path',item.source?.path);row(dl,'Source span',item.source?`${item.source.line}–${item.source.endLine??item.source.line}${item.source.column!==undefined?' · column '+item.source.column:''}`:null);row(dl,'Snapshot',item.source?.snapshotId);row(dl,'Content hash',item.source?.sourceSha256);row(dl,'Provider',item.source?.provider);row(dl,'Provider version',item.source?.providerVersion);row(dl,'Resolution method',item.resolution);row(dl,'Limitations',item.limitations);
+  if(edge){row(dl,'From',name(edge.from));row(dl,'To',name(edge.to));row(dl,'Authority',edge.authority);row(dl,'Call site',edge.callSiteId);row(dl,'Branch',edge.branch);row(dl,'Meaning',edge.kind==='CALLS'?'Target resolved under the stated static contract. Execution and reachability are not established.':edge.kind==='MAY_CALL'?'Possible target; not a uniquely established call.':'Source-derived relation within the provider contract. Not runtime execution.');}
+  if(call){row(dl,'Call expression',call.expression);row(dl,'Target status',call.status);row(dl,'Resolution basis',call.reason);row(dl,'Targets',call.targetIds.map(name).join(', ')||'Not established');}
+  $('details').replaceChildren(dl);$('focus').disabled=!callable(node);$('openSource').disabled=!item.source;
+  $('connections').hidden=Boolean(edge)||!node;
+  if(node){renderConnections(node);}
+  cy?.$id(id).select();
+  if($('view').value==='all'&&cy){
+    globalSpotlight=node?[node.id]:edge?[edge.from,edge.to]:call?[call.callerId,...call.targetIds]:[];
+    globalSpotlightLabel=node?globalModule(node):edge?'Selected '+edge.kind+' relation':'Selected callsite';
+    updateGlobalSpotlight();
+  }
+}
+function linkButton(label,id){const button=element('button',label);button.type='button';button.onclick=()=>{inspect(id);$('selectedTitle').scrollIntoView({block:'nearest'});};return button;}
+function renderConnections(node){
+  const incoming=graph.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind)&&e.to===node.id),outgoing=graph.edges.filter(e=>['CALLS','MAY_CALL'].includes(e.kind)&&e.from===node.id);
+  $('incoming').replaceChildren(...incoming.map(e=>linkButton(`${e.kind} · ${name(e.from)} · ${e.authority}`,e.id)));if(!incoming.length)$('incoming').textContent='None shown in this projection.';
+  $('outgoing').replaceChildren(...outgoing.map(e=>linkButton(`${e.kind} · ${name(e.to)} · ${e.authority}`,e.id)));
+  for(const call of graph.callSites.filter(c=>c.callerId===node.id&&c.status!=='RESOLVED'))$('outgoing').append(linkButton(`${call.status} · ${call.expression}`,call.id));
+  if(!$('outgoing').childElementCount)$('outgoing').textContent='None shown in this projection.';
+  $('connectionLimits').textContent=`Only currently returned relations are listed. ${graph.projection?.boundaryRelations||0} relations cross this page. Focus a function to inspect its neighborhood; absence is not proof of no callers.`;
+}
+function renderLists(){
+  $('elementList').replaceChildren();
+  for(const n of graph.nodes){const b=linkButton(`${n.kind} · ${n.qualifiedName||n.label} · ${n.authority}`,n.id);b.dataset.node=n.id;$('elementList').append(b);}
+  for(const e of graph.edges){const b=linkButton(`${e.kind} · ${name(e.from)} → ${name(e.to)} · ${e.authority}`,e.id);b.dataset.edge=e.id;$('elementList').append(b);}
+  $('callSites').replaceChildren();
+  for(const c of graph.callSites){const button=linkButton('',c.id);button.className='call-row';button.dataset.state=c.status;button.append(element('span',c.status),element('strong',c.expression||'Call expression'),element('small',`${c.source.path}:${c.source.line} · ${c.reason}`));button.firstChild.className='call-state';$('callSites').append(button);}
+  const counts=graph.coverage?.calls;$('callSummary').textContent=counts?`${counts.total} call sites in analysis · ${counts.resolved} resolved · ${counts.ambiguous} ambiguous · ${counts.unknown} unknown · ${counts.external} external. ${graph.callSites.length} shown in this view.`:`${graph.callSites.length} call sites shown in this view.`;
+  const p=graph.projection||{};$('coverage').textContent=`${graph.nodes.length} of ${p.matchedNodes??graph.nodes.length} matching nodes shown · ${graph.edges.length} relations · ${p.boundaryRelations||0} relations cross this view${p.edgesOmitted?' · '+p.edgesOmitted+' edges omitted by limit':''}${p.callSitesOmitted?' · '+p.callSitesOmitted+' call sites omitted by limit':''}.`;
+  $('previous').disabled=offset===0;$('next').disabled=!p.hasMore;
+  $('limitations').replaceChildren(...ARRAY(graph.limitations).map(text=>element('li',text)));
+  $('capabilities').textContent=JSON.stringify({providers:graph.providers,capabilities:graph.capabilities,coverage:graph.coverage,metrics:graph.metrics},null,2);
+  const meaning={all:'All available node/edge types on this bounded projection, grouped visually by captured file. Every original relation retains its authority and exact source; filters/spotlights only change rendering. Use the source list for evidence. This does not claim runtime reachability or complete repository coverage.',calls:'CALLS identifies a statically resolved target under the provider contract. MAY_CALL remains a possibility. A call expression alone is not a resolved target.',focused:'A bounded neighborhood around the selected function. Relations outside the returned page remain outside this view.',control:'Static control structure describes source paths and branches. Reachability and branch execution are not established by this view.',data:'Source-derived data dependencies are scoped to the supported provider contract. They are not observed values or a proof of all possible data flow.',runtime:'Only retained observations from an identified compatible session may be shown. No program executes when opening this view.',sequence:'Sequence order must come from actual retained runtime events. Static call edges are never converted into an invented execution sequence.'};
+  $('viewMeaning').textContent=meaning[$('view').value];
+}
+async function loadGraph(){
+  if(state?.status!=='READY'){notice('Analyze the selected captured snapshot before opening its semantic views.');return;}
+  graphController?.abort();graphController=new AbortController();const my=graphController;
+  notice('Reading the bounded analysis projection. No project execution.');
+  try{
+    const seeking=$('view').value==='focused'&&!focus;
+    const global=$('view').value==='all';
+    // Reuse the existing all-edge read-only projection; no new API or producer.
+    const requestedView=seeking?'calls':global?'focused':$('view').value;
+    const query=$('view').value==='focused'&&focus?'':$('query').value.trim();
+    const next=await request({action:'graph',view:requestedView,focus:seeking||global?'':focus,query,offset:String(offset)},null,my.signal);if(my!==graphController)return;
+    graph=next;identity(next);clearInspector();renderLists();draw();
+    if($('view').value==='focused'&&focus&&graph.nodes.some(n=>n.id===focus))inspect(focus);
+    notice(seeking?'Choose a function from the list to open a readable one-hop focused graph. No source was executed.':
+      `Analysis loaded · ${$('view').selectedOptions[0].textContent}. Unknowns and coverage limits remain explicit.`);
+  }catch(error){if(error.name!=='AbortError'&&my===graphController)notice(error.message,true);}
+}
+async function source(){
+  if(!selected?.source||!graph)return;const seq=++sourceOperation,item=selected;
+  // Relations anchor at their call site when available; no path is supplied by the browser.
+  const node=item.edge?(item.callSiteId||graph.nodes.find(n=>n.source?.path===item.source.path&&n.source?.line===item.source.line)?.id):item.id;
+  if(!node){notice('This relation has no separate admitted source node. Inspect one of its endpoint definitions.',true);return;}
+  $('sourceCode').hidden=false;$('sourceCode').textContent='Reading captured source…';
+  try{const value=await request({action:'source',snapshot:graph.identity.snapshotId,node});if(seq!==sourceOperation)return;if(value.sourceSha256!==item.source.sourceSha256)throw new Error('Source identity does not match the selected evidence.');$('sourceCode').textContent=ARRAY(value.lines).map(line=>`${String(line.line).padStart(4)}  ${line.text}${line.truncated?' … [truncated]':''}`).join('\n')+(value.redacted?'\n\nLocal display redaction applies; content hash identifies the original captured file.':'');}catch(error){if(seq===sourceOperation)$('sourceCode').textContent=error.message;}
+}
+function zoomAtPointer(event){
+  if(!cy||event.ctrlKey||event.metaKey||!Number.isFinite(event.deltaY)||event.deltaY===0)return;
+  const raw=event.deltaY,delta=event.deltaMode===0?raw:Math.sign(raw)*100,steps=Math.max(-3,Math.min(3,delta/100)),next=Math.min(cy.maxZoom(),Math.max(cy.minZoom(),cy.zoom()*Math.pow(2.6,-steps)));
+  event.preventDefault();event.stopImmediatePropagation();const rect=$('canvas').getBoundingClientRect();if(next!==cy.zoom())cy.zoom({level:next,renderedPosition:{x:event.clientX-rect.left,y:event.clientY-rect.top}});
+}
+$('canvas').addEventListener('wheel',zoomAtPointer,{capture:true,passive:false});
+$('analyze').onclick=()=>action('analyze');$('cancel').onclick=()=>action('cancel');$('reload').onclick=()=>refresh(true);
+$('runtimeDemo').onclick=runRuntimeExample;
+$('source').onchange=()=>{operation++;sourceOperation++;graphController?.abort();clearTimeout(pollTimer);state=null;focus='';offset=0;clearGraph();controls();refresh();};
+$('view').onchange=()=>{offset=0;if(['calls','all'].includes($('view').value))focus='';
+  if($('view').value==='all'){$('query').value='';globalSpotlight=[];globalSpotlightLabel='';$('globalKind').value='all';}
+  if($('view').value==='focused'&&!focus&&callable(graph?.nodes.find(n=>n.id===selected?.id))){focus=selected.id;$('query').value='';}
+  loadGraph();};
+$('search').onclick=()=>{offset=0;if($('view').value==='focused'&&$('query').value.trim())focus='';loadGraph();};
+$('query').onkeydown=e=>{if(e.key==='Enter'){$('search').click();}};
+$('whole').onclick=()=>{focus='';offset=0;loadGraph();};$('previous').onclick=()=>{offset=Math.max(0,offset-150);loadGraph();};$('next').onclick=()=>{offset+=150;loadGraph();};
+$('focus').onclick=()=>{if(callable(graph?.nodes.find(n=>n.id===selected?.id)))selectFocusedFunction(selected.id);};$('openSource').onclick=source;
+$('fit').onclick=()=>cy?.fit(undefined,40);$('layout').onclick=()=>draw();$('zoomIn').onclick=()=>{if(cy)cy.zoom({level:Math.min(cy.maxZoom(),cy.zoom()*1.6),renderedPosition:{x:cy.width()/2,y:cy.height()/2}});};$('zoomOut').onclick=()=>{if(cy)cy.zoom({level:Math.max(cy.minZoom(),cy.zoom()/1.6),renderedPosition:{x:cy.width()/2,y:cy.height()/2}});};
+$('globalKind').onchange=()=>{globalSpotlight=[];globalSpotlightLabel='';if($('view').value==='all')draw();};
+$('globalBright').onclick=()=>{globalBright=!globalBright;updateGlobalSpotlight();};
+$('globalReset').onclick=()=>{globalSpotlight=[];globalSpotlightLabel='';updateGlobalSpotlight();};
+$('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';if(cy)cy.style(graphStyle());};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(pollTimer);pollTimer=null;}else if(state?.status==='RUNNING')refresh(false);});
+window.addEventListener('pagehide',()=>{clearTimeout(pollTimer);graphController?.abort();});
+refresh();
