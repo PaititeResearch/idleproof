@@ -40,3 +40,14 @@ test('Deep has an independent same-origin embed bridge without mutating its orig
   assert.equal(plain.includes('atlas-unified-embed.js'),false);
   assert.throws(()=>injectEmbeddedDeep('<main></main>'),/ATLAS_UNIFIED_SHELL_INCOMPATIBLE/);
 });
+
+test('unified injection accepts CRLF Windows checkout without normalizing original V1 facts',()=>{
+  const original=read('atlas.html').replace(/\r?\n/g,'\r\n');
+  const combined=injectUnifiedAtlas(original);
+  assert.match(combined,/id="atlasUnifiedNav"/);
+  assert.match(combined,/id="atlasUnifiedStructure"/);
+  assert.match(combined,/id="atlasUnifiedDeepFrame"/);
+  assert.ok(combined.includes(original.slice(original.indexOf('<div class="intro">'),original.indexOf('</footer>')+9)));
+  assert.ok(combined.includes('\r\n<div class="intro">'),'Windows newline retained at source boundary');
+  assert.throws(()=>injectUnifiedAtlas(combined),/ATLAS_UNIFIED_SHELL_INCOMPATIBLE/);
+});

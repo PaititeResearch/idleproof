@@ -8,6 +8,8 @@ const once=(source,needle,replacement)=>{
 };
 
 export function injectUnifiedAtlas(html){
+  // Accept LF and CRLF checkouts without changing any original V1 bytes.
+  const eol=html.includes('\r\n')?'\r\n':'\n';
   let result=once(html,'</head>','<link rel="stylesheet" href="/atlas-unified.css"></head>');
   const nav=[
     '<nav id="atlasUnifiedNav" class="atlas-unified-nav" aria-label="Atlas workspaces">',
@@ -19,8 +21,8 @@ export function injectUnifiedAtlas(html){
     '<p id="atlasUnifiedStatus" role="status" aria-live="polite">Structure and UML retain private notes and user model revisions. Deep presents source-bound evidence separately.</p>',
     '</nav>'
   ].join('\n');
-  result=once(result,'<main>\n<div class="intro">',
-    '<main>\n'+nav+'\n<div id="atlasUnifiedStructure" role="tabpanel" aria-labelledby="atlasUnifiedStructureTab">\n<div class="intro">');
+  result=once(result,'<main>'+eol+'<div class="intro">',
+    '<main>'+eol+nav+eol+'<div id="atlasUnifiedStructure" role="tabpanel" aria-labelledby="atlasUnifiedStructureTab">'+eol+'<div class="intro">');
   const deep=[
     '</div>',
     '<section id="atlasUnifiedDeep" class="atlas-unified-deep" role="tabpanel" aria-labelledby="atlasUnifiedDeepTab" hidden>',
@@ -28,7 +30,7 @@ export function injectUnifiedAtlas(html){
     '<iframe id="atlasUnifiedDeepFrame" title="Atlas — semantic calls, control and data flow" referrerpolicy="no-referrer" loading="lazy"></iframe>',
     '</section>'
   ].join('\n');
-  result=once(result,'</footer>\n</main>','</footer>\n'+deep+'\n</main>');
+  result=once(result,'</footer>'+eol+'</main>','</footer>'+eol+deep+eol+'</main>');
   result=once(result,'</body>','<script type="module" src="/atlas-unified.js"></script>\n</body>');
   return result;
 }
