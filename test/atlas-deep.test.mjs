@@ -44,9 +44,28 @@ test('deep server: disabled bytes stay exact; enabled reads do not start analysi
   const f=fixture(t),apps=[];t.after(async()=>{for(const app of apps){app.server.closeAllConnections?.();await new Promise(resolve=>app.server.close(resolve));}});
   const disabled=await createServer({cwd:f.cwd,port:0,experimentalAtlas:true,experimentalAtlasDeep:false});apps.push(disabled);
   assert.equal(await (await fetch(disabled.url+'/atlas.html')).text(),fs.readFileSync(new URL('../public/atlas.html',import.meta.url),'utf8'));
-  for(const p of ['/atlas-deep.html','/atlas-deep.js','/api/atlas-deep'])assert.equal((await fetch(disabled.url+p)).status,404);
+  for(const p of ['/atlas-deep.html','/atlas-deep.js','/api/atlas-deep','/atlas-unified.js','/atlas-unified-embed.js'])
+    assert.equal((await fetch(disabled.url+p)).status,404);
   const enabled=await createServer({cwd:f.cwd,port:0,experimentalAtlas:true,experimentalAtlasDeep:true});apps.push(enabled);
-  assert.match(await (await fetch(enabled.url+'/atlas.html')).text(),/Open experimental Deep Understanding/);
+  const unified=await fetch(enabled.url+'/atlas.html'),unifiedHtml=await unified.text();
+  assert.match(unifiedHtml,/id="atlasUnifiedNav"/);
+  assert.match(unifiedHtml,/id="atlasUnifiedDeepFrame"/);
+  assert.match(unifiedHtml,/id="annotation"/);
+  assert.match(unifiedHtml,/id="historyDialog"/);
+  assert.match(unifiedHtml,/\/atlas-unified\.js/);
+  assert.equal(unified.headers.get('x-frame-options'),'DENY');
+  const standalone=await fetch(enabled.url+'/atlas-deep.html');
+  assert.equal(standalone.headers.get('x-frame-options'),'DENY');
+  assert.match(standalone.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+  assert.doesNotMatch(await standalone.text(),/atlas-unified-embed/);
+  const frame=await fetch(enabled.url+'/atlas-deep.html?embedded=1');
+  assert.equal(frame.headers.get('x-frame-options'),'SAMEORIGIN');
+  assert.match(frame.headers.get('content-security-policy'),/frame-ancestors 'self'/);
+  assert.match(await frame.text(),/atlas-unified-embed\.js/);
+  const outerFrame=await fetch(enabled.url+'/atlas.html?embedded=1');
+  assert.equal(outerFrame.headers.get('x-frame-options'),'SAMEORIGIN');
+  assert.match(outerFrame.headers.get('content-security-policy'),/frame-ancestors 'self'/);
+  assert.equal((await fetch(enabled.url+'/')).headers.get('x-frame-options'),'DENY');
   for(let i=0;i<2;i++){const status=await (await fetch(enabled.url+'/api/atlas-deep')).json();assert.equal(status.status,'IDLE');assert.equal(status.identity.snapshotId,f.model.header.snapshotId);assert.equal(status.job,null);}
   const foreign=await fetch(enabled.url+'/api/atlas-deep',{method:'POST',headers:{origin:'https://foreign.invalid','content-type':'application/json'},body:JSON.stringify({action:'analyze',source:'HEAD',snapshotId:f.model.header.snapshotId})});assert.equal(foreign.status,403);
   const stale=await fetch(enabled.url+'/api/atlas-deep',{method:'POST',headers:{origin:enabled.url,'content-type':'application/json'},body:JSON.stringify({action:'analyze',source:'HEAD',snapshotId:'dwscan_'+'0'.repeat(64)})});assert.equal(stale.status,409);
