@@ -206,7 +206,7 @@ export function sqlLessonSupported(session = {}) {
   return /\b(?:sql|transactions?|database|postgres(?:ql)?|sqlite|mysql)\b|\bselect\b[\s\S]{1,120}\bfrom\b|\binsert\s+into\b|\bupdate\s+\w+\s+set\b/i.test(prompt);
 }
 
-function applicableConcept(session, id) {
+export function applicableConcept(session, id) {
   // Only the concepts actually recognized in the inspected code may drive a Local
   // lesson. A phrase such as "fin de session" in the agent prompt must not create
   // an Authentication lesson about an unrelated arithmetic function.
