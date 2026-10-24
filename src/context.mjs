@@ -3,6 +3,10 @@ import { isBuiltin } from 'node:module';
 import { inferFileRole } from './semantics.mjs';
 import { readProjectSource } from './project-source.mjs';
 import { loadStructureExtractions, supportsStructurePath, structureLanguageFor } from './structure-provider.mjs';
+import { changeEvidence, changedFiles, changedSymbolsFromLines } from './change-evidence.mjs';
+import { detectConcepts } from './analyze.mjs';
+import { isExcludedProjectPath } from './project-source.mjs';
+import { sqlStatementTables } from './sql-shape.mjs';
 
 const MAX_RELATED_FILES = 8;
 const cache = new Map();
@@ -111,9 +115,8 @@ function routesFromText(text) {
 function tablesFromText(text) {
   const tables = [];
   const source = String(text).split(/\r?\n/).filter((line) => !/^\s*from\s+[.A-Za-z_][\w.]*\s+import\b/i.test(line)).join('\n');
+  tables.push(...sqlStatementTables(source));
   const patterns = [
-    /\b(?:CREATE|ALTER|DROP)\s+TABLE\s+(?:IF\s+(?:NOT\s+)?EXISTS\s+)?["`]?([A-Za-z_][\w.]*)/gi,
-    /\b(?:FROM|JOIN|INTO|UPDATE)\s+["`]?([A-Za-z_][\w.]*)/gi,
     /\.(?:from|table)\s*\(\s*["'`]([A-Za-z_][\w.-]*)["'`]\s*\)/gi,
     /\b__tablename__\s*=\s*["']([A-Za-z_][\w.-]*)["']/gi
   ];
@@ -121,19 +124,33 @@ function tablesFromText(text) {
   return unique(tables).slice(0, 24);
 }
 
+const nameParts = (value = '') => String(value).replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter((part) => part.length >= 3);
+
+// Whole identifiers and their snake/camel/kebab parts: `gift_wrap_fee_cents` in a request must
+// match the symbol `gift_wrap_fee_cents` and its parts.
 function wordTokens(value = '') {
-  return new Set(String(value).toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g) || []);
+  const words = String(value).match(/[A-Za-z][A-Za-z0-9_-]{2,}/g) || [];
+  return new Set(words.flatMap((word) => [word.toLowerCase(), ...nameParts(word)]));
 }
 
-function chooseSymbol(symbols, prompt) {
-  if (!symbols.length) return null;
+const CHANGE_WEIGHT = { added:60, modified:40 };
+
+// The symbol the evidence points to, and why: a symbol the change adds or modifies, then one the
+// request names. Without either, no symbol is singled out: the first declaration of a file says
+// nothing about the task.
+function chooseSymbol(symbols, prompt, changed = new Map()) {
+  if (!symbols.length) return { symbol:null, evidence:null };
   const tokens = wordTokens(prompt);
   const scored = symbols.map((symbol, index) => {
-    const parts = String(symbol).replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-    const hits = parts.filter((part) => tokens.has(part)).length;
-    return { symbol, score:hits * 10 - index * 0.01 };
+    const exact = tokens.has(String(symbol).toLowerCase().split('.').at(-1)) ? 100 : 0;
+    const hits = nameParts(symbol.split('.').at(-1)).filter((part) => tokens.has(part)).length;
+    const change = CHANGE_WEIGHT[changed.get(symbol)] || 0;
+    return { symbol, change, prompt:exact + hits * 10, score:change + exact + hits * 10 - index * 0.01 };
   }).sort((a, b) => b.score - a.score);
-  return scored[0].symbol;
+  const best = scored[0];
+  if (best.change) return { symbol:best.symbol, evidence:changed.get(best.symbol) };
+  if (best.prompt) return { symbol:best.symbol, evidence:'request' };
+  return { symbol:null, evidence:null };
 }
 
 function technologiesFrom(text) {
@@ -148,13 +165,23 @@ function preferredContextFile(session = {}) {
   return reading ? (live || touched) : (touched || live);
 }
 
-function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
+// Symbols the change touched in a file without a parser: declarations in the added lines.
+function heuristicChangedSymbols(symbols, change) {
+  if (!change) return new Map();
+  if (change.newFile) return new Map(symbols.map((symbol) => [symbol, 'added']));
+  const declared = new Set(symbolsFromText(stripCommentEvidence(change.addedText || '')));
+  return new Map(symbols.filter((symbol) => declared.has(symbol)).map((symbol) => [symbol, 'modified']));
+}
+
+function inspectTaskFile(cwd, file, prompt, admitted, extractions, evidence = new Map()) {
   const safe = admitted.get(file);
   if (!safe) {
-    const fallback = { file:file || null, symbol:null, route:null, table:null, technologies:[], dependencies:[], importReferences:[], symbols:[],
+    const fallback = { file:file || null, symbol:null, symbolEvidence:null, route:null, table:null, technologies:[], dependencies:[], importReferences:[], symbols:[],
+      changed:false, newFile:false, changedSymbols:[], codeConcepts:[],
       structureCoverage:{provider:'unavailable',parsed:null,canonical:false,reason:'source-unavailable'} };
     return { ...fallback, fileRole:inferFileRole(file || '', fallback) };
   }
+  const change = evidence.get(safe.relative) || null;
   const canonical = extractions.byPath.get(safe.relative);
   // A language with a canonical provider whose extraction is unavailable or rejected has no
   // structural facts: text matching cannot tell a declaration from one quoted in a string, so
@@ -167,7 +194,7 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
       ? {provider:'unavailable',sourceSha256:safe.sha256,parsed:null,canonical:false,reason:extractions.reason}
       : {provider:'legacy-heuristic',sourceSha256:safe.sha256,parsed:null,canonical:false,reason:'language-adapter-pending'};
   const cacheKey = JSON.stringify([safe.absolute, safe.sha256, createHash('sha256').update(prompt).digest('hex'),
-                                 canonical||structureCoverage]);
+                                 canonical||structureCoverage, change ? [change.newFile, change.ranges] : null]);
   if (cache.has(cacheKey)) return structuredClone(cache.get(cacheKey));
 
   // The request can rank observed symbols, but cannot create file-specific facts.
@@ -193,9 +220,20 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
   const dependencies = dataSource||unresolvedOrigin||providerFailed ? [] : canonical ? unique(canonical.imports.map(item=>externalDependency(
     canonical.language==='python' ? item.target.split('.')[0] : item.target,canonical.language))).slice(0,24)
     : dependenciesFromText(evidenceText);
+  const changedSymbols = canonical
+    ? changedSymbolsFromLines(canonical.symbols.map((symbol) => ({ name:displayName(symbol), line:symbol.line, end_line:symbol.end_line })), change)
+    : heuristicChangedSymbols(symbols, change);
+  const choice = chooseSymbol(symbols, prompt, changedSymbols);
+  // Concepts the code itself supports: what the change adds, or the inspected file when unchanged.
+  const conceptText = documentSource ? '' : change ? stripCommentEvidence(change.newFile ? safe.text : change.addedText || '') : evidenceText;
   const base = {
     file:safe.relative,
-    symbol:chooseSymbol(symbols, prompt),
+    symbol:choice.symbol,
+    symbolEvidence:choice.evidence,
+    changed:Boolean(change),
+    newFile:Boolean(change?.newFile),
+    changedSymbols:[...changedSymbols].slice(0, 12).map(([name, kind]) => ({ name, kind })),
+    codeConcepts:dataSource ? [] : detectConcepts(conceptText),
     route:routes[0] || null,
     table:tables[0] || null,
     technologies:unique(technologiesFrom(dataSource ? '' : evidenceText)).slice(0, 12),
@@ -211,17 +249,38 @@ function inspectTaskFile(cwd, file, prompt, admitted, extractions) {
   return signal;
 }
 
+// At handoff the subject is the change itself: a changed production file with changed symbols, then
+// a changed test file, ranked by how the request names them. A file only read is never the subject.
+function changeSubject(inspected, prompt) {
+  const tokens = wordTokens(prompt);
+  const score = (item) => (item.changedSymbols.length ? 100 : 0) + (item.fileRole?.role === 'test' ? 0 : 50)
+    + ({ added:10, modified:5 }[item.symbolEvidence] || 0)
+    + nameParts(item.file).filter((part) => tokens.has(part)).length
+    + (item.symbol && tokens.has(String(item.symbol).toLowerCase()) ? 20 : 0);
+  return inspected.filter((item) => item.changed)
+    .map((item, index) => ({ item, score:score(item) - index * 0.001 }))
+    .sort((a, b) => b.score - a.score)[0]?.item || null;
+}
+
 export function extractTaskSignals(cwd = process.cwd(), session = {}, {onStructureFailure=null, structureOptions={}} = {}) {
   const prompt = String(session.prompt || '');
-  const currentFile = preferredContextFile(session);
-  const candidates = unique([currentFile, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean).slice(-MAX_RELATED_FILES);
-  const admitted = new Map(unique([currentFile,...candidates]).map(file=>[file,readProjectSource(cwd,file)]));
+  const preferred = preferredContextFile(session);
+  const handoff = session.status === 'complete';
+  const changed = handoff ? changedFiles(cwd, session).filter((file) => !isExcludedProjectPath(file)).slice(0, MAX_RELATED_FILES) : [];
+  const touched = unique([preferred, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean).slice(-MAX_RELATED_FILES);
+  // The changed files come first so a long reading session cannot push them out of the bound.
+  const candidates = unique([...changed, ...touched]).slice(0, MAX_RELATED_FILES);
+  const admitted = new Map(unique([preferred,...candidates]).filter(Boolean).map(file=>[file,readProjectSource(cwd,file)]));
   const sources = [...new Map([...admitted.values()].filter(Boolean).map(source=>[source.relative,source])).values()]
     .filter(source=>supportsStructurePath(source.relative));
   const extractions = loadStructureExtractions(cwd,sources,{...structureOptions,onFailure:onStructureFailure});
-  const current = inspectTaskFile(cwd, currentFile, prompt, admitted, extractions);
-  const relatedFiles = candidates.map((file) => inspectTaskFile(cwd, file, prompt, admitted, extractions));
+  const evidence = changeEvidence(cwd, session, [...admitted.values()].filter(Boolean).map((source) => source.relative));
+  const inspect = (file) => inspectTaskFile(cwd, file, prompt, admitted, extractions, evidence);
+  const relatedFiles = candidates.map(inspect);
+  const preferredSignals = inspect(preferred);
+  const current = (handoff && changeSubject([preferredSignals, ...relatedFiles], prompt)) || preferredSignals;
   const allTechnologies = unique([...(current.technologies || []), ...relatedFiles.flatMap((item) => item.technologies || [])]).slice(0, 16);
-  return { ...current, technologies:allTechnologies, relatedFiles };
+  const codeConcepts = unique([...(current.codeConcepts || []), ...relatedFiles.filter((item) => item.changed).flatMap((item) => item.codeConcepts || [])]);
+  return { ...current, technologies:allTechnologies, codeConcepts, relatedFiles };
 }
 

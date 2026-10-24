@@ -18,9 +18,13 @@ export function canonicalCore(facts={},calls=[]) {
       const declared=facts[file.path]||facts[file.path.split('/').at(-1)]||{};
       const module=language==='python'?file.path.slice(0,-3).replace(/\/?__init__$/,'').replaceAll('/','.'):file.path;
       const lineOf=name=>lines.findIndex(line=>line.includes(name))+1;
-      const symbols=(declared.symbols||[]).filter(name=>lineOf(name)>0).map(name=>({
+      // A declared symbol is a name (one-line span at its first occurrence) or a parser span
+      // {name, line, end_line}, emitted only when that line of the sent bytes still declares it.
+      const span=item=>typeof item==='string'?{name:item,line:lineOf(item),end_line:lineOf(item)}
+        :{name:item.name,line:lines[item.line-1]?.includes(item.name)?item.line:0,end_line:item.end_line};
+      const symbols=(declared.symbols||[]).map(span).filter(item=>item.line>0).map(({name,line,end_line})=>({
         qualified_name:language==='python'?`${module}.${name}`:`${file.path}::${name}`,kind:'function',
-        line:lineOf(name),end_line:lineOf(name),epistemic_status:'OBSERVED',local_call_name:name}));
+        line,end_line,epistemic_status:'OBSERVED',local_call_name:name}));
       const imports=(declared.imports||[]).map(target=>details
         ?{target,epistemic_status:'OBSERVED',source_target:null,members:null,line:null,end_line:null}
         :{target,epistemic_status:'OBSERVED'});
