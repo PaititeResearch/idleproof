@@ -137,3 +137,18 @@ test('Local hides session-word auth lessons unsupported by the current inspected
   });
   assert.equal(genuineAuth.card.id, 'auth');
 });
+
+
+test('a real inspected TypeScript source retains its relevant lesson without requiring the word TypeScript inside code', () => {
+  const state = { ledger: { typescript: { confidence:0, exposures:1 } } };
+  const session = {
+    id:'stripe-work', status:'active', prompt:'Update src/stripe.ts',
+    touchedFiles:['src/stripe.ts'],
+    taskSignals:{file:'src/stripe.ts', codeConcepts:[], structureCoverage:{sourceSha256:'a'.repeat(64)}},
+    concepts:{typescript:{events:2}}
+  };
+  assert.equal(buildLearningExperience(state,session).card.id,'typescript');
+  assert.equal(buildLearningExperience(state,{
+    ...session,taskSignals:{file:'src/stripe.ts',codeConcepts:[]}
+  }).card.id,null, 'a file path that was not inspected is not sufficient');
+});
