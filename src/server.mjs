@@ -79,7 +79,10 @@ function enrichLearningSession(cwd, session, recentEvents = []) {
   if (!session) return null;
   const event = latestContextEvent(session, recentEvents);
   const enriched = { ...session, currentCapabilities:event?.capabilities || [], currentExecutable:event?.commandExecutable || null, currentResource:event?.resource || null };
-  enriched.taskSignals = extractTaskSignals(cwd, enriched);
+  // Live UI scope, not the native task/Proof baseline: long-lived Codex sessions
+  // can span commits. Describe current worktree changes relative to HEAD, instead
+  // of claiming that a function committed in an earlier turn is newly added.
+  enriched.taskSignals = extractTaskSignals(cwd, { ...enriched, baselineIdentity: null });
   return enriched;
 }
 
