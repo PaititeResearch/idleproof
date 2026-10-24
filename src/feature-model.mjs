@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { loadStructureExtractions, supportsStructurePath, structureLanguageFor } from './structure-provider.mjs';
+import { sqlStatementTables } from './sql-shape.mjs';
 import { SOURCE_FILE_BYTES, isExcludedProjectPath as ignored, isInsideProject as inside,
          admitProjectSource as admittedSource, readProjectSource as safeRead } from './project-source.mjs';
 
@@ -96,9 +97,8 @@ function sqlSignalText(text) {
 
 function tablesFromText(text) {
   const source=sqlSignalText(text); const tables=[];
+  tables.push(...sqlStatementTables(source));
   for (const pattern of [
-    /\b(?:CREATE|ALTER|DROP)\s+TABLE\s+(?:IF\s+(?:NOT\s+)?EXISTS\s+)?["`]?([A-Za-z_][\w.]*)/gi,
-    /\b(?:FROM|JOIN|INTO|UPDATE)\s+["`]?([A-Za-z_][\w.]*)/gi,
     /\.(?:from|table)\s*\(\s*["'`]([A-Za-z_][\w.-]*)["'`]\s*\)/gi,
     /\b__tablename__\s*=\s*["']([A-Za-z_][\w.-]*)["']/gi
   ]) for (const match of source.matchAll(pattern)) tables.push(match[1]);

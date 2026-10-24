@@ -256,7 +256,10 @@ function safeTaskSummary(session=null, explanation=null) {
   const route=redact(signals.route || '',120);
   const table=redact(signals.table || '',120);
   const concept=redact(explanation?.concept?.name || explanation?.concept?.id || '',100);
-  if (symbol && file && `Work around ${symbol} in ${file}`.length<=300) return `Work around ${symbol} in ${file}`;
+  // The summary names the symbol the change adds or modifies when Git shows it; otherwise the
+  // symbol is only where the work was observed.
+  const verb=signals.symbolEvidence==='added' ? 'Adds' : signals.symbolEvidence==='modified' ? 'Changes' : 'Work around';
+  if (symbol && file && `${verb} ${symbol} in ${file}`.length<=300) return `${verb} ${symbol} in ${file}`;
   if (route && file && `Work around route ${route} in ${file}`.length<=300) return `Work around route ${route} in ${file}`;
   if (table && file && `Work around data surface ${table} in ${file}`.length<=300) return `Work around data surface ${table} in ${file}`;
   if (file) return `Work involving ${file}`.length<=300 ? `Work involving ${file}` : 'Work involving a file listed in this snapshot.';

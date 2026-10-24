@@ -53,6 +53,26 @@ function neutralImportReferences(signals={}) {
 
 // A text-matched symbol from a language without a provider stays a candidate wherever it is shown.
 const symbolLabel = signals => symbolIsCandidate(signals) ? `the text-matched candidate \`${signals.symbol}\` (not parsed)` : `\`${signals.symbol}\``;
+const nameLabel = (signals, name) => symbolIsCandidate(signals) ? `\`${name}\` (text-matched, not parsed)` : `\`${name}\``;
+
+// How the subject symbol was selected: the change itself, the request, or (older callers) unstated.
+function symbolSentence(signals) {
+  if (signals.symbolEvidence === 'added') return `the change adds ${symbolLabel(signals)}`;
+  if (signals.symbolEvidence === 'modified') return `the change modifies ${symbolLabel(signals)}`;
+  if (signals.symbolEvidence === 'request') return `the request names ${symbolLabel(signals)}, which this file defines; this task's changes to it are not established`;
+  return `the work is currently centered on ${symbolLabel(signals)}`;
+}
+
+// Changed symbols are the current work; other declarations are existing context, kept apart.
+function changeFacts(signals) {
+  const changed = (signals.changedSymbols || []).filter((item) => item?.name).slice(0, 4);
+  if (!changed.length) return [];
+  const names = new Set(changed.map((item) => item.name));
+  const facts = [`this change ${changed.map((item) => `${item.kind === 'added' ? 'adds' : 'modifies'} ${nameLabel(signals, item.name)}`).join(', ')}`];
+  const unchanged = (signals.symbols || []).filter((name) => !names.has(name) && !(signals.changedSymbols || []).some((item) => item.name === name)).slice(0, 3);
+  if (unchanged.length) facts.push(`existing declarations it does not change include ${unchanged.map((name) => nameLabel(signals, name)).join(', ')}`);
+  return facts;
+}
 
 function fileObservation(file, session, currentFile) {
   const normalized = normalizedProjectPath(file);
@@ -60,9 +80,15 @@ function fileObservation(file, session, currentFile) {
   const signals = normalized === currentFile ? (session.taskSignals || {}) : (related || {});
   const inferred = inferFileRole(normalized, signals);
   const exact = `\`${normalized}\``;
-  const facts=[];
-  if (signals.symbol) facts.push(!symbolIsCandidate(signals) ? `the observed symbol is \`${signals.symbol}\``
+  const facts=changeFacts(signals);
+  if (signals.symbol && !facts.length) facts.push(!symbolIsCandidate(signals) ? `the observed symbol is \`${signals.symbol}\``
     : `a text-matched symbol candidate (not parsed) is \`${signals.symbol}\``);
+  // Declarations are facts about the file, not about the task: without a change or a request
+  // naming one, none of them is presented as the subject.
+  else if (!signals.symbol && !facts.length && (signals.symbols||[]).length) {
+    const listed = signals.symbols.slice(0,3).map((name)=>`\`${name}\``).join(', ');
+    facts.push(signals.structureCoverage?.canonical === true ? `it declares ${listed}` : `text-matched declarations (not parsed) include ${listed}`);
+  }
   if (signals.route) facts.push(`it exposes or references route \`${signals.route}\``);
   if (signals.table) facts.push(`it references data surface \`${signals.table}\``);
   if ((signals.dependencies||[]).length) facts.push(`it references ${signals.dependencies.slice(0,3).map((value)=>`\`${value}\``).join(', ')}`);
@@ -89,14 +115,15 @@ function conceptPlain(concept) { return CONCEPT_PLAIN[concept?.id] || null; }
 function detectedTerms(text) { const lower=String(text||'').toLowerCase(); return Object.entries(TERM_GLOSSARY).filter(([term])=>lower.includes(term)).map(([term,meaning])=>({term,meaning})).slice(0,5); }
 function surfaceSentence(signals={}) {
   const parts=[];
-  if (signals.symbol) parts.push(`the work is currently centered on ${symbolLabel(signals)}`);
+  if (signals.symbol) parts.push(symbolSentence(signals));
   if (signals.route) parts.push(`the task touches route \`${signals.route}\``);
   if (signals.table) parts.push(`the task touches stored data named \`${signals.table}\``);
   if ((signals.dependencies||[]).length) parts.push(`the current file references ${signals.dependencies.slice(0,3).map((value)=>`\`${value}\``).join(', ')}`);
   const imports=neutralImportReferences(signals);
   if (imports.length) parts.push(`the current file contains import references ${imports.map(value=>`\`${value}\``).join(', ')} (origins unresolved)`);
   if ((signals.technologies||[]).length) parts.push(`recognized stack signals include ${signals.technologies.slice(0,3).join(', ')}`);
-  return parts.length ? `${parts.join('; ')}.` : '';
+  const sentence = parts.join('; ');
+  return sentence ? `${sentence[0].toUpperCase()}${sentence.slice(1)}.` : '';
 }
 function watchItems(concept,files,signals={}) {
   const items=[]; const plain=conceptPlain(concept); if (plain?.watch) items.push(plain.watch); const roles=new Set(files.map((item)=>item.role));
@@ -126,7 +153,7 @@ export function buildPlainExplanation({session={},concept=null,phase='work'}={})
   return {
     schema:'idleproof.explanation.v1', title:task?'What this task means in your project':'What the agent is doing in your project', doing, project, why, expectedOutcome, watch, files,
     concept:plain?{id:concept.id,name:plain.name}:null, terms,
-    certainty:{ level:current&&observedSymbol(signals)?'observed-plus-inferred':'bounded-inference', limitations:[
+    certainty:{ level:current&&(observedSymbol(signals)||(signals.structureCoverage?.canonical===true&&(signals.symbols||[]).length))?'observed-plus-inferred':'bounded-inference', limitations:[
       'File roles are inferred from observed paths and static local context; they are not a proven runtime call graph.',
       'IdleProof distinguishes observed facts from inferred responsibility and keeps exact project names when evidence is weak.',
       'Whether the change is actually correct is a proof question for tests and DiffWitness, not something this explanation claims by itself.'
