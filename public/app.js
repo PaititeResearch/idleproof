@@ -409,27 +409,61 @@ function renderControlPlane(state) {
   syncCommitControls();
 }
 
+// One label per native Stop status. Only `accepted` is a Proof, and only when Core's change
+// envelope bound its certificate to this exact change.
+const NATIVE_STOP_LABELS = {
+  accepted:'Proof accepted', blocked:'Proof not accepted', inconclusive:'Proof inconclusive',
+  terminal:'Proof stopped · needs a person', unavailable:'DiffWitness unavailable · not verified',
+  pending:'Proof checking', 'no-change':'No change to prove', 'not-required':'No production code to prove',
+  'not-configured':'Proof not configured', unverified:'Proof not confirmed'
+};
+const NATIVE_STOP_HEADLINES = {
+  accepted:'DiffWitness accepted this change.<br><em>Review the exact evidence.</em>',
+  blocked:'The coding turn ended.<br><em>Proof was not accepted.</em>',
+  inconclusive:'The coding turn ended.<br><em>Proof was not accepted: the evidence is inconclusive.</em>',
+  terminal:'The coding turn ended.<br><em>Proof was not accepted: a person must step in.</em>',
+  unavailable:'The coding turn ended.<br><em>DiffWitness could not check it: not verified.</em>',
+  pending:'The coding turn ended.<br><em>Proof is still being checked.</em>',
+  'no-change':'The coding turn ended.<br><em>No repository change to prove.</em>',
+  'not-required':'The coding turn ended.<br><em>No production code changed: no Proof required.</em>',
+  unverified:'The coding turn ended.<br><em>Verification is not confirmed.</em>'
+};
+const NATIVE_STOP_REASONS = {
+  'test-runner-unavailable':'the evidence command could not start its test runner (environment problem, not a test failure)',
+  'evidence-command-unavailable':'the evidence command could not start (environment problem, not a test failure)',
+  'stable-fail':'the evidence command fails on the candidate (stable-fail)', flaky:'the evidence is flaky', timeout:'the evidence timed out',
+  inconclusive:'the evidence is inconclusive', 'debt-budget':'the Debt Ledger budget rejected the change',
+  'no-evidence-command':'no evidence command is configured', 'not-armed':'DiffWitness was not armed when the task started',
+  'change-identity-unavailable':'the accepted Proof could not be bound to this exact change',
+  'change-identity-mismatch':'the accepted Proof names another change',
+  'proof-envelope-unavailable':'the accepted Proof could not be bound to this exact change',
+  'proof-not-accepted-in-envelope':'Core did not record an accepted Proof for this change',
+  'certificate-mismatch':"the certificate does not match Core's record for this change",
+  'proof-not-accepted':'see the IDE handoff'
+};
+
 function render(state) {
   const session = state.session; const active = session?.status === 'active'; const complete = session?.status === 'complete';
   const agentName = session?.source === 'codex' ? 'Codex' : session?.source === 'claude' ? 'Claude Code' : session?.source ? session.source : 'Agent';
   // Observing a diff or finishing an IDE turn never establishes a DiffWitness Proof.
   // Historical/unknown/mismatched Stop results are deliberately not upgraded to VERIFIED.
   const nativeStop = complete && session?.nativeStop && session.nativeStop.changeId === (session.proof?.changeId || null) ? session.nativeStop : null;
-  const proven = nativeStop?.status === 'accepted' && typeof nativeStop.certificateId === 'string' &&
-    /^dw2_[a-z0-9]+$/.test(nativeStop.certificateId) && Boolean(nativeStop.changeId);
-  const refused = ['blocked', 'terminal', 'unavailable'].includes(nativeStop?.status);
-  const pending = nativeStop?.status === 'pending';
-  const proofLabel = proven ? 'Proof accepted' : refused ? 'Proof not accepted' : pending ? 'Proof checking' :
-    nativeStop?.status === 'no-change' ? 'No change to prove' :
-    nativeStop?.status === 'not-configured' ? 'Proof not configured' : 'Proof not confirmed';
+  const proven = nativeStop?.status === 'accepted' && /^dw[a-z0-9]{0,4}_[a-f0-9]{8,64}$/.test(String(nativeStop.certificateId || '')) &&
+    /^dwchg_[a-f0-9]{24}$/.test(String(nativeStop.changeId || '')) && nativeStop.binding === 'core-change-envelope';
+  const stopState = proven ? 'accepted' : nativeStop?.status === 'accepted' ? 'unverified' : nativeStop?.status || 'unverified';
+  const proofLabel = NATIVE_STOP_LABELS[stopState] || NATIVE_STOP_LABELS.unverified;
+  const stopReason = NATIVE_STOP_REASONS[nativeStop?.reasonCode] || (nativeStop?.reasonCode ? String(nativeStop.reasonCode) : 'see the IDE handoff');
+  const earlierRefusals = proven && nativeStop.earlierNotAccepted > 0 ? ` · ${nativeStop.earlierNotAccepted} earlier Stop attempt(s) on this change not accepted` : '';
   const learning = state.learning || {};
   $('project').textContent = state.project; $('debt').textContent = state.metrics.conceptsChecked ? state.metrics.debt : 'Not assessed'; $('coverage').textContent = state.metrics.conceptsChecked ? `${state.metrics.coverage}%` : 'Not assessed';
   $('coverage').nextElementSibling.textContent = `${state.metrics.conceptsChecked||0} checked / ${state.metrics.conceptsSeen||0} observed concepts`;
   document.body.classList.toggle('completed', complete); $('statusDot').classList.toggle('active', active);
   $('status').textContent = active ? `${agentName} working · ${learning.paused ? 'learning snoozed' : 'live lesson ready'}` : complete ? `${agentName} turn complete · ${proofLabel}` : 'Waiting for a coding agent';
   $('window').textContent = active ? `≈ ${session.estimatedWindow || 20} sec learning window` : complete ? 'handoff review · ' + proofLabel.toLowerCase() : 'no learning window';
-  $('currentTool').textContent = complete ? (proven ? `Native Proof accepted · ${nativeStop.certificateId}` : refused ? `Proof not accepted · ${nativeStop.reasonCode || 'see IDE handoff'}` : pending ? 'Native Proof is being checked' : 'Coding turn finished · verification not confirmed') : (session?.currentTool || 'No active tool');
-  $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : proven ? 'DiffWitness accepted this change.<br><em>Review the exact evidence.</em>' : refused ? 'The coding turn ended.<br><em>Proof was not accepted.</em>' : pending ? 'The coding turn ended.<br><em>Proof is still being checked.</em>' : complete ? 'The coding turn ended.<br><em>Verification is not confirmed.</em>' : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
+  $('currentTool').textContent = complete ? (proven ? `Native Proof accepted · ${nativeStop.certificateId}${earlierRefusals}` :
+    ['blocked', 'terminal', 'inconclusive', 'unavailable'].includes(stopState) ? `${proofLabel} · ${stopReason}` :
+    stopState === 'pending' ? 'Native Proof is being checked' : 'Coding turn finished · verification not confirmed') : (session?.currentTool || 'No active tool');
+  $('headline').innerHTML = active ? 'Your agent is building.<br><em>Keep the mental model.</em>' : complete ? NATIVE_STOP_HEADLINES[stopState] || NATIVE_STOP_HEADLINES.unverified : 'Vibe code fast.<br><em>Stay fluent in your own product.</em>';
   $('task').textContent = session?.prompt || 'Run `idleproof on`, then use Claude Code or Codex normally. IdleProof turns live agent work into task-specific learning and feature understanding.';
   if (active && learning.file) $('currentTool').textContent = `${session.currentTool || 'Working'} · ${learning.file}`;
   renderControlPlane(state);

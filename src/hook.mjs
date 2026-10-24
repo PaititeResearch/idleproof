@@ -22,6 +22,7 @@ import { taskContinuityQuery, taskDisplayText, taskMetadata, updateSessionTask }
 import { validContextIdentity, emptyContinuityJournal } from './continuity-contract.mjs';
 import { shellReadPaths } from './shell-read-context.mjs';
 import { continuityCounts, loadContinuityContext, renderContinuityForAgent } from './continuity.mjs';
+import { isBoundAcceptance } from './native-stop-status.mjs';
 
 function now() {
   return new Date().toISOString();
@@ -251,7 +252,9 @@ export function processHookLifecycle(event = {}, { deferAutoDebt = false } = {})
       };
       // This is an unverified transition: the native Core Stop has not run yet.
       // Preserve prior verdicts for historical changes, but never carry them to this boundary.
-      if (deferAutoDebt && eventName === 'Stop') {
+      // A repeated Stop of the exact tree Core already accepted keeps that verdict; its own
+      // result is still kept in the native Stop history.
+      if (deferAutoDebt && eventName === 'Stop' && !isBoundAcceptance(session.nativeStop, session.proof.changeId)) {
         session.nativeStop = { status: 'pending', changeId: session.proof.changeId, checkedAt: null };
       }
       session.findings = analyzeDiff(snapshot.diff);
