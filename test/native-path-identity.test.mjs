@@ -48,7 +48,7 @@ test('POSIX backslash source is unavailable instead of relabelled as a nested fi
   assert.equal(signals.symbol,null);
   assert.equal(signals.structureCoverage.canonical,false);
   assert.equal(signals.structureCoverage.reason,'source-unavailable');
-  assert.equal(signals.relatedFiles.find(item=>item.file==='part/file.py').symbol,'nested_symbol');
+  assert.deepEqual(signals.relatedFiles.find(item=>item.file==='part/file.py').symbols,['nested_symbol']);
   if(process.env.IDLEPROOF_REQUIRE_CANONICAL==='1') assert.equal(signals.relatedFiles.find(item=>item.file==='part/file.py').structureCoverage.canonical,true);
 });
 
