@@ -221,3 +221,12 @@ test('a completed coding turn never implies native Proof acceptance', async () =
     assert.match(ui.get('currentTool').textContent, /2 earlier Stop attempt\(s\) on this change not accepted/);
   }
 });
+
+
+test('file evidence is collapsed by default while the optional learning action stays accessible', () => {
+  assert.match(html, /<details id="explanationDetails" class="learning-evidence">/);
+  assert.match(html, /<summary>File observations, limitations and review guidance<\/summary>/);
+  assert.doesNotMatch(html, /<details id="explanationDetails"[^>]*\bopen\b/);
+  const extra = fs.readFileSync(new URL('../public/feature-review.js',import.meta.url),'utf8');
+  assert.match(extra, /lesson\.closest\('details'\)/);
+});
