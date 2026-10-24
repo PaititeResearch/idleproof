@@ -9,7 +9,7 @@ import { extractTaskSignals } from './context.mjs';
 import { cachedFeatureModel, findFeatureMemory, previewFeatureDrift, recentFeatureMemory, scoreFeatureAnswer } from './feature-memory.mjs';
 import { buildFeatureRecallChallenge, scoreStoredFeatureReview } from './feature-review.mjs';
 import { buildProjectModel } from './project-model.mjs';
-import { buildLearningExperience, buildLearningJourney } from './learning.mjs';
+import { applicableConcept, buildLearningExperience, buildLearningJourney } from './learning.mjs';
 import { presentLearningCard } from './presentation.mjs';
 import { taskConceptAvailability, snoozeUntil } from './snooze.mjs';
 import { computeMetrics, loadState, mutateState } from './state.mjs';
@@ -89,10 +89,19 @@ function enrichLearningSession(cwd, session, recentEvents = []) {
 function learningForState(cwd, state, recentEvents = safeRecentEvents(cwd, 40)) {
   const session = latestSession(state);
   const enriched = enrichLearningSession(cwd, session, recentEvents);
-  const journey = buildLearningJourney(state, enriched || {});
-  const availability = taskConceptAvailability(state, enriched || {});
+  // Use exactly the same code-grounded concept set for the live card, learning
+  // journey and snooze availability. Otherwise unrelated past prompt topics
+  // can leave a neutral card with no snooze button while PAUSED is still false.
+  // Do not rewrite the persisted session or erase historical learning exposure.
+  const grounded = enriched ? {
+    ...enriched,
+    concepts:Object.fromEntries(Object.entries(enriched.concepts || {})
+      .filter(([id]) => CONCEPT_BY_ID[id] && applicableConcept(enriched, id)))
+  } : null;
+  const journey = buildLearningJourney(state, grounded || {});
+  const availability = taskConceptAvailability(state, grounded || {});
   if (availability.paused) return { session, enriched, learning:{ ...journey, selectedConceptId:null, card:null, paused:true, snoozedConceptIds:availability.snoozed.map((item) => item.id), resumeAt:availability.resumeAt } };
-  const learningSession = enriched && Object.keys(enriched.concepts || {}).length ? { ...enriched, concepts:availability.available } : enriched;
+  const learningSession = grounded && Object.keys(grounded.concepts || {}).length ? { ...grounded, concepts:availability.available } : grounded;
   const selected = buildLearningExperience(state, learningSession || {}, 'testing');
   return { session, enriched, learning:{ ...selected, concepts:journey.concepts, recap:journey.recap, card:presentLearningCard(selected.card, enriched || {}), paused:false, snoozedConceptIds:availability.snoozed.map((item) => item.id), resumeAt:availability.resumeAt } };
 }
