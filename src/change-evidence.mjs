@@ -22,61 +22,52 @@ export function changeBase(session = {}) {
   return OBJECT.test(String(tree || '')) ? tree : 'HEAD';
 }
 
-function untracked(cwd, files) {
-  const listed = files.length ? git(cwd, ['ls-files', '--others', '--exclude-standard', '-z', '--', ...files]) : '';
-  return new Set(listed.split('\0').filter(Boolean).map(normalizedProjectPath));
+function untrackedFiles(cwd) {
+  return new Set(git(cwd, ['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean).map(normalizedProjectPath));
 }
 
-// Files the change touched relative to its base (tracked edits and new untracked files), relative to cwd.
-export function changedFiles(cwd, session = {}) {
-  try {
-    const base = changeBase(session);
-    const tracked = git(cwd, ['diff', '--no-color', '--no-ext-diff', '--relative', '--name-only', '-z', base, '--']);
-    const added = git(cwd, ['ls-files', '--others', '--exclude-standard', '-z']);
-    return [...new Set([...tracked.split('\0'), ...added.split('\0')].filter(Boolean).map(normalizedProjectPath))].slice(0, 200);
-  } catch {
-    return [];
+function parseHunks(diff, evidence) {
+  let current = null;
+  for (const line of diff.split('\n')) {
+    if (line.startsWith('diff --git ')) { current = null; continue; }
+    if (line.startsWith('+++ ')) {
+      const target = line.slice(4);
+      current = target === '/dev/null' ? null : normalizedProjectPath(target.replace(/^b\//, ''));
+      if (current && !evidence.has(current)) evidence.set(current, { newFile: false, ranges: [], addedText: '' });
+      continue;
+    }
+    if (!current) continue;
+    const entry = evidence.get(current);
+    const hunk = line.match(/^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+    if (hunk) {
+      const start = Number(hunk[2]);
+      const count = hunk[3] === undefined ? 1 : Number(hunk[3]);
+      // [from, to, pure addition]. A pure deletion has no new-side line: it touches the code
+      // around its position. Replaced lines are a modification, never an addition.
+      entry.ranges.push(count ? [start, start + count - 1, hunk[1] === '0'] : [Math.max(1, start), Math.max(1, start + 1), false]);
+      continue;
+    }
+    if (line.startsWith('+') && entry.addedText.length < MAX_ADDED_TEXT) entry.addedText += `${line.slice(1)}\n`;
   }
 }
 
-// Map of relative path → {newFile, ranges:[[start,end]], addedText}. Missing entries mean unchanged
-// or unknown; a Git failure yields an empty map, never an invented change.
-export function changeEvidence(cwd, session = {}, files = []) {
-  const wanted = [...new Set(files.filter(Boolean).map(normalizedProjectPath))].slice(0, MAX_FILES);
+// What the change did, from Git, relative to cwd: `files` lists every changed path (tracked edits
+// and new untracked files) and `evidence` maps a path to {newFile, ranges:[[start,end,pure]],
+// addedText}. With `only`, the diff is limited to those paths and new files are not looked up (the
+// live, per-event path: one Git process). A Git failure yields nothing, never an invented change.
+export function collectChanges(cwd, session = {}, { only = null } = {}) {
   const evidence = new Map();
-  if (!wanted.length) return evidence;
+  const wanted = only ? [...new Set(only.filter(Boolean).map(normalizedProjectPath))].slice(0, MAX_FILES) : null;
+  if (wanted && !wanted.length) return { files: [], evidence };
   try {
-    const fresh = untracked(cwd, wanted);
-    for (const file of fresh) evidence.set(file, { newFile: true, ranges: [[1, Number.MAX_SAFE_INTEGER, true]], addedText: null });
-    const tracked = wanted.filter((file) => !fresh.has(file));
-    if (!tracked.length) return evidence;
-    const diff = git(cwd, ['diff', '--no-color', '--no-ext-diff', '--relative', '-U0', changeBase(session), '--', ...tracked]);
-    let current = null;
-    for (const line of diff.split('\n')) {
-      if (line.startsWith('diff --git ')) { current = null; continue; }
-      if (line.startsWith('+++ ')) {
-        const target = line.slice(4);
-        current = target === '/dev/null' ? null : normalizedProjectPath(target.replace(/^b\//, ''));
-        if (current && !evidence.has(current)) evidence.set(current, { newFile: false, ranges: [], addedText: '' });
-        continue;
-      }
-      if (!current) continue;
-      const entry = evidence.get(current);
-      const hunk = line.match(/^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
-      if (hunk) {
-        const start = Number(hunk[2]);
-        const count = hunk[3] === undefined ? 1 : Number(hunk[3]);
-        // [from, to, pure addition]. A pure deletion has no new-side line: it touches the code
-        // around its position. Replaced lines are a modification, never an addition.
-        entry.ranges.push(count ? [start, start + count - 1, hunk[1] === '0'] : [Math.max(1, start), Math.max(1, start + 1), false]);
-        continue;
-      }
-      if (line.startsWith('+') && entry.addedText.length < MAX_ADDED_TEXT) entry.addedText += `${line.slice(1)}\n`;
+    parseHunks(git(cwd, ['diff', '--no-color', '--no-ext-diff', '--relative', '-U0', changeBase(session), '--', ...(wanted || [])]), evidence);
+    if (!wanted) {
+      for (const file of untrackedFiles(cwd)) evidence.set(file, { newFile: true, ranges: [[1, Number.MAX_SAFE_INTEGER, true]], addedText: null });
     }
   } catch {
-    return new Map();
+    return { files: [], evidence: new Map() };
   }
-  return evidence;
+  return { files: [...evidence.keys()].slice(0, 200), evidence };
 }
 
 const overlaps = (ranges, start, end) => ranges.some(([from, to]) => from <= end && to >= start);

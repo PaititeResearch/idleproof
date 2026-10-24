@@ -3,7 +3,7 @@ import { isBuiltin } from 'node:module';
 import { inferFileRole } from './semantics.mjs';
 import { readProjectSource } from './project-source.mjs';
 import { loadStructureExtractions, supportsStructurePath, structureLanguageFor } from './structure-provider.mjs';
-import { changeEvidence, changedFiles, changedSymbolsFromLines } from './change-evidence.mjs';
+import { changedSymbolsFromLines, collectChanges } from './change-evidence.mjs';
 import { detectConcepts } from './analyze.mjs';
 import { isExcludedProjectPath } from './project-source.mjs';
 import { sqlStatementTables } from './sql-shape.mjs';
@@ -266,7 +266,10 @@ export function extractTaskSignals(cwd = process.cwd(), session = {}, {onStructu
   const prompt = String(session.prompt || '');
   const preferred = preferredContextFile(session);
   const handoff = session.status === 'complete';
-  const changed = handoff ? changedFiles(cwd, session).filter((file) => !isExcludedProjectPath(file)).slice(0, MAX_RELATED_FILES) : [];
+  const touchedNow = unique([preferred, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean);
+  // Handoff: the whole change (one diff and the new files). Live: only the files in view.
+  const { files: changedPaths, evidence } = collectChanges(cwd, session, { only: handoff ? null : touchedNow });
+  const changed = handoff ? changedPaths.filter((file) => !isExcludedProjectPath(file)).slice(0, MAX_RELATED_FILES) : [];
   const touched = unique([preferred, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean).slice(-MAX_RELATED_FILES);
   // The changed files come first so a long reading session cannot push them out of the bound.
   const candidates = unique([...changed, ...touched]).slice(0, MAX_RELATED_FILES);
@@ -274,7 +277,6 @@ export function extractTaskSignals(cwd = process.cwd(), session = {}, {onStructu
   const sources = [...new Map([...admitted.values()].filter(Boolean).map(source=>[source.relative,source])).values()]
     .filter(source=>supportsStructurePath(source.relative));
   const extractions = loadStructureExtractions(cwd,sources,{...structureOptions,onFailure:onStructureFailure});
-  const evidence = changeEvidence(cwd, session, [...admitted.values()].filter(Boolean).map((source) => source.relative));
   const inspect = (file) => inspectTaskFile(cwd, file, prompt, admitted, extractions, evidence);
   const relatedFiles = candidates.map(inspect);
   const preferredSignals = inspect(preferred);
