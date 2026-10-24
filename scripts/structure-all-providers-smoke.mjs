@@ -31,7 +31,11 @@ try{
   assert.equal(value.structureCoverage.canonical,true,file);
   assert.equal(value.structureCoverage.provider,provider,file);
   assert.equal(value.structureCoverage.parsed,optional,file);
-  assert.equal(value.symbol,optional?expected:null,file);
+  // The request names only the decoy and nothing changed: no subject (#29). The provider's
+  // declarations hold the real one and never the decoy.
+  assert.equal(value.symbol,null,file);
+  assert.equal(value.symbols.includes(expected),optional,file);
+  assert.ok(!value.symbols.some(symbol=>/invented/i.test(symbol)),file);
   assert.deepEqual(value.dependencies,[],`${file}: origin is unresolved, not third-party proof`);
   if(file.startsWith('settings.')){
    assert.equal(value.route,null);assert.equal(value.table,null);assert.deepEqual(value.technologies,[]);
@@ -73,7 +77,8 @@ try{
  fs.utimesSync(jsonPath,stamp.atime,stamp.mtime);
  assert.equal(fs.statSync(jsonPath).size,stamp.size);
  const changed=extractTaskSignals(cwd,{currentResource:'settings.json',prompt:'Inspect invented'});
- assert.equal(changed.symbol,optional?'/c.d':null,'same-size source edit must invalidate cached keys');
+ assert.equal(changed.symbols.includes('/c.d'),optional,'same-size source edit must invalidate cached keys');
+ assert.ok(!changed.symbols.includes('/a.b'),'same-size source edit must invalidate cached keys');
  const previousCommand=process.env.DIFFWITNESS_BIN;
  try{
   process.env.DIFFWITNESS_BIN=path.join(cwd,'missing-dw');
