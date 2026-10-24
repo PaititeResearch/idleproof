@@ -144,6 +144,8 @@ test('refusals keep their Core cause: runner unavailable, inconclusive, terminal
   assert.deepEqual(classifyNativeStop({ changeId: id, diffResult: terminal(
     'DiffWitness still cannot establish acceptable evidence after 3 continuation attempts. Last reason: candidate is not stably green; classification: stable-fail') }),
   { status: 'terminal', reasonCode: 'stable-fail' });
+  assert.deepEqual(classifyNativeStop({ changeId: id, diffResult: block(
+    "classification: stable-fail\ncause: missing-module ('requests' is not importable by the evidence command)") }), { status: 'blocked', reasonCode: 'missing-module' });
   assert.deepEqual(classifyNativeStop({ changeId: id, diffResult: block('Reason: Debt Ledger budget rejected the change: max_per_change') }),
     { status: 'blocked', reasonCode: 'debt-budget' });
   assert.deepEqual(classifyNativeStop({ changeId: id, diffResult: terminal('DiffWitness was not armed at SessionStart, so this task cannot be declared verified.') }),

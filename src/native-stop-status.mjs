@@ -56,7 +56,7 @@ function envelopeBinding(envelope, changeId, certificateId) {
 }
 
 function refusalReason(text) {
-  const cause = text.match(/\bcause:\s*(test-runner-unavailable|evidence-command-unavailable)\b/)?.[1];
+  const cause = text.match(/\bcause:\s*(test-runner-unavailable|evidence-command-unavailable|missing-module)\b/)?.[1];
   if (cause) return cause;
   const classification = text.match(/classification:\s*(stable-fail|flaky|timeout)\b/i)?.[1];
   if (classification) return classification.toLowerCase();

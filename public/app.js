@@ -431,6 +431,7 @@ const NATIVE_STOP_HEADLINES = {
 const NATIVE_STOP_REASONS = {
   'test-runner-unavailable':'the evidence command could not start its test runner (environment problem, not a test failure)',
   'evidence-command-unavailable':'the evidence command could not start (environment problem, not a test failure)',
+  'missing-module':'a module the tests import is not installed or does not exist (see the IDE handoff)',
   'stable-fail':'the evidence command fails on the candidate (stable-fail)', flaky:'the evidence is flaky', timeout:'the evidence timed out',
   inconclusive:'the evidence is inconclusive', 'debt-budget':'the Debt Ledger budget rejected the change',
   'no-evidence-command':'no evidence command is configured', 'not-armed':'DiffWitness was not armed when the task started',
