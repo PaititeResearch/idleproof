@@ -207,6 +207,12 @@ export function sqlLessonSupported(session = {}) {
 }
 
 function applicableConcept(session, id) {
+  // Only the concepts actually recognized in the inspected code may drive a Local
+  // lesson. A phrase such as "fin de session" in the agent prompt must not create
+  // an Authentication lesson about an unrelated arithmetic function.
+  // Older callers with no source coverage preserve their prior behavior.
+  const grounded = session?.taskSignals?.codeConcepts;
+  if (Array.isArray(grounded) && !grounded.includes(id)) return false;
   return id !== 'sql' || sqlLessonSupported(session);
 }
 
