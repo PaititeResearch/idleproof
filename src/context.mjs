@@ -266,14 +266,16 @@ export function extractTaskSignals(cwd = process.cwd(), session = {}, {onStructu
   const prompt = String(session.prompt || '');
   const preferred = preferredContextFile(session);
   const handoff = session.status === 'complete';
-  const touchedNow = unique([preferred, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean);
-  // Handoff: the whole change (one diff and the new files). Live: only the files in view.
-  const { files: changedPaths, evidence } = collectChanges(cwd, session, { only: handoff ? null : touchedNow });
-  const changed = handoff ? changedPaths.filter((file) => !isExcludedProjectPath(file)).slice(0, MAX_RELATED_FILES) : [];
   const touched = unique([preferred, ...(session.touchedFiles || []).slice(-MAX_RELATED_FILES)]).filter(Boolean).slice(-MAX_RELATED_FILES);
+  // Live: one diff limited to the admitted project files in view (a path outside the project would
+  // fail the whole diff). Handoff: the whole change, one diff plus the new files.
+  const admittedTouched = new Map(unique([preferred, ...touched]).filter(Boolean).map((file) => [file, readProjectSource(cwd, file)]));
+  const { files: changedPaths, evidence } = collectChanges(cwd, session,
+    { only: handoff ? null : [...admittedTouched.values()].filter(Boolean).map((source) => source.relative) });
+  const changed = handoff ? changedPaths.filter((file) => !isExcludedProjectPath(file)).slice(0, MAX_RELATED_FILES) : [];
   // The changed files come first so a long reading session cannot push them out of the bound.
   const candidates = unique([...changed, ...touched]).slice(0, MAX_RELATED_FILES);
-  const admitted = new Map(unique([preferred,...candidates]).filter(Boolean).map(file=>[file,readProjectSource(cwd,file)]));
+  const admitted = new Map([...admittedTouched, ...unique(changed).filter((file) => !admittedTouched.has(file)).map((file) => [file, readProjectSource(cwd, file)])]);
   const sources = [...new Map([...admitted.values()].filter(Boolean).map(source=>[source.relative,source])).values()]
     .filter(source=>supportsStructurePath(source.relative));
   const extractions = loadStructureExtractions(cwd,sources,{...structureOptions,onFailure:onStructureFailure});

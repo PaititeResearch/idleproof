@@ -232,6 +232,18 @@ test('variants: rename, partial edit, similar names, several files, tests only, 
   });
 });
 
+test('agent paths are literal and a path outside the project does not lose the change evidence', (t) => {
+  const cwd = repo(t);
+  const { session } = turn(cwd);
+  // Live event with pathspec-magic-looking and outside-project paths in view.
+  const live = { ...session, status: 'active', currentResource: 'src/cart.py',
+    touchedFiles: [':(exclude)src/cart.py', path.join(os.tmpdir(), 'outside.py'), 'tests/test_cart.py', 'src/cart.py'] };
+  const found = signals(cwd, live);
+  assert.equal(found.file, 'src/cart.py');
+  assert.deepEqual(found.changedSymbols, [{ name: 'gift_wrap_fee_cents', kind: 'added' }]);
+  assert.equal(found.symbol, 'gift_wrap_fee_cents');
+});
+
 test('SQL tables need the shape of a statement', async () => {
   const { sqlStatementTables } = await import('../src/sql-shape.mjs');
   for (const prose of ['"""Fee computed from item_count; update the total, select from options"""',

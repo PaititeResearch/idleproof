@@ -10,8 +10,9 @@ const MAX_ADDED_TEXT = 64 * 1024;
 const GIT_TIMEOUT_MS = 5000;
 const OBJECT = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 
+// Paths come from agent events: they are always literal, never pathspec magic such as `:(exclude)`.
 function git(cwd, args) {
-  return execFileSync('git', ['-c', 'core.quotePath=false', ...args], {
+  return execFileSync('git', ['--literal-pathspecs', '-c', 'core.quotePath=false', ...args], {
     cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: GIT_TIMEOUT_MS, maxBuffer: 8 * 1024 * 1024, windowsHide: true
   });
 }
