@@ -98,7 +98,7 @@ function fileObservation(file, session, currentFile) {
 
   let explanation;
   if (facts.length) {
-    const prefix = normalized === currentFile ? 'is the file IdleProof can currently inspect most precisely' : 'was also inspected from the files touched in this task';
+    const prefix = normalized === currentFile ? 'is the file IdleProof can currently inspect most precisely' : 'was also inspected during this coding session';
     // A known symbol, import or technology does not by itself justify a guessed
     // responsibility. Low-confidence roles stay explicitly unknown even with facts.
     const role = inferred.confidence === 'high' ? `It looks like ${roleDescription(inferred.role)}; `
@@ -145,7 +145,7 @@ export function buildPlainExplanation({session={},concept=null,phase='work'}={})
   const doing=[phaseSentence(phase,task),current?`Right now, the clearest local evidence is in \`${current.path}\`${signals.symbol?` around ${symbolLabel(signals)}`:''}.`:'',surfaceSentence(signals)].filter(Boolean).join(' ');
   const fileDetails=files.slice(0,6).map((item)=>item.explanation).join(' ');
   const shellBoundary = session.shellReadFiles?.length ? ' Shell read commands identify referenced paths; IdleProof inspects their current local contents separately. This does not establish the exact bytes returned to the agent or execution of project code.' : '';
-  const project=(files.length ? `IdleProof observed ${files.length===1?'this file':`${files.length} files`} in the current task: ${files.map((item)=>`\`${item.path}\``).join(', ')}. ${fileDetails}` : 'IdleProof has the task context but has not yet observed a project-local file closely enough to make a file-specific claim.') + shellBoundary;
+  const project=(files.length ? `IdleProof observed ${files.length===1?'this file':`${files.length} files`} during this coding session: ${files.map((item)=>`\`${item.path}\``).join(', ')}. ${fileDetails}` : 'IdleProof has the task context but has not yet observed a project-local file closely enough to make a file-specific claim.') + shellBoundary;
   const why=plain ? `${plain.meaning} ${plain.risk}` : 'Understanding the observed work helps you review whether it addresses the requested task. IdleProof can explain the observed files and boundaries, but it will not invent a more specific business meaning until the code provides stronger evidence.';
   const expectedOutcome=phase==='handoff' ? 'Review the observed activity against the requested task. Treat code changes and test execution as separate claims that need their own evidence.' : `If the agent succeeds, the project should satisfy ${task?`the requested outcome “${task}”`:'the current requested outcome'} while preserving the surrounding behavior that this task depends on.`;
   const watch=watchItems(concept,files,signals);

@@ -102,3 +102,53 @@ test('card selection prioritizes task-relevant weak concepts and avoids an immed
   };
   assert.equal(selectLearningCard(state, session, 'testing'), 'http');
 });
+
+
+test('Local hides session-word auth lessons unsupported by the current inspected code', () => {
+  const state = {
+    ledger: {
+      auth: { confidence: 0, exposures: 3 },
+      testing: { confidence: 0, exposures: 2 }
+    }
+  };
+  const session = {
+    id:'codex-gift-wrap', status:'complete', source:'codex',
+    prompt:'Restore gift_wrap_fee_cents and terminate the coding session',
+    touchedFiles:['src/cart.py','tests/test_cart.py'],
+    taskSignals: { file:'src/cart.py', symbol:'gift_wrap_fee_cents', codeConcepts:['testing'] },
+    concepts: { auth:{ events:4 }, testing:{ events:2 } }
+  };
+  const withTests = buildLearningExperience(state, session, 'auth');
+  assert.equal(withTests.selectedConceptId, 'testing');
+  assert.equal(withTests.card.id, 'testing');
+  assert.deepEqual(withTests.concepts.map(item=>item.id), ['testing']);
+
+  const noGroundedConcept = buildLearningExperience(state, {
+    ...session, taskSignals:{ ...session.taskSignals, codeConcepts:[] }
+  }, 'auth');
+  assert.equal(noGroundedConcept.selectedConceptId, null);
+  assert.equal(noGroundedConcept.card.id, null);
+  assert.deepEqual(noGroundedConcept.concepts, []);
+  assert.notEqual(noGroundedConcept.card.title, 'Authentication & sessions');
+
+  const genuineAuth = buildLearningExperience(state, {
+    ...session,
+    taskSignals:{ file:'src/auth/session.ts', symbol:'authorizeAdmin', codeConcepts:['auth'] }
+  });
+  assert.equal(genuineAuth.card.id, 'auth');
+});
+
+
+test('a real inspected TypeScript source retains its relevant lesson without requiring the word TypeScript inside code', () => {
+  const state = { ledger: { typescript: { confidence:0, exposures:1 } } };
+  const session = {
+    id:'stripe-work', status:'active', prompt:'Update src/stripe.ts',
+    touchedFiles:['src/stripe.ts'],
+    taskSignals:{file:'src/stripe.ts', codeConcepts:[], structureCoverage:{sourceSha256:'a'.repeat(64)}},
+    concepts:{typescript:{events:2}}
+  };
+  assert.equal(buildLearningExperience(state,session).card.id,'typescript');
+  assert.equal(buildLearningExperience(state,{
+    ...session,taskSignals:{file:'src/stripe.ts',codeConcepts:[]}
+  }).card.id,null, 'a file path that was not inspected is not sufficient');
+});

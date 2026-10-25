@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { extractTaskSignals } from '../src/context.mjs';
+import { buildPlainExplanation } from '../src/explain.mjs';
 import { buildHookDelivery } from '../src/delivery.mjs';
 import { processHookLifecycle } from '../src/hook.mjs';
 import { buildPortalSnapshot } from '../src/portal-snapshot.mjs';
@@ -256,4 +257,39 @@ test('SQL tables need the shape of a statement', async () => {
   assert.deepEqual(sqlStatementTables("cur.execute('INSERT INTO widget_events(id) VALUES (1)')"), ['widget_events']);
   assert.deepEqual(sqlStatementTables('SELECT o.id FROM orders o JOIN customers c ON c.id = o.customer_id'), ['orders', 'customers']);
   assert.deepEqual(sqlStatementTables("sql`update invoices set paid = true`"), ['invoices']);
+});
+
+
+test('Live explanation rebases the running agent session on committed HEAD for regressions and recovery', (t) => {
+  const cwd = repo(t);
+  const { session } = turn(cwd);
+  const git = (...args) => execFileSync('git',args,{ cwd,stdio:['ignore','pipe','ignore'] });
+  git('add','-A');
+  git('commit','-qm','S1 committed baseline');
+  const original = fs.readFileSync(path.join(cwd,'src/cart.py'),'utf8');
+  const brokenText = original.replace('return min(item_count * 150, 600)','return 0');
+  assert.notEqual(brokenText,original);
+  fs.writeFileSync(path.join(cwd,'src/cart.py'),brokenText);
+  const uiSession = {
+    ...session, status:'complete',
+    prompt:'Intentionally regress gift_wrap_fee_cents without editing tests',
+    baselineIdentity:null
+  };
+  const broken = signals(cwd,uiSession);
+  assert.equal(broken.changed,true);
+  assert.equal(broken.file,'src/cart.py');
+  assert.equal(broken.symbol,'gift_wrap_fee_cents');
+  assert.equal(broken.symbolEvidence,'modified');
+  assert.ok(broken.changedSymbols.some(item=>item.name==='gift_wrap_fee_cents'&&item.kind==='modified'));
+
+  fs.writeFileSync(path.join(cwd,'src/cart.py'),original);
+  const restored = signals(cwd,{ ...uiSession, prompt:'Restore gift_wrap_fee_cents' });
+  assert.equal(restored.changed,false);
+  assert.deepEqual(restored.changedSymbols,[]);
+  const explanation = buildPlainExplanation({
+    session:{...uiSession,prompt:'Restore gift_wrap_fee_cents',touchedFiles:['src/cart.py'],taskSignals:restored},
+    phase:'handoff'
+  });
+  assert.doesNotMatch(explanation.doing+' '+explanation.project,/the change adds/);
+  assert.match(explanation.project,/coding session/i);
 });
