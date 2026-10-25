@@ -81,20 +81,21 @@ test('the nominal provider still extracts the actual symbols in every supported 
   const cwd = project(t);
   const signals = extractTaskSignals(cwd, SESSION, {structureOptions:declared});
   for (const item of everyFile(signals)) {
-    assert.equal(item.symbol, 'actual', item.file);
+    // The request names only the decoy and nothing changed: `actual` is observed, not the subject.
+    assert.equal(item.symbol, null, item.file);
     assert.deepEqual(item.symbols, ['actual'], item.file);
     assert.equal(item.structureCoverage.canonical, true, item.file);
     assert.equal(item.structureCoverage.parsed, true, item.file);
   }
   const explanation = buildPlainExplanation({session:{...SESSION, taskSignals:signals}});
-  assert.match(JSON.stringify(explanation), /the observed symbol is `actual`/);
+  assert.match(JSON.stringify(explanation), /it declares `actual`/);
   assert.equal(explanation.certainty.level, 'observed-plus-inferred');
 });
 
 test('recovery after an incident returns fresh facts and a later failure never reuses them', (t) => {
   const cwd = project(t);
   assertDegraded(extractTaskSignals(cwd, SESSION, {structureOptions:failingCore.timeout}), 'core-extraction-unavailable');
-  assert.equal(extractTaskSignals(cwd, SESSION, {structureOptions:declared}).symbol, 'actual', 'not stuck in a cached failure');
+  assert.deepEqual(extractTaskSignals(cwd, SESSION, {structureOptions:declared}).symbols, ['actual'], 'not stuck in a cached failure');
   // The same bytes with a failing provider: the earlier extraction is not silently reused.
   assertDegraded(extractTaskSignals(cwd, SESSION, {structureOptions:failingCore.exit}), 'core-extraction-unavailable');
   // Edited bytes: the provider's facts describe the new content only.
@@ -127,8 +128,8 @@ test('a language without a provider keeps its labelled heuristic, presented as a
   assert.match(JSON.stringify(explanation), /a text-matched symbol candidate \(not parsed\) is `mountWidget`/);
   // The summary never presents the candidate as the active symbol either.
   assert.match(explanation.doing, /around the text-matched candidate `mountWidget` \(not parsed\)/);
-  assert.match(explanation.doing, /centered on the text-matched candidate `mountWidget` \(not parsed\)/);
-  assert.ok(!/around `mountWidget`|centered on `mountWidget`/.test(explanation.doing));
+  assert.match(explanation.doing, /request names the text-matched candidate `mountWidget` \(not parsed\)/);
+  assert.ok(!/around `mountWidget`|centered on `mountWidget`|names `mountWidget`/.test(explanation.doing));
   assert.ok(!/observed symbol/.test(JSON.stringify(explanation)));
   assert.equal(explanation.certainty.level, 'bounded-inference');
 });

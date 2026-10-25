@@ -1,4 +1,5 @@
 import { normalizedProjectPath } from './project-path.mjs';
+import { publicNativeStop } from './native-stop-status.mjs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -295,7 +296,7 @@ export function publicSession(session) {
     changed: session.changed || { added: 0, deleted: 0 },
     proof: session.proof || null,
     // Local diff hashes are observations, not accepted Proof. Native Stop is recorded separately.
-    nativeStop: session.nativeStop?.changeId === (session.proof?.changeId || null) ? session.nativeStop : null,
+    nativeStop: publicNativeStop(session),
     findings: session.findings || [],
     concepts: session.concepts || {},
     events: (session.events || []).slice(-20)

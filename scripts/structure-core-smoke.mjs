@@ -11,7 +11,10 @@ try {
   fs.writeFileSync(file, 'bait = """\ndef invented(): pass\n"""\n\ndef actual():\n    return 1\n');
   const start=performance.now();
   const first=extractTaskSignals(cwd,{currentResource:'source.py',prompt:'Inspect invented'});
-  assert.equal(first.symbol,'actual','a string must not invent an AST declaration');
+  // The request names only the string's decoy and nothing changed: no subject (#29), and the
+  // declarations are exactly the AST's, never the string's.
+  assert.equal(first.symbol,null,'a string must not invent an AST declaration');
+  assert.deepEqual(first.symbols,['actual'],'a string must not invent an AST declaration');
   assert.equal(first.structureCoverage.provider,'python-ast');
   assert.equal(first.structureCoverage.parsed,true);
   assert.equal(first.structureCoverage.canonical,true);
@@ -25,9 +28,9 @@ try {
   assert.equal(invalid.structureCoverage.canonical,true);
   const stamp=new Date('2020-01-01T00:00:00Z');
   fs.writeFileSync(file,'def beforeEdit(): pass');fs.utimesSync(file,stamp,stamp);
-  assert.equal(extractTaskSignals(cwd,{currentResource:'source.py',prompt:'Inspect'}).symbol,'beforeEdit');
+  assert.deepEqual(extractTaskSignals(cwd,{currentResource:'source.py',prompt:'Inspect'}).symbols,['beforeEdit']);
   fs.writeFileSync(file,'def after_Edit(): pass');fs.utimesSync(file,stamp,stamp);
-  assert.equal(extractTaskSignals(cwd,{currentResource:'source.py',prompt:'Inspect'}).symbol,'after_Edit');
+  assert.deepEqual(extractTaskSignals(cwd,{currentResource:'source.py',prompt:'Inspect'}).symbols,['after_Edit']);
   assert.deepEqual(fs.readdirSync(cwd),['source.py']);
   console.log(JSON.stringify({schema:'idleproof-structure-core-smoke-1',passed:true,
     elapsed_ms:Math.round((performance.now()-start)*1000)/1000,classification:'MACHINE'}));

@@ -282,6 +282,10 @@ body[data-connection="stale"] .shell>section .panel-head,body[data-connection="s
 .risk-badge{flex:none;padding:1px 7px;border:1px solid var(--line-strong);border-radius:var(--r-xs);color:var(--ink-2);font:600 11px/1.6 var(--font-mono);letter-spacing:.03em}
 .why{max-width:74ch;color:var(--ink-2);font-size:13.5px;overflow-wrap:anywhere}
 .lesson{max-width:70ch;margin:14px 0 16px;color:var(--ink);font-size:15px;line-height:1.7;overflow-wrap:anywhere}
+.learning-evidence{max-width:74ch;margin:14px 0;border-top:1px solid var(--line)}
+.learning-evidence>summary{padding:12px 0;cursor:pointer;color:var(--ink-2);font-size:13px;font-weight:600}
+.learning-evidence>summary:hover{color:var(--ink)}
+.learning-evidence .lesson{margin:4px 0 18px;font-size:14px}
 .ledger{margin-top:6px}
 .ledger-row{display:grid;grid-template-columns:minmax(120px,1.2fr) auto 120px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
 .ledger-row:last-child{border-bottom:0}

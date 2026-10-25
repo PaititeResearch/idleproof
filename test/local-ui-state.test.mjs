@@ -168,28 +168,40 @@ test('a completed coding turn never implies native Proof acceptance', async () =
     session: { ...(original.session || {}), source:'codex', status:'complete',
       proof: { changeId, diffSha256:'c'.repeat(64) } } };
 
-  for (const [status, expected] of [
-    ['blocked', /Proof was not accepted/],
-    ['terminal', /Proof was not accepted/],
-    ['unavailable', /Proof was not accepted/],
+  for (const [status, expected, reasonCode = 'stable-fail'] of [
+    ['blocked', /Proof was not accepted\./],
+    ['blocked', /Proof was not accepted\./, 'test-runner-unavailable'],
+    ['terminal', /Proof was not accepted: a person must step in/],
+    ['inconclusive', /Proof was not accepted: the evidence is inconclusive/, 'inconclusive'],
+    ['unavailable', /DiffWitness could not check it: not verified/, 'SPAWN_FAILED'],
     ['pending', /Proof is still being checked/],
     ['unverified', /Verification is not confirmed/],
-    ['no-change', /Verification is not confirmed/],
+    ['no-change', /No repository change to prove/],
+    ['not-required', /No production code changed: no Proof required/],
     ['not-configured', /Verification is not confirmed/]
   ]) {
     const state = structuredClone(base);
-    state.session.nativeStop = { status, changeId, reasonCode:'stable-fail' };
+    state.session.nativeStop = { status, changeId, reasonCode };
     const ui = harness([state]);
     await ui.settle();
     assert.match(ui.get('headline').innerHTML, expected, status);
     assert.equal(ui.get('proofId').textContent, 'not verified', status);
     assert.doesNotMatch(ui.get('status').textContent, /Proof accepted/, status);
+    assert.doesNotMatch(ui.get('headline').innerHTML, /The code is ready/, status);
   }
 
-  // Older cached states and a native Stop for a foreign exact change cannot be treated as verified.
+  // A missing runner is an environment problem, never presented as a failing assertion.
+  const runner = structuredClone(base);
+  runner.session.nativeStop = { status:'blocked', changeId, reasonCode:'test-runner-unavailable' };
+  const runnerUi = harness([runner]);
+  await runnerUi.settle();
+  assert.match(runnerUi.get('currentTool').textContent, /could not start its test runner \(environment problem, not a test failure\)/);
+
+  // Older cached states, a native Stop for a foreign exact change and an acceptance that Core's
+  // envelope did not bind cannot be treated as verified.
   for (const nativeStop of [null, {
-    status:'accepted', changeId:'dwchg_' + 'b'.repeat(24), certificateId:'dw2_abcdef123456'
-  }]) {
+    status:'accepted', changeId:'dwchg_' + 'b'.repeat(24), certificateId:'dw2_abcdef1234567890abcd', binding:'core-change-envelope'
+  }, { status:'accepted', changeId, certificateId:'dw2_abcdef1234567890abcd' }]) {
     const state = structuredClone(base);
     state.session.nativeStop = nativeStop;
     const ui = harness([state]);
@@ -198,13 +210,23 @@ test('a completed coding turn never implies native Proof acceptance', async () =
     assert.equal(ui.get('proofId').textContent, 'not verified');
   }
 
-  const verified = structuredClone(base);
-  verified.session.nativeStop = {
-    status:'accepted', changeId, certificateId:'dw2_abcdef123456'
-  };
-  const ui = harness([verified]);
-  await ui.settle();
-  assert.match(ui.get('headline').innerHTML, /DiffWitness accepted this change/);
-  assert.match(ui.get('status').textContent, /Proof accepted/);
-  assert.equal(ui.get('proofId').textContent, 'dw2_abcdef123456');
+  for (const certificateId of ['dw2_abcdef1234567890abcd', 'dwac1_0123456789abcdef0123']) {
+    const verified = structuredClone(base);
+    verified.session.nativeStop = { status:'accepted', changeId, certificateId, binding:'core-change-envelope', earlierNotAccepted:2 };
+    const ui = harness([verified]);
+    await ui.settle();
+    assert.match(ui.get('headline').innerHTML, /DiffWitness accepted this change/);
+    assert.match(ui.get('status').textContent, /Proof accepted/);
+    assert.equal(ui.get('proofId').textContent, certificateId);
+    assert.match(ui.get('currentTool').textContent, /2 earlier Stop attempt\(s\) on this change not accepted/);
+  }
+});
+
+
+test('file evidence is collapsed by default while the optional learning action stays accessible', () => {
+  assert.match(html, /<details id="explanationDetails" class="learning-evidence">/);
+  assert.match(html, /<summary>File observations, limitations and review guidance<\/summary>/);
+  assert.doesNotMatch(html, /<details id="explanationDetails"[^>]*\bopen\b/);
+  const extra = fs.readFileSync(new URL('../public/feature-review.js',import.meta.url),'utf8');
+  assert.match(extra, /lesson\.closest\('details'\)/);
 });

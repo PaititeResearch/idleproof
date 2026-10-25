@@ -1,12 +1,9 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import { acceptedByPortalQueue, buildAssurancePortalSnapshot, queueAssuranceReceipt } from './portal-assurance.mjs';
 import { keepNativeMeasurement, settleWithManualAssurance } from './auto-debt.mjs';
 import { schedulePortalSync } from './portal-client.mjs';
+import { changeEnvelopePath } from './native-stop-status.mjs';
 
-function envelopePath(cwd) {
-  return path.join(cwd, '.git', 'diffwitness', 'change-envelope.json');
-}
 
 // Kept for the automatic job of this change, which sends it later if the Portal queue refuses it, instead of
 // measuring the change again, then queued for Portal in the same automatic debt queue-lock hold, so a reset
@@ -29,7 +26,8 @@ function keepAndQueue(cwd, snapshot, identity) {
 // `autoDebtIdentity`: the identity of the completion that the native Stop accepted. It lets this receipt admit
 // that change's automatic job; without it, the receipt is kept only for a job already queued.
 export function queueMatchingDiffWitnessAssurance(cwd = process.cwd(), { autoDebtIdentity = null } = {}) {
-  const file = envelopePath(cwd);
+  // Core writes it through `git rev-parse --git-path`, which is not `.git/` in a linked worktree.
+  const file = changeEnvelopePath(cwd);
   if (!fs.existsSync(file)) return { matched:false, reason:'no-envelope' };
   let envelope;
   try {

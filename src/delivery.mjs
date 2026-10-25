@@ -57,11 +57,17 @@ function userMessage(explanation, phase, session) {
   return lines.filter(Boolean).join('\n');
 }
 
+// The explanation states a concept's meaning and risk about this code, so the concept must be
+// supported by the code IdleProof inspected (what the change adds, or the inspected file). A topic
+// only mentioned in prompts, commands or tool output is not a fact about the code.
 function conceptFor(state,session) {
-  const ids=Object.keys(session.concepts||{}).filter((id)=>CONCEPT_BY_ID[id]);
+  const grounded=new Set(session.taskSignals?.codeConcepts||[]);
+  const concepts=Object.fromEntries(Object.entries(session.concepts||{}).filter(([id])=>CONCEPT_BY_ID[id]&&grounded.has(id)));
+  const ids=Object.keys(concepts);
   if (!ids.length) return null;
-  const id=selectLearningCard(state,session,ids[0]);
-  return CONCEPT_BY_ID[id]||null;
+  // The ranking only chooses among grounded concepts.
+  const id=selectLearningCard(state,{...session,concepts},ids[0]);
+  return grounded.has(id) ? CONCEPT_BY_ID[id]||null : null;
 }
 
 export function buildHookDelivery(cwd,state,session,eventName,{structureOptions={}}={}) {

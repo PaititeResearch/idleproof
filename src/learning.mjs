@@ -206,7 +206,23 @@ export function sqlLessonSupported(session = {}) {
   return /\b(?:sql|transactions?|database|postgres(?:ql)?|sqlite|mysql)\b|\bselect\b[\s\S]{1,120}\bfrom\b|\binsert\s+into\b|\bupdate\s+\w+\s+set\b/i.test(prompt);
 }
 
-function applicableConcept(session, id) {
+export function applicableConcept(session, id) {
+  // Only the concepts actually recognized in the inspected code may drive a Local
+  // lesson. A phrase such as "fin de session" in the agent prompt must not create
+  // an Authentication lesson about an unrelated arithmetic function.
+  // Older callers with no source coverage preserve their prior behavior.
+  const signals = session?.taskSignals || {};
+  const grounded = signals.codeConcepts;
+  // A real inspected .ts/.tsx source is independent, code-grounded evidence of
+  // TypeScript context even when its current hunk contains no literal "typescript".
+  // Similarly, parsed route/table observations are stronger than prompt keywords.
+  const sourceInspected = typeof signals.structureCoverage?.sourceSha256 === 'string';
+  const structural = sourceInspected && (
+    (id === 'typescript' && /\.(?:ts|tsx|mts|cts)$/i.test(signals.file || '')) ||
+    (id === 'http' && Boolean(signals.route)) ||
+    (id === 'sql' && Boolean(signals.table))
+  );
+  if (Array.isArray(grounded) && !grounded.includes(id) && !structural) return false;
   return id !== 'sql' || sqlLessonSupported(session);
 }
 

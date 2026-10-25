@@ -32,7 +32,15 @@ test('dashboard keeps a shell read-only task neutral despite historical test exp
 
 test('local dashboard serves state and records one-tap proof answers', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'idleproof-server-'));
+  // An authentication question must have REAL inspected auth code, not just a
+  // prompt saying "authentication". This also tests one-tap learning after
+  // the code-grounding gate is applied.
+  fs.mkdirSync(path.join(cwd, 'src', 'auth'), { recursive:true });
+  fs.writeFileSync(path.join(cwd, 'src', 'auth', 'session.ts'),
+    'export function authorizeAdmin(user) { return user.isAuthenticated && user.role === "admin"; }\n');
   processHookEvent({ cwd, session_id: 'web', hook_event_name: 'UserPromptSubmit', prompt: 'Add authentication tests' });
+  processHookEvent({ cwd, session_id: 'web', hook_event_name:'PreToolUse',
+    tool_name:'Read', tool_input:{file_path:path.join(cwd,'src','auth','session.ts')} });
   const { server, url } = await createServer({ cwd, port: 0 });
   try {
     const health = await fetch(`${url}/api/health`).then((res) => res.json());

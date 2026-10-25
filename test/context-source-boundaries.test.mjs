@@ -43,10 +43,10 @@ test('same size and mtime cannot reuse facts from different source bytes', (t) =
   const stamp = new Date('2020-01-01T00:00:00Z');
   fs.writeFileSync(file, 'export function beforeEdit() {}');
   fs.utimesSync(file, stamp, stamp);
-  assert.equal(inspect(cwd, 'changed.js').symbol, 'beforeEdit');
+  assert.deepEqual(inspect(cwd, 'changed.js').symbols, ['beforeEdit']);
   fs.writeFileSync(file, 'export function after_Edit() {}');
   fs.utimesSync(file, stamp, stamp);
-  assert.equal(inspect(cwd, 'changed.js').symbol, 'after_Edit');
+  assert.deepEqual(inspect(cwd, 'changed.js').symbols, ['after_Edit']);
 });
 
 test('caller mutation cannot poison later cached signal extraction', (t) => {
@@ -55,10 +55,13 @@ test('caller mutation cannot poison later cached signal extraction', (t) => {
   const first = inspect(cwd, 'source.js');
   first.symbols.push('inventedSymbol');
   first.relatedFiles[0].symbol = 'inventedSymbol';
+  first.relatedFiles[0].symbols.push('inventedSymbol');
   const next = inspect(cwd, 'source.js');
-  assert.equal(next.symbol, 'realSymbol');
+  // No change and no request names it: the declaration is a fact, not the task's subject.
+  assert.equal(next.symbol, null);
   assert.deepEqual(next.symbols, ['realSymbol']);
-  assert.equal(next.relatedFiles[0].symbol, 'realSymbol');
+  assert.equal(next.relatedFiles[0].symbol, null);
+  assert.deepEqual(next.relatedFiles[0].symbols, ['realSymbol']);
 });
 
 test('internal aliases stay valid and admitted labels are relative', (t) => {
@@ -68,7 +71,7 @@ test('internal aliases stay valid and admitted labels are relative', (t) => {
   link(path.join(cwd, 'src'), path.join(cwd, 'alias'));
   const signals = inspect(cwd, path.join(cwd, 'alias', 'source.js'));
   assert.equal(signals.file, 'alias/source.js');
-  assert.equal(signals.symbol, 'localSymbol');
+  assert.deepEqual(signals.symbols, ['localSymbol']);
 });
 
 test('retargeting a cached internal alias outside the project discards its facts', (t) => {
@@ -78,7 +81,7 @@ test('retargeting a cached internal alias outside the project discards its facts
   fs.writeFileSync(path.join(src, 'source.js'), 'export function inside() {}');
   fs.writeFileSync(path.join(outside, 'source.js'), 'export function outside() {}');
   link(src, alias);
-  assert.equal(inspect(cwd, 'alias/source.js').symbol, 'inside');
+  assert.deepEqual(inspect(cwd, 'alias/source.js').symbols, ['inside']);
   fs.unlinkSync(alias);
   link(outside, alias);
   assert.equal(inspect(cwd, 'alias/source.js').symbol, null);

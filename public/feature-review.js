@@ -98,7 +98,8 @@ function installOptionalLiveCheck() {
   button.className = 'text-button';
   button.id = 'revealUnderstandingCheck';
   button.textContent = 'check my understanding · optional';
-  lesson.insertAdjacentElement('afterend', button);
+  // Preserve the optional understanding check even while detailed evidence is collapsed.
+  (lesson.closest('details') || lesson).insertAdjacentElement('afterend', button);
 
   let key = '';
   let revealed = false;

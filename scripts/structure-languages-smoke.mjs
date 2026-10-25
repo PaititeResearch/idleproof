@@ -18,7 +18,9 @@ try {
   const session={currentResource:'service.ts',currentCapabilities:['code.read'],
     touchedFiles:fixtures.map(([file])=>file),prompt:'Inspect invented'};
   const first=extractTaskSignals(cwd,session);
-  assert.equal(first.symbol,optional?'actual':null);
+  // The request names only the decoy and nothing changed: no subject (#29); declarations below.
+  assert.equal(first.symbol,null);
+  assert.deepEqual(first.symbols,optional?['actual']:[]);
   for(const [file,,provider]of fixtures){
     const item=first.relatedFiles.find(item=>item.file===file);
     assert.equal(item.structureCoverage.provider,provider);
@@ -35,9 +37,9 @@ try {
     assert.equal(invalid.structureCoverage.canonical,true);
     const stamp=new Date('2020-01-01T00:00:00Z');
     fs.writeFileSync(path.join(cwd,'service.ts'),'export function beforeEdit() {}');fs.utimesSync(path.join(cwd,'service.ts'),stamp,stamp);
-    assert.equal(extractTaskSignals(cwd,session).symbol,'beforeEdit');
+    assert.deepEqual(extractTaskSignals(cwd,session).symbols,['beforeEdit']);
     fs.writeFileSync(path.join(cwd,'service.ts'),'export function after_Edit() {}');fs.utimesSync(path.join(cwd,'service.ts'),stamp,stamp);
-    assert.equal(extractTaskSignals(cwd,session).symbol,'after_Edit');
+    assert.deepEqual(extractTaskSignals(cwd,session).symbols,['after_Edit']);
   }
   assert.deepEqual(fs.readdirSync(cwd).sort(),fixtures.map(([file])=>file).sort());
   console.log(JSON.stringify({schema:'idleproof-structure-languages-smoke-1',passed:true,
